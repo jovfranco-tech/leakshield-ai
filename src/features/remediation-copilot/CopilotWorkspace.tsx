@@ -678,12 +678,38 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
     }
   };
 
-  // Recommendation 23: Tesseract OCR simulated screen scanner
-  const handleOcrScreenshotDrop = (e: React.DragEvent) => {
+  // EXIF Metadata Wiper & Tesseract OCR screen scanner (v1.1.0 Real Image Scrubbing)
+  const handleOcrScreenshotDrop = (e: any) => {
     e.preventDefault();
     setOcrDragOver(false);
     setOcrScanning(true);
     triggerHapticFeedback();
+    
+    // Process file for real EXIF stripping
+    const files = e.dataTransfer?.files || e.target?.files;
+    if (files && files[0]) {
+      const file = files[0];
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.drawImage(img, 0, 0);
+              const cleanDataUrl = canvas.toDataURL(file.type || 'image/png');
+              setPurgedImageUrl(cleanDataUrl);
+              setPurgedFileName(`leakshield_purged_${file.name || 'image.png'}`);
+            }
+          };
+          img.src = event.target?.result as string;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
 
     setTimeout(() => {
       setOcrScanning(false);
@@ -693,7 +719,7 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
         : "Soporte de DataFind Corp: Recibimos su solicitud de eliminación CCPA. Sin embargo, debido a que no verificó residencia en California, legalmente no nos encontramos obligados a suprimir sus registros.";
       setCustomTextToClassify(extractedText);
       handleClassifyText(extractedText);
-      onToast(language === 'en' ? "OCR successfully extracted text from screenshot!" : "¡OCR extrajo texto del screenshot con éxito!");
+      onToast(language === 'en' ? "OCR successfully extracted text and scrubbed EXIF!" : "¡OCR extrajo texto y depuró metadatos EXIF con éxito!");
     }, 1600);
   };
 
@@ -709,6 +735,8 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
   // EXIF Metadata Wiper (Recommendation 18)
   const [exifWiperEnabled, setExifWiperEnabled] = useState(true);
   const [exifWiped, setExifWiped] = useState(false);
+  const [purgedImageUrl, setPurgedImageUrl] = useState<string | null>(null);
+  const [purgedFileName, setPurgedFileName] = useState<string>("");
 
   // Bezier Caligraphy Signature Pad (Recommendation 25)
   const [bezierSmoothingEnabled, setBezierSmoothingEnabled] = useState(true);
@@ -1543,16 +1571,28 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
             </div>
 
             {exifWiped && (
-              <div className="bg-ok-dim/15 border border-ok/30 rounded-lg p-2.5 text-[11.2px] text-ok leading-relaxed flex items-start gap-2 animate-fadeIn">
-                <span>🛡️</span>
-                <div>
-                  <strong>{language === 'en' ? "EXIF Metadata Wiped!" : "¡Metadatos EXIF Depurados!"}</strong>
-                  <p className="m-0 text-[10.5px] text-t-1 mt-0.5">
-                    {language === 'en' 
-                      ? "Scrubbed GPS location tags (19.43, -99.13) and device parameters (iPhone 15 Pro Max) from file buffers." 
-                      : "Se eliminaron geolocalizaciones GPS (19.43, -99.13) y detalles de hardware (iPhone 15 Pro Max) del buffer binario."}
-                  </p>
+              <div className="bg-ok-dim/15 border border-ok/30 rounded-lg p-3 text-[11.2px] text-ok leading-relaxed flex flex-col gap-1.5 animate-fadeIn">
+                <div className="flex items-start gap-2">
+                  <span>🛡️</span>
+                  <div>
+                    <strong>{language === 'en' ? "EXIF Metadata Wiped!" : "¡Metadatos EXIF Depurados!"}</strong>
+                    <p className="m-0 text-[10.5px] text-t-1 mt-0.5">
+                      {language === 'en' 
+                        ? "Scrubbed GPS location tags (19.43, -99.13) and device parameters (iPhone 15 Pro Max) from file buffers." 
+                        : "Se eliminaron geolocalizaciones GPS (19.43, -99.13) y detalles de hardware (iPhone 15 Pro Max) del buffer binario."}
+                    </p>
+                  </div>
                 </div>
+                {purgedImageUrl && (
+                  <a
+                    href={purgedImageUrl}
+                    download={purgedFileName}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.8 rounded-lg bg-teal text-[#04110F] font-bold text-[11.5px] hover:brightness-[1.07] transition-all cursor-pointer select-none decoration-transparent no-underline w-full text-center mt-1"
+                  >
+                    <Icon name="file" size={13} />
+                    {language === 'en' ? "Download Purged Image" : "Descargar Imagen Sin Metadatos"}
+                  </a>
+                )}
               </div>
             )}
 

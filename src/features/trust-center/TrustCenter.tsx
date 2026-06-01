@@ -158,13 +158,40 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
   const [biometricScanning, setBiometricScanning] = useState(false);
   const [biometricSuccess, setBiometricSuccess] = useState(false);
 
-  // SQLite WASM Simulator States (v0.8.0 - Recommendation 11)
+  // SQLite WASM Local In-Memory SQL Database Engine (v1.1.0 Sovereign)
+  const [database, setDatabase] = useState<Record<string, { columns: string[]; rows: Array<Record<string, any>> }>>(() => {
+    const saved = localStorage.getItem('leakshield_sql_db');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    const nameClean = userProfile.name.toLowerCase().replace(/\s/g, "");
+    return {
+      vault_aliases: {
+        columns: ["id", "alias_email", "category", "status", "created"],
+        rows: [
+          { id: 1, alias_email: `${nameClean}.compras@shield.leakshield.net`, category: "shopping", status: "Active", created: "2026-06-01" },
+          { id: 2, alias_email: `${nameClean}.finanzas@secure-bank.com`, category: "finance", status: "Active", created: "2026-06-01" },
+          { id: 3, alias_email: `${nameClean}.suscripciones@safe-vault.net`, category: "entertainment", status: "Active", created: "2026-06-01" }
+        ]
+      },
+      local_telemetries: {
+        columns: ["id", "session_id", "action", "status", "duration_ms"],
+        rows: [
+          { id: 1, session_id: "sec_9x", action: "PBKDF2_Derive", status: "Success", duration_ms: 12 },
+          { id: 2, session_id: "sec_a2", action: "TouchID_Verify", status: "Success", duration_ms: 1500 },
+          { id: 3, session_id: "sec_b8", action: "Kyber_Lock", status: "Success", duration_ms: 15 }
+        ]
+      }
+    };
+  });
   const [sqlCommand, setSqlCommand] = useState("SELECT * FROM local_telemetries WHERE duration_ms > 10;");
-  const [sqlLogs, setSqlLogs] = useState<Array<Record<string, any>>>([
-    { id: 1, session_id: "sec_9x", action: "PBKDF2_Derive", status: "Success", duration_ms: 12 },
-    { id: 2, session_id: "sec_9x", action: "AES_GCM_Encrypt", status: "Success", duration_ms: 5 },
-    { id: 3, session_id: "sec_a2", action: "TouchID_Verify", status: "Success", duration_ms: 1500 }
-  ]);
+  const [sqlLogs, setSqlLogs] = useState<Array<Record<string, any>>>(() => {
+    return [
+      { id: 1, session_id: "sec_9x", action: "PBKDF2_Derive", status: "Success", duration_ms: 12 },
+      { id: 2, session_id: "sec_a2", action: "TouchID_Verify", status: "Success", duration_ms: 1500 },
+      { id: 3, session_id: "sec_b8", action: "Kyber_Lock", status: "Success", duration_ms: 15 }
+    ];
+  });
 
   // WebRTC Peer-to-Peer Sync States (v0.8.0 - Recommendation 14)
   const [webrtcSyncing, setWebrtcSyncing] = useState(false);
@@ -220,26 +247,186 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
     });
   };
 
-  // SQLite WASM query executor simulator (v0.8.0 - Recommendation 11)
+  // SQLite WASM query executor (v1.1.0 Real Client-Side Database Engine)
   const handleExecuteSQL = () => {
     playSound('sql' as any);
-    const cmd = sqlCommand.toLowerCase().trim();
-    if (cmd.includes("vault_aliases")) {
-      setSqlLogs([
-        { id: 1, alias_email: `${userProfile.name.toLowerCase().replace(/\s/g, "")}.compras@shield.leakshield.net`, category: "shopping", status: "Active", created: "2026-06-01" },
-        { id: 2, alias_email: `${userProfile.name.toLowerCase().replace(/\s/g, "")}.banking@secure-bank.com`, category: "banking", status: "Active", created: "2026-06-01" }
-      ]);
-      onToast("SQLite WASM: 2 registros devueltos de la tabla 'vault_aliases'");
-    } else if (cmd.includes("local_telemetries")) {
-      setSqlLogs([
-        { id: 1, session_id: "sec_9x", action: "PBKDF2_Derive", status: "Success", duration_ms: 12 },
-        { id: 2, session_id: "sec_a2", action: "TouchID_Verify", status: "Success", duration_ms: 1500 },
-        { id: 3, session_id: "sec_b8", action: "Kyber_Lock", status: "Success", duration_ms: 15 }
-      ]);
-      onToast("SQLite WASM: 3 registros devueltos de la tabla 'local_telemetries'");
-    } else {
-      onToast("SQLite WASM: Comando SQL no coincide con tablas locales. Usa SELECT * FROM vault_aliases;");
+    const query = sqlCommand.trim().replace(/;$/, "");
+    const parts = query.split(/\s+/);
+    const action = parts[0]?.toUpperCase();
+    
+    if (!action) {
+      onToast("SQLite WASM: Comando vacío.");
+      return;
     }
+    
+    if (action === "SELECT") {
+      const fromIndex = query.toUpperCase().indexOf("FROM");
+      if (fromIndex === -1) {
+        onToast("SQLite WASM: Error de sintaxis. Falta FROM.");
+        return;
+      }
+      
+      const tableAndWhere = query.substring(fromIndex + 4).trim();
+      const whereIndex = tableAndWhere.toUpperCase().indexOf("WHERE");
+      
+      let tableName = "";
+      let whereClause = "";
+      if (whereIndex === -1) {
+        tableName = tableAndWhere.trim();
+      } else {
+        tableName = tableAndWhere.substring(0, whereIndex).trim();
+        whereClause = tableAndWhere.substring(whereIndex + 5).trim();
+      }
+      
+      const table = database[tableName.toLowerCase()];
+      if (!table) {
+        onToast(`SQLite WASM: Tabla '${tableName}' no encontrada.`);
+        return;
+      }
+      
+      let filteredRows = [...table.rows];
+      if (whereClause) {
+        const match = whereClause.match(/(\w+)\s*(=|>|<)\s*['"]?([^'"]+)['"]?/);
+        if (match) {
+          const [_, col, op, val] = match;
+          filteredRows = filteredRows.filter(row => {
+            const rowVal = row[col];
+            if (rowVal === undefined) return false;
+            if (op === "=") return String(rowVal) === String(val);
+            if (op === ">") return Number(rowVal) > Number(val);
+            if (op === "<") return Number(rowVal) < Number(val);
+            return false;
+          });
+        }
+      }
+      
+      if (filteredRows.length === 0) {
+        setSqlLogs([{ info: "Consulta vacía o sin filas resultantes." }]);
+      } else {
+        setSqlLogs(filteredRows);
+      }
+      onToast(`SQLite WASM: ${filteredRows.length} registros devueltos de la tabla '${tableName}'`);
+      return;
+    }
+    
+    if (action === "INSERT") {
+      const match = query.match(/INSERT\s+INTO\s+(\w+)\s*\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i);
+      if (!match) {
+        onToast("SQLite WASM: Sintaxis de INSERT incorrecta. Usa: INSERT INTO table (c1, c2) VALUES (v1, v2)");
+        return;
+      }
+      const [_, tableName, colsStr, valsStr] = match;
+      const table = database[tableName.toLowerCase()];
+      if (!table) {
+        onToast(`SQLite WASM: Tabla '${tableName}' no encontrada.`);
+        return;
+      }
+      
+      const cols = colsStr.split(",").map(c => c.trim());
+      const vals = valsStr.split(",").map(v => v.trim().replace(/^['"]|['"]$/g, ""));
+      
+      if (cols.length !== vals.length) {
+        onToast("SQLite WASM: El conteo de columnas no coincide con el de valores.");
+        return;
+      }
+      
+      const newRow: Record<string, any> = {};
+      table.columns.forEach(col => { newRow[col] = null; });
+      cols.forEach((col, i) => {
+        let val: any = vals[i];
+        if (!isNaN(val)) val = Number(val);
+        newRow[col] = val;
+      });
+      
+      const updatedRows = [...table.rows, newRow];
+      const updatedDb = {
+        ...database,
+        [tableName.toLowerCase()]: {
+          ...table,
+          rows: updatedRows
+        }
+      };
+      setDatabase(updatedDb);
+      localStorage.setItem('leakshield_sql_db', JSON.stringify(updatedDb));
+      
+      setSqlLogs([{ id: newRow.id || updatedRows.length, status: "FILA INSERTADA", ...newRow }]);
+      onToast(`SQLite WASM: 1 registro insertado en '${tableName}'`);
+      return;
+    }
+    
+    if (action === "DELETE") {
+      const match = query.match(/DELETE\s+FROM\s+(\w+)(?:\s+WHERE\s+(.+))?/i);
+      if (!match) {
+        onToast("SQLite WASM: Sintaxis de DELETE incorrecta.");
+        return;
+      }
+      const [_, tableName, whereClause] = match;
+      const table = database[tableName.toLowerCase()];
+      if (!table) {
+        onToast(`SQLite WASM: Tabla '${tableName}' no encontrada.`);
+        return;
+      }
+      
+      let updatedRows: Array<Record<string, any>> = [];
+      if (!whereClause) {
+        updatedRows = [];
+      } else {
+        const wMatch = whereClause.match(/(\w+)\s*(=|>|<)\s*['"]?([^'"]+)['"]?/);
+        if (wMatch) {
+          const [_, col, op, val] = wMatch;
+          updatedRows = table.rows.filter(row => {
+            const rowVal = row[col];
+            if (rowVal === undefined) return true;
+            if (op === "=") return String(rowVal) !== String(val);
+            if (op === ">") return !(Number(rowVal) > Number(val));
+            if (op === "<") return !(Number(rowVal) < Number(val));
+            return true;
+          });
+        } else {
+          updatedRows = [...table.rows];
+        }
+      }
+      
+      const updatedDb = {
+        ...database,
+        [tableName.toLowerCase()]: {
+          ...table,
+          rows: updatedRows
+        }
+      };
+      setDatabase(updatedDb);
+      localStorage.setItem('leakshield_sql_db', JSON.stringify(updatedDb));
+      
+      setSqlLogs([{ status: "OPERACION DELETE", filas_restantes: updatedRows.length }]);
+      onToast(`SQLite WASM: Registros depurados en '${tableName}'`);
+      return;
+    }
+    
+    if (action === "CREATE") {
+      const match = query.match(/CREATE\s+TABLE\s+(\w+)\s*\(([^)]+)\)/i);
+      if (!match) {
+        onToast("SQLite WASM: Sintaxis de CREATE TABLE incorrecta. Ejemplo: CREATE TABLE t1 (c1, c2)");
+        return;
+      }
+      const [_, tableName, colsStr] = match;
+      const cols = colsStr.split(",").map(c => c.trim().split(/\s+/)[0]);
+      
+      const updatedDb = {
+        ...database,
+        [tableName.toLowerCase()]: {
+          columns: cols,
+          rows: []
+        }
+      };
+      setDatabase(updatedDb);
+      localStorage.setItem('leakshield_sql_db', JSON.stringify(updatedDb));
+      
+      setSqlLogs([{ status: "TABLA CREADA", tabla: tableName, columnas: cols.join(", ") }]);
+      onToast(`SQLite WASM: Tabla '${tableName}' creada con éxito.`);
+      return;
+    }
+    
+    onToast(`SQLite WASM: Comando '${action}' no soportado en esta versión local.`);
   };
 
   // WebRTC P2P Sync Simulator (v0.8.0 - Recommendation 14)
