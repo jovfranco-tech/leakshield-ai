@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Icon } from '../../components/ui/Icon';
 import { Switch } from '../../components/ui/Switch';
+import { Profile } from '../../types/privacy';
 
 const handleMouseMove = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
   const rect = e.currentTarget.getBoundingClientRect();
@@ -35,9 +36,17 @@ const ToggleRow: React.FC<ToggleProps> = ({ label, defaultOn, onToast }) => {
 interface TrustCenterProps {
   onToast: (msg: string) => void;
   onResetTasks?: () => void;
+  profile?: Profile;
 }
 
-export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks }) => {
+export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks, profile }) => {
+  const userProfile = profile || {
+    name: "Jovan Franco",
+    emails: ["jovan@secure-corp.com"],
+    usernames: ["jovan_ops"],
+    location: "México"
+  };
+
   const principles = [
     { ic: "user", t: "Solo tus propias cuentas", d: "Escanea únicamente identificadores que poseas o estés autorizado a monitorear. Respaldamos las auditorías autorizadas de privacidad con telemetría estrictamente autenticada." },
     { ic: "lock", t: "Sin contraseñas guardadas", d: "Cero contraseñas almacenadas. Las validaciones de credenciales se realizan usando k-anonymity, transmitiendo solo los primeros 5 caracteres del hash SHA-1 a la API Have I Been Pwned. Tus credenciales reales nunca salen del cliente." },
@@ -47,8 +56,99 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks 
     { ic: "shield", t: "Expectativas honestas", d: "Ofrecemos reducción de riesgos y herramientas de higiene digital. No garantizamos una remoción absoluta del 100% en todo internet, estableciendo expectativas reales y éticas." },
   ];
 
+  // 1. 3D XOR Cube visualizer states
+  const [cubeAnimating, setCubeAnimating] = useState(false);
+  const [cubeLogs, setCubeLogs] = useState<string[]>([]);
+
+  // 2. Simulated WebAuthn TouchID states
+  const [showBiometricModal, setShowBiometricModal] = useState(false);
+  const [biometricScanning, setBiometricScanning] = useState(false);
+  const [biometricSuccess, setBiometricSuccess] = useState(false);
+
+  // 3. Risk Weight Tuner States
+  const [weightPassword, setWeightPassword] = useState(3.5);
+  const [weightBrokers, setWeightBrokers] = useState(2.5);
+  const [weightAccounts, setWeightAccounts] = useState(1.5);
+  const [weightBreaches, setWeightBreaches] = useState(2.0);
+
+  // Keyboard shortcut configuration
+  const [shortcuts] = useState([
+    { key: "D", action: "Navegar al Dashboard principal" },
+    { key: "C", action: "Abrir el Copiloto de Remediación" },
+    { key: "T", action: "Ver el Tablero Kanban de Tareas" },
+    { key: "Alt + S", action: "Mostrar el panel de controles de la demo" }
+  ]);
+
+  // XOR 3D Cube animation trigger
+  const handleTriggerXORCube = () => {
+    if (cubeAnimating) return;
+    setCubeAnimating(true);
+    setCubeLogs([]);
+    onToast("Inicializando bóveda local encriptada...");
+
+    const steps = [
+      "[IndexedDB] Creando base de datos segura 'leakshield_vault_db'...",
+      "[XOR Crypt] Generando llave dinámica a partir de la firma de sesión...",
+      "[XOR Crypt] Cifrando 14 registros de perfil y bitácoras activas...",
+      "[IndexedDB Commit] Bóveda escrita con éxito en bloque persistente aislado."
+    ];
+
+    steps.forEach((step, idx) => {
+      setTimeout(() => {
+        setCubeLogs(prev => [...prev, `[${new Date().toLocaleTimeString('es-ES', { hour12: false })}] ${step}`]);
+        if (idx === steps.length - 1) {
+          setCubeAnimating(false);
+          onToast("¡Bóveda local indexada protegida al 100%!");
+        }
+      }, (idx + 1) * 350);
+    });
+  };
+
+  // WebAuthn Biometric verification & Blob CSV export
+  const handleExportDataCSV = () => {
+    setShowBiometricModal(true);
+    setBiometricScanning(false);
+    setBiometricSuccess(false);
+  };
+
+  const handleStartBiometricScan = () => {
+    setBiometricScanning(true);
+    setBiometricSuccess(false);
+    
+    // Simulate biometric matching
+    setTimeout(() => {
+      setBiometricScanning(false);
+      setBiometricSuccess(true);
+      onToast("¡Autenticación biométrica exitosa!");
+
+      // Export CSV file dynamically using native Blob URL
+      setTimeout(() => {
+        const csvHeaders = "ID,Alias Email,Base Email,Tag,Category,Created At,Routing Status\n";
+        const emailBase = userProfile.emails[0] || "jovan@secure-corp.com";
+        const prefix = emailBase.split('@')[0];
+        
+        const csvRows = [
+          `1,${prefix}+compras@shield.leakshield.net,${emailBase},compras,shopping,2026-06-01,Active`,
+          `2,${prefix}.vault.finanzas@secure-bank.com,${emailBase},finanzas,banking,2026-06-01,Active`,
+          `3,shield.temp-boletin-4e@shield.leakshield.net,${emailBase},boletin,newsletters,2026-06-01,Active`
+        ].join("\n");
+
+        const blob = new Blob([csvHeaders + csvRows], { type: 'text/csv;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `leakshield_alias_emails_${prefix}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        
+        setShowBiometricModal(false);
+        onToast("¡Lote de alias exportado en archivo .csv!");
+      }, 500);
+    }, 1500);
+  };
+
   return (
-    <div className="max-w-[1180px] mx-auto fade-in">
+    <div className="max-w-[1180px] mx-auto fade-in px-5 md:px-8">
       <div className="flex justify-between items-end mb-4 flex-wrap gap-3">
         <div>
           <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1">Centro de Confianza · Límites de Seguridad</div>
@@ -56,7 +156,7 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks 
         </div>
         <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25">
           <span className="demo-blip" />
-          Prototipo
+          Prototipo v0.6.0
         </span>
       </div>
 
@@ -101,70 +201,156 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks 
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Toggle Controls */}
-        <div 
-          onMouseMove={handleMouseMove}
-          className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium flex flex-col justify-between"
-        >
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
-            background: `radial-gradient(350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.04), transparent 80%)`
-          }} />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-3.5 border-b border-line pb-3">
-              <Icon name="settings" size={16} />
-              <h2 className="text-[15px] font-semibold text-t-0">Controles de datos</h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        {/* Left Side: Controls & Shortcuts Customizer */}
+        <div className="flex flex-col gap-4">
+          {/* Toggle Controls */}
+          <div 
+            onMouseMove={handleMouseMove}
+            className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium flex flex-col justify-between"
+          >
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
+              background: `radial-gradient(350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.04), transparent 80%)`
+            }} />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-3.5 border-b border-line pb-3">
+                <Icon name="settings" size={16} style={{ color: "var(--teal)" }} />
+                <h2 className="text-[15px] font-semibold text-t-0">Controles de datos</h2>
+              </div>
+              <div className="flex flex-col">
+                <ToggleRow label="Monitorear mis identificadores" defaultOn={true} onToast={onToast} />
+                <ToggleRow label="Guardar hallazgos solo para esta sesión" defaultOn={true} onToast={onToast} />
+                <ToggleRow label="Permitir que el copiloto redacte (nunca auto-enviar)" defaultOn={true} onToast={onToast} />
+                <ToggleRow label="Compartir estadísticas anónimas" defaultOn={false} onToast={onToast} />
+              </div>
             </div>
-            <div className="flex flex-col">
-              <ToggleRow label="Monitorear mis identificadores" defaultOn={true} onToast={onToast} />
-              <ToggleRow label="Guardar hallazgos solo para esta sesión" defaultOn={true} onToast={onToast} />
-              <ToggleRow label="Permitir que el copiloto redacte (nunca auto-enviar)" defaultOn={true} onToast={onToast} />
-              <ToggleRow label="Compartir estadísticas anónimas" defaultOn={false} onToast={onToast} />
+          </div>
+
+          {/* Keyboard Shortcuts Customizer Table */}
+          <div 
+            onMouseMove={handleMouseMove}
+            className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium flex flex-col justify-between"
+          >
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
+              background: `radial-gradient(350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.04), transparent 80%)`
+            }} />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-3.5 border-b border-line pb-3">
+                <Icon name="settings" size={16} />
+                <h2 className="text-[15px] font-semibold text-t-0">Atajos de Teclado del Command Center</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-[12px]">
+                  <thead>
+                    <tr className="border-b border-line text-t-2">
+                      <th className="py-2.5 font-semibold">Atajo</th>
+                      <th className="py-2.5 font-semibold">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shortcuts.map((sh, idx) => (
+                      <tr key={idx} className="border-b border-line/45 last:border-b-0 hover:bg-bg-3/30 transition-colors">
+                        <td className="py-2.5 font-mono text-teal font-semibold select-all">{sh.key}</td>
+                        <td className="py-2.5 text-t-1">{sh.action}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Data Wiping Actions */}
-        <div 
-          onMouseMove={handleMouseMove}
-          className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium flex flex-col justify-between"
-        >
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
-            background: `radial-gradient(350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.04), transparent 80%)`
-          }} />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-3.5 border-b border-line pb-3">
-              <Icon name="file" size={16} />
-              <h2 className="text-[15px] font-semibold text-t-0">Tus datos, tu decisión</h2>
+        {/* Right Side: Data Wiping Actions, 3D Cube & TouchID */}
+        <div className="flex flex-col gap-4">
+          <div 
+            onMouseMove={handleMouseMove}
+            className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium flex flex-col justify-between glossy-sweep noise-grain h-full"
+          >
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
+              background: `radial-gradient(400px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.04), transparent 80%)`
+            }} />
+            <div className="relative z-10 flex flex-col h-full justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-3.5 border-b border-line pb-3">
+                  <Icon name="file" size={16} />
+                  <h2 className="text-[15px] font-semibold text-t-0">Tus datos, tu decisión</h2>
+                </div>
+                
+                {/* 3D Cube and text side-by-side */}
+                <div className="grid grid-cols-[auto_1fr] gap-4.5 items-center mb-4 bg-bg-inset border border-line p-4 rounded-xl">
+                  {/* CSS 3D XOR Cube */}
+                  <div 
+                    className="cube-wrap cursor-pointer group-hover:scale-105 transition-transform" 
+                    onClick={handleTriggerXORCube}
+                    title="Hacer clic para forzar rotación de cifrado XOR"
+                  >
+                    <div className={`cube ${cubeAnimating ? "cube-animating" : ""}`} style={{
+                      transform: cubeAnimating ? "" : "rotateX(-25deg) rotateY(45deg)"
+                    }}>
+                      <div className="cube-face face-front">XOR</div>
+                      <div className="cube-face face-back">0x4F</div>
+                      <div className="cube-face face-right">KEY</div>
+                      <div className="cube-face face-left">v0.6</div>
+                      <div className="cube-face face-top">VAULT</div>
+                      <div className="cube-face face-bottom">SEC</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="text-[13.5px] font-semibold text-t-0 leading-tight mb-1">Cifrado XOR e IndexedDB Local</h3>
+                    <p className="text-t-2 text-[12.2px] leading-relaxed m-0">
+                      Almacenamiento local fuertemente enmascarado en IndexedDB. Haz clic en el cubo XOR para disparar un chequeo de encriptación persistente en vivo.
+                    </p>
+                  </div>
+                </div>
+
+                {cubeLogs.length > 0 && (
+                  <div className="mb-4 bg-bg-inset border border-line rounded-lg p-3 font-mono text-[10.5px] leading-relaxed text-teal shadow-inner animate-fadeIn flex flex-col gap-1 max-h-[110px] overflow-y-auto">
+                    <div className="flex items-center gap-1.5 border-b border-line/45 pb-1 text-t-2 font-sans font-semibold">
+                      <span className="w-2 h-2 rounded-full bg-teal animate-pulse" />
+                      Auditoría de Encriptación Local (Vault Logs)
+                    </div>
+                    {cubeLogs.map((lg, i) => (
+                      <div key={i} className="whitespace-pre-wrap">{lg}</div>
+                    ))}
+                  </div>
+                )}
+
+                <p className="text-t-2 text-[12.8px] leading-[1.55] mb-2.5">
+                  Exporta todos tus alias de correos verificados en formato CSV para importarlos en tu gestor, o borra localmente todos los estados en un solo clic.
+                </p>
+              </div>
+
+              <div>
+                <div className="flex gap-2.5 flex-wrap">
+                  <button 
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2.5 border border-line-2 bg-bg-3 hover:bg-bg-2 text-t-1 hover:text-t-0 cursor-pointer transition-all duration-130 shadow-premium"
+                    onClick={handleExportDataCSV}
+                  >
+                    <Icon name="file" size={15} style={{ color: "var(--teal)" }} />
+                    Exportar mis alias (.csv)
+                  </button>
+                  <button 
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2.5 bg-transparent hover:bg-bg-inset border border-transparent hover:border-line text-crit cursor-pointer transition-all duration-130"
+                    onClick={() => {
+                      if (onResetTasks) {
+                        onResetTasks();
+                      }
+                      onToast("Datos restablecidos de forma segura");
+                    }}
+                  >
+                    <Icon name="trash" size={15} />
+                    Eliminar todo
+                  </button>
+                </div>
+              </div>
             </div>
-            <p className="text-t-2 text-[12.8px] leading-[1.55] mb-4.5">
-              Exporta toda la información almacenada en el navegador o bórrala al instante. En esta demo ningún dato sale de tu dispositivo.
-            </p>
-            <div className="flex gap-2.5">
-              <button 
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 border border-line-2 bg-bg-3 hover:bg-bg-2 text-t-1 hover:text-t-0 cursor-pointer transition-all duration-130 shadow-premium"
-                onClick={() => onToast("Exportación de datos simulada preparada")}
-              >
-                <Icon name="file" size={15} />
-                Exportar mis datos
-              </button>
-              <button 
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 bg-transparent hover:bg-bg-inset border border-transparent hover:border-line text-crit cursor-pointer transition-all duration-130"
-                onClick={() => {
-                  if (onResetTasks) {
-                    onResetTasks();
-                  }
-                  onToast("Datos restablecidos de forma segura");
-                }}
-              >
-                <Icon name="trash" size={15} />
-                Eliminar todo
-              </button>
+            
+            <div className="flex items-center gap-1.5 mt-4.5 text-t-3 text-[11px] border-t border-line/45 pt-3.5 relative z-10">
+              <Icon name="shield-check" size={13} />
+              <span>Diseñado para conectarse a un backend serverless proxy — sin secretos expuestos en el cliente.</span>
             </div>
-          </div>
-          <div className="flex items-center gap-1.5 mt-4 text-t-3 text-[11px] border-t border-line pt-3.5 relative z-10">
-            <Icon name="shield-check" size={13} />
-            <span>Diseñado para conectarse a un backend serverless proxy — sin secretos expuestos en el cliente.</span>
           </div>
         </div>
       </div>
@@ -172,7 +358,7 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks 
       {/* Advanced Cybersecurity & Privacy Boundaries Panel */}
       <div 
         onMouseMove={handleMouseMove}
-        className="group relative overflow-hidden border border-line rounded-lg p-6 bg-bg-2 shadow-premium mt-6"
+        className="group relative overflow-hidden border border-line rounded-lg p-6 bg-bg-2 shadow-premium mb-4"
       >
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
           background: `radial-gradient(550px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.03), transparent 80%)`
@@ -181,7 +367,77 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks 
 
         <div className="flex items-center gap-2 mb-4 border-b border-line pb-3 relative z-10">
           <Icon name="shield-check" size={18} style={{ color: "var(--teal)" }} />
-          <h2 className="text-[16px] font-semibold text-t-0">Arquitectura de Privacidad y Mecánicas de Verificación</h2>
+          <h2 className="text-[16px] font-semibold text-t-0">Calibración de Pesos de Riesgo e Inferencia de Score</h2>
+        </div>
+
+        {/* Risk Weight Tuner sliders */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-[12.8px] leading-relaxed text-t-1 relative z-10 mb-4 border-b border-line pb-5">
+          <div className="flex flex-col gap-4">
+            <h3 className="font-semibold text-t-0 text-[13.5px] flex items-center gap-1.5">
+              <Icon name="sparkles" size={15} style={{ color: "var(--teal)" }} />
+              Ajuste Personalizado de Pesos (Risk Weight Tuner)
+            </h3>
+            <p className="m-0 text-t-2 leading-relaxed">
+              Configura cómo influye cada factor en el cálculo de tu Score de Exposición de LeakShield. Los cambios se recalculan localmente de forma instantánea.
+            </p>
+            
+            <div className="bg-bg-inset border border-line rounded-lg p-4 flex flex-col gap-3">
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-[11.8px] text-t-1">Exex. Contraseñas Reutilizadas:</span>
+                  <span className="text-[11px] font-mono text-teal font-bold">{weightPassword.toFixed(1)}x</span>
+                </div>
+                <input 
+                  type="range" min="1.0" max="5.0" step="0.2" value={weightPassword}
+                  onChange={(e) => { setWeightPassword(parseFloat(e.target.value)); onToast("Peso de contraseña recalibrado"); }}
+                  className="accent-teal h-1 bg-bg-2 rounded-lg appearance-none cursor-pointer w-full"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-[11.8px] text-t-1">Exposición en Data Brokers:</span>
+                  <span className="text-[11px] font-mono text-teal font-bold">{weightBrokers.toFixed(1)}x</span>
+                </div>
+                <input 
+                  type="range" min="1.0" max="5.0" step="0.2" value={weightBrokers}
+                  onChange={(e) => { setWeightBrokers(parseFloat(e.target.value)); onToast("Peso de data brokers recalibrado"); }}
+                  className="accent-teal h-1 bg-bg-2 rounded-lg appearance-none cursor-pointer w-full"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <h3 className="font-semibold text-t-0 text-[13.5px] flex items-center gap-1.5 opacity-0 sm:opacity-100">
+              <span>&nbsp;</span>
+            </h3>
+            <div className="bg-bg-inset border border-line rounded-lg p-4 flex flex-col gap-3 h-full justify-between">
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-[11.8px] text-t-1">Cuentas Inactivas (Legacy Gaps):</span>
+                  <span className="text-[11px] font-mono text-teal font-bold">{weightAccounts.toFixed(1)}x</span>
+                </div>
+                <input 
+                  type="range" min="1.0" max="5.0" step="0.2" value={weightAccounts}
+                  onChange={(e) => { setWeightAccounts(parseFloat(e.target.value)); onToast("Peso de cuentas inactivas recalibrado"); }}
+                  className="accent-teal h-1 bg-bg-2 rounded-lg appearance-none cursor-pointer w-full"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-[11.8px] text-t-1">Historial de Brechas Generales:</span>
+                  <span className="text-[11px] font-mono text-teal font-bold">{weightBreaches.toFixed(1)}x</span>
+                </div>
+                <input 
+                  type="range" min="1.0" max="5.0" step="0.2" value={weightBreaches}
+                  onChange={(e) => { setWeightBreaches(parseFloat(e.target.value)); onToast("Peso de brechas generales recalibrado"); }}
+                  className="accent-teal h-1 bg-bg-2 rounded-lg appearance-none cursor-pointer w-full"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-[12.8px] leading-relaxed text-t-1 relative z-10">
@@ -190,11 +446,8 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks 
               <Icon name="key" size={15} style={{ color: "var(--cyan)" }} />
               Verificación de Credenciales mediante k-Anonymity
             </h3>
-            <p className="m-0 text-t-2 leading-relaxed">
+            <p className="m-0 text-t-2 leading-relaxed text-[12.2px]">
               Al verificar si una contraseña fue expuesta en filtraciones públicas, LeakShield evita estrictamente transmitir los valores en texto plano o el hash completo. En su lugar, aplicamos SHA-1, extraemos los primeros 5 caracteres hexadecimales del hash (ej. <code className="bg-bg-inset border border-line px-1 rounded font-mono text-[11.5px]">21BD1</code>), y enviamos únicamente este prefijo a la API Have I Been Pwned.
-            </p>
-            <p className="mt-2.5 m-0 text-t-2 leading-relaxed">
-              La API nos devuelve una lista de todos los sufijos coincidentes y sus frecuencias de exposición. LeakShield realiza la comparación localmente en la memoria del navegador. Esto garantiza que ni Have I Been Pwned ni LeakShield conozcan el hash completo o tus credenciales reales.
             </p>
           </div>
 
@@ -203,18 +456,90 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks 
               <Icon name="sparkles" size={15} style={{ color: "var(--teal)" }} />
               Proxy Serverless y Aislamiento de Seguridad de IA
             </h3>
-            <p className="m-0 text-t-2 leading-relaxed">
-              Todas las recomendaciones de IA, búsquedas de filtraciones y bajas con data brokers están estructuradas para ejecutarse a través de funciones serverless seguras (ej. Firebase App Hosting, Vercel Serverless o Cloud Functions).
+            <p className="m-0 text-t-2 leading-relaxed text-[12.2px]">
+              Todas las recomendaciones de IA, búsquedas de filtraciones y bajas con data brokers están estructuradas para ejecutarse a través de funciones serverless seguras (ej. Firebase App Hosting, Vercel Serverless o Cloud Functions). Tus datos reales nunca salen del cliente sin tu consentimiento.
             </p>
-            <ul className="m-0 mt-2.5 pl-4 flex flex-col gap-1 text-t-2 list-disc">
-              <li><strong>Cero Secretos Expuestos:</strong> Las claves de API para Vertex AI, Google Search y Have I Been Pwned residen de forma segura en variables de entorno del servidor, nunca en el bundle del cliente.</li>
-              <li><strong>Registros Libres de PII:</strong> Los registros de acceso del sistema no guardan información personal identificable y están protegidos contra abusos con rate-limiting estricto.</li>
-              <li><strong>Revisión Humana (Human-in-the-loop):</strong> Cada borrador de carta formal redactado por la IA se presenta localmente para que el usuario lo revise, edite o confirme antes de ser encolado.</li>
-            </ul>
           </div>
         </div>
       </div>
+
+      {/* Simulated Biometric Verification Modal (WebAuthn TouchID/FaceID) */}
+      {showBiometricModal && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-[6px] grid place-items-center p-6 cursor-pointer"
+          onClick={() => setShowBiometricModal(false)}
+        >
+          <div 
+            className="fade-in cursor-default flex flex-col w-full max-w-[380px] bg-bg-1 border border-line-2 rounded-xl p-5 shadow-[0_32px_80px_rgba(0,0,0,0.8)] text-center gap-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center border-b border-line pb-2 flex-shrink-0">
+              <span className="text-[13.5px] font-bold text-t-0">Seguridad de Dispositivo</span>
+              <button 
+                className="text-t-3 hover:text-t-0 bg-transparent border-0 cursor-pointer font-bold text-[14px]"
+                onClick={() => setShowBiometricModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="py-6 flex flex-col items-center justify-center gap-4">
+              {biometricScanning ? (
+                <div className="relative w-20 h-20 flex items-center justify-center bg-teal-dim/20 border border-teal-line/30 rounded-full animate-pulse">
+                  {/* Glowing spinner ring */}
+                  <div className="absolute inset-0 rounded-full border-2 border-teal border-t-transparent spin" style={{ animationDuration: "1s" }} />
+                  <Icon name="user" size={32} className="text-teal" />
+                </div>
+              ) : biometricSuccess ? (
+                <div className="w-20 h-20 flex items-center justify-center bg-ok-dim border border-ok text-ok rounded-full animate-bounce">
+                  <Icon name="check-circle" size={36} />
+                </div>
+              ) : (
+                <div className="w-20 h-20 flex items-center justify-center bg-bg-3 hover:bg-bg-2 border border-line-2 rounded-full cursor-pointer hover:border-teal-line transition-all duration-200 active:scale-95 shadow-[0_0_20px_rgba(45,212,191,0.08)]" onClick={handleStartBiometricScan}>
+                  <span className="text-[34px] filter grayscale hover:grayscale-0 transition-all select-none animate-pulse">
+                    ☝️
+                  </span>
+                </div>
+              )}
+
+              <div>
+                <h4 className="text-[14.5px] font-bold text-t-0">
+                  {biometricScanning ? "Escaneando huella..." : biometricSuccess ? "¡Acceso Concedido!" : "Verificación de Identidad"}
+                </h4>
+                <p className="text-t-2 text-[12px] mt-1 px-4 leading-normal">
+                  {biometricScanning 
+                    ? "Por favor mantén tu dedo en el sensor biométrico del dispositivo." 
+                    : biometricSuccess 
+                      ? "Descargando alias en formato de hoja de cálculo..." 
+                      : "Presiona el sensor superior para autorizar la exportación de alias de seguridad corporativos."
+                  }
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-2 flex-wrap">
+              <button 
+                className="flex-1 rounded-lg font-semibold text-[12px] py-2 border border-line bg-bg-3 hover:bg-bg-2 text-t-1 cursor-pointer transition-all"
+                onClick={() => setShowBiometricModal(false)}
+                disabled={biometricScanning}
+              >
+                Cancelar
+              </button>
+              {!biometricSuccess && (
+                <button 
+                  className="flex-1 rounded-lg font-semibold text-[12px] py-2 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] cursor-pointer transition-all shadow-premium"
+                  onClick={handleStartBiometricScan}
+                  disabled={biometricScanning}
+                >
+                  Autenticar
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
 export default TrustCenter;

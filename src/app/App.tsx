@@ -75,7 +75,7 @@ const secureLoad = (key: string) => {
 };
 
 // Premium Touch: Threat Mesh Canvas Network Background Component (Zero-Dependency)
-const ThreatMeshBackground: React.FC<{ scoreValue?: number }> = ({ scoreValue = 72 }) => {
+const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'medium' | 'fast'; theme?: 'dark' | 'light' }> = ({ scoreValue = 72, speed = 'medium', theme = 'dark' }) => {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -110,7 +110,8 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number }> = ({ scoreValue = 
 
     const particleCount = 28;
     const particles: Array<{ x: number; y: number; vx: number; vy: number; r: number }> = [];
-    const speedMult = Math.max(0.2, (100 - scoreValue) / 30);
+    const baseMult = speed === 'slow' ? 0.3 : speed === 'fast' ? 1.6 : 0.95;
+    const speedMult = Math.max(0.2, (100 - scoreValue) / 30) * baseMult;
 
     for (let i = 0; i < particleCount; i++) {
       particles.push({
@@ -124,8 +125,8 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number }> = ({ scoreValue = 
 
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
-      ctx.strokeStyle = 'rgba(45, 212, 191, 0.035)';
-      ctx.fillStyle = 'rgba(45, 212, 191, 0.08)';
+      ctx.strokeStyle = theme === 'light' ? 'rgba(15, 23, 42, 0.04)' : 'rgba(45, 212, 191, 0.035)';
+      ctx.fillStyle = theme === 'light' ? 'rgba(15, 23, 42, 0.08)' : 'rgba(45, 212, 191, 0.08)';
 
       for (let i = 0; i < particleCount; i++) {
         const p = particles[i];
@@ -161,7 +162,7 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number }> = ({ scoreValue = 
           continue;
         }
         ctx.beginPath();
-        ctx.strokeStyle = `rgba(34, 211, 238, ${rp.opacity})`;
+        ctx.strokeStyle = theme === 'light' ? `rgba(15, 23, 42, ${rp.opacity * 0.7})` : `rgba(34, 211, 238, ${rp.opacity})`;
         ctx.lineWidth = 1.4;
         ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
         ctx.stroke();
@@ -176,10 +177,10 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number }> = ({ scoreValue = 
       window.removeEventListener('click', handleClick);
       cancelAnimationFrame(animationId);
     };
-  }, []);
+  }, [scoreValue, speed, theme]);
 
   return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none opacity-60" />;
-};
+};;
 
 // Centralized Error Boundary Component to isolate failures beautifully
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
@@ -392,6 +393,7 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
 };
 
 // Reusable Tweaks configuration UI (rendered dynamically)
+// Reusable Tweaks configuration UI (rendered dynamically)
 const TweaksOverlay: React.FC<{
   layout: DashboardLayout;
   scoreStyle: ScoreStyle;
@@ -399,8 +401,10 @@ const TweaksOverlay: React.FC<{
   accent: string[];
   persistentStorage: boolean;
   language: 'es' | 'en';
+  theme: 'dark' | 'light';
+  particleSpeed: 'slow' | 'medium' | 'fast';
   onChange: (key: string, val: any) => void;
-}> = ({ layout, scoreStyle, copilotMode, accent, persistentStorage, language, onChange }) => {
+}> = ({ layout, scoreStyle, copilotMode, accent, persistentStorage, language, theme, particleSpeed, onChange }) => {
   const [open, setOpen] = useState(false);
 
   const colors = [
@@ -412,12 +416,46 @@ const TweaksOverlay: React.FC<{
 
   const colorLabels = ["Cyberpunk Emerald", "Deep Cobalt", "Amethyst Amber", "Virtual Jade"];
 
+  const labels = language === 'en' ? {
+    demoControls: "Demo Controls",
+    dbLayout: "Dashboard Layout",
+    focus: "Focus", grid: "Grid", exec: "Exec.",
+    scoreVis: "Score Visualization",
+    number: "Number", ring: "Ring", bar: "Bar",
+    copilotPanel: "Copilot Sidebar",
+    rail: "Sidebar", inline: "Integrated",
+    xorPersist: "XOR Persistent Storage",
+    session: "Session", local: "Local (XOR)",
+    lang: "Language",
+    theme: "Interface Theme",
+    dark: "Dark", light: "Light (Exec)",
+    meshSpeed: "ThreatMesh Speed",
+    slow: "Slow", med: "Med", fast: "Fast",
+    accentColor: "Accent Color Palette"
+  } : {
+    demoControls: "Controles de la Demo",
+    dbLayout: "Diseño de Dashboard",
+    focus: "Foco", grid: "Cuadrícula", exec: "Ejec.",
+    scoreVis: "Visualización de Score",
+    number: "Número", ring: "Anillo", bar: "Barra",
+    copilotPanel: "Panel Lateral Copiloto",
+    rail: "Lateral", inline: "Integrado",
+    xorPersist: "Cifrado XOR Persistente",
+    session: "Sesión", local: "Local (XOR)",
+    lang: "Idioma / Localization",
+    theme: "Tema de Interfaz",
+    dark: "Oscuro", light: "Claro (Ejec.)",
+    meshSpeed: "Velocidad ThreatMesh",
+    slow: "Lenta", med: "Media", fast: "Rápida",
+    accentColor: "Paleta de Colores de Acento"
+  };
+
   if (!open) {
     return (
       <button 
         className="fixed right-4 bottom-4 z-50 w-9 h-9 rounded-full bg-gradient-to-br from-teal to-cyan text-[#04110F] shadow-lg flex items-center justify-center cursor-pointer border-0 active:scale-95 transition-all duration-100"
         onClick={() => setOpen(true)}
-        title="Configuración de la demo"
+        title={labels.demoControls}
       >
         <Icon name="settings" size={17} />
       </button>
@@ -425,63 +463,93 @@ const TweaksOverlay: React.FC<{
   }
 
   return (
-    <div className="fixed right-4 bottom-4 z-50 w-[260px] bg-bg-1/95 border border-line-2 rounded-xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl flex flex-col gap-3 font-sans select-none text-[12px]">
+    <div className="fixed right-4 bottom-4 z-50 w-[260px] bg-bg-1/95 border border-line-2 rounded-xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl flex flex-col gap-3 font-sans select-none text-[12px] text-t-1">
       <div className="flex justify-between items-center font-semibold text-t-0 border-b border-line pb-2 mb-1">
-        <span>Controles de la Demo</span>
+        <span>{labels.demoControls}</span>
         <button className="text-t-2 hover:text-t-0 bg-transparent border-0 cursor-pointer font-bold" onClick={() => setOpen(false)}>✕</button>
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Diseño de Dashboard</span>
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">{labels.dbLayout}</span>
         <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
           {(["executive", "grid", "focus"] as const).map(l => (
             <button 
               key={l}
-              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${layout === l ? 'bg-bg-3 text-t-0' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
+              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${layout === l ? 'bg-bg-3 text-t-0 shadow-premium' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
               onClick={() => onChange('dashboardLayout', l)}
             >
-              {l === 'focus' ? 'Foco' : l === 'grid' ? 'Cuadrícula' : 'Ejec.'}
+              {l === 'focus' ? labels.focus : l === 'grid' ? labels.grid : labels.exec}
             </button>
           ))}
         </div>
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Visualización de Score</span>
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">{labels.scoreVis}</span>
         <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
           {(["numeric", "ring", "bar"] as const).map(s => (
             <button 
               key={s}
-              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${scoreStyle === s ? 'bg-bg-3 text-t-0' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
+              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${scoreStyle === s ? 'bg-bg-3 text-t-0 shadow-premium' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
               onClick={() => onChange('scoreStyle', s)}
             >
-              {s === 'numeric' ? 'Número' : s === 'ring' ? 'Anillo' : 'Barra'}
+              {s === 'numeric' ? labels.number : s === 'ring' ? labels.ring : labels.bar}
             </button>
           ))}
         </div>
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Panel Lateral Copiloto</span>
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">{labels.copilotPanel}</span>
         <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
           {(["rail", "inline"] as const).map(m => (
             <button 
               key={m}
-              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${copilotMode === m ? 'bg-bg-3 text-t-0' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
+              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${copilotMode === m ? 'bg-bg-3 text-t-0 shadow-premium' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
               onClick={() => onChange('copilotMode', m)}
             >
-              {m === 'rail' ? 'Lateral' : 'Integrado'}
+              {m === 'rail' ? labels.rail : labels.inline}
             </button>
           ))}
         </div>
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Cifrado XOR Persistente</span>
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">{labels.theme}</span>
+        <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
+          {(["dark", "light"] as const).map(th => (
+            <button 
+              key={th}
+              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${theme === th ? 'bg-bg-3 text-t-0 shadow-premium' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
+              onClick={() => onChange('theme', th)}
+            >
+              {th === 'dark' ? labels.dark : labels.light}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">{labels.meshSpeed}</span>
+        <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
+          {(["slow", "medium", "fast"] as const).map(sp => (
+            <button 
+              key={sp}
+              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${particleSpeed === sp ? 'bg-bg-3 text-t-0 shadow-premium' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
+              onClick={() => onChange('particleSpeed', sp)}
+            >
+              {sp === 'slow' ? labels.slow : sp === 'medium' ? labels.med : labels.fast}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">{labels.xorPersist}</span>
         <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
           {[
-            [false, "Sesión"],
-            [true, "Local (XOR)"]
+            [false, labels.session],
+            [true, labels.local]
           ].map(([val, label]) => (
             <button 
               key={val ? 1 : 0}
@@ -495,7 +563,7 @@ const TweaksOverlay: React.FC<{
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Idioma / Localization</span>
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">{labels.lang}</span>
         <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
           {[
             ['es', "Español"],
@@ -513,7 +581,7 @@ const TweaksOverlay: React.FC<{
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Paleta de Colores de Acento</span>
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">{labels.accentColor}</span>
         <div className="flex gap-2">
           {colors.map((c, i) => {
             const active = accent[0] === c[0] && accent[1] === c[1];
@@ -537,7 +605,7 @@ const TweaksOverlay: React.FC<{
       </div>
     </div>
   );
-};
+};;
 
 export const AppInternal: React.FC = () => {
   const { playSound } = useSoundEngine();
@@ -562,7 +630,17 @@ export const AppInternal: React.FC = () => {
   const [accent, setAccent] = useState<string[]>(["#2DD4BF", "#22D3EE"]);
   const [persistentStorage, setPersistentStorage] = useState(false);
   const [language, setLanguage] = useState<'es' | 'en'>('es');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [particleSpeed, setParticleSpeed] = useState<'slow' | 'medium' | 'fast'>('medium');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.body.classList.add('light-theme');
+    } else {
+      document.body.classList.remove('light-theme');
+    }
+  }, [theme]);
   
   useEffect(() => {
     let timeoutId: number;
@@ -919,6 +997,8 @@ export const AppInternal: React.FC = () => {
           accent={accent} 
           persistentStorage={persistentStorage}
           language={language}
+          theme={theme}
+          particleSpeed={particleSpeed}
           onChange={(k, v) => {
             if (k === 'dashboardLayout') setDashboardLayout(v);
             if (k === 'scoreStyle') setScoreStyle(v);
@@ -926,6 +1006,8 @@ export const AppInternal: React.FC = () => {
             if (k === 'accent') setAccent(v);
             if (k === 'persistentStorage') setPersistentStorage(v);
             if (k === 'language') setLanguage(v);
+            if (k === 'theme') setTheme(v);
+            if (k === 'particleSpeed') setParticleSpeed(v);
           }} 
         />
       </>
@@ -943,6 +1025,8 @@ export const AppInternal: React.FC = () => {
           accent={accent} 
           persistentStorage={persistentStorage}
           language={language}
+          theme={theme}
+          particleSpeed={particleSpeed}
           onChange={(k, v) => {
             if (k === 'dashboardLayout') setDashboardLayout(v);
             if (k === 'scoreStyle') setScoreStyle(v);
@@ -950,6 +1034,8 @@ export const AppInternal: React.FC = () => {
             if (k === 'accent') setAccent(v);
             if (k === 'persistentStorage') setPersistentStorage(v);
             if (k === 'language') setLanguage(v);
+            if (k === 'theme') setTheme(v);
+            if (k === 'particleSpeed') setParticleSpeed(v);
           }} 
         />
       </>
@@ -967,6 +1053,8 @@ export const AppInternal: React.FC = () => {
           accent={accent} 
           persistentStorage={persistentStorage}
           language={language}
+          theme={theme}
+          particleSpeed={particleSpeed}
           onChange={(k, v) => {
             if (k === 'dashboardLayout') setDashboardLayout(v);
             if (k === 'scoreStyle') setScoreStyle(v);
@@ -974,6 +1062,8 @@ export const AppInternal: React.FC = () => {
             if (k === 'accent') setAccent(v);
             if (k === 'persistentStorage') setPersistentStorage(v);
             if (k === 'language') setLanguage(v);
+            if (k === 'theme') setTheme(v);
+            if (k === 'particleSpeed') setParticleSpeed(v);
           }} 
         />
         <Toast msg={toast} />
@@ -989,7 +1079,7 @@ export const AppInternal: React.FC = () => {
           <span>Modo Offline: Operando en contingencia local segura sin conexión a internet</span>
         </div>
       )}
-      <ThreatMeshBackground scoreValue={dynamicScore.value} />
+      <ThreatMeshBackground scoreValue={dynamicScore.value} speed={particleSpeed} theme={theme} />
 
       {/* Left side Nav Rail */}
       <NavRail view={view} onNav={nav} profile={demoProfile} language={language} />
@@ -1010,7 +1100,9 @@ export const AppInternal: React.FC = () => {
         
         {/* Scrollable Screen Content */}
         <div className="content-container-column flex-1 overflow-y-auto px-5 md:px-8 py-6.5 pb-14">
-          {renderScreen()}
+          <div key={view} className="view-transition-container">
+            {renderScreen()}
+          </div>
         </div>
       </main>
 
@@ -1212,6 +1304,8 @@ export const AppInternal: React.FC = () => {
         accent={accent}
         persistentStorage={persistentStorage}
         language={language}
+        theme={theme}
+        particleSpeed={particleSpeed}
         onChange={(k, v) => {
           if (k === 'dashboardLayout') setDashboardLayout(v);
           if (k === 'scoreStyle') setScoreStyle(v);
@@ -1219,6 +1313,8 @@ export const AppInternal: React.FC = () => {
           if (k === 'accent') setAccent(v);
           if (k === 'persistentStorage') setPersistentStorage(v);
           if (k === 'language') setLanguage(v);
+          if (k === 'theme') setTheme(v);
+          if (k === 'particleSpeed') setParticleSpeed(v);
         }} 
       />
 

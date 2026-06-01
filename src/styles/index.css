@@ -270,3 +270,107 @@
   animation-delay: 2.5s !important;
 }
 
+/* ── Phase IV v0.6.0 Premium Additions ── */
+
+/* 1. Light Theme Color Overrides */
+.light-theme {
+  --bg-0: #F4F6F9;        /* light app base */
+  --bg-1: #FFFFFF;        /* light panels */
+  --bg-2: #F8FAFC;        /* light cards */
+  --bg-3: #E2E8F0;        /* light elevated / hover */
+  --bg-inset: #F1F5F9;    /* light wells */
+  --line: rgba(0,0,0,.08);
+  --line-2: rgba(0,0,0,.14);
+  --line-3: rgba(0,0,0,.22);
+
+  --t-0: #0F172A;
+  --t-1: #475569;
+  --t-2: #64748B;
+  --t-3: #94A3B8;
+
+  --teal-dim: rgba(45,212,191,.15);
+  --teal-line: rgba(45,212,191,.45);
+  --cyan-dim: rgba(34,211,238,.14);
+}
+
+.light-theme .main-column {
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(34,211,238,.07), transparent 60%),
+    radial-gradient(900px 500px at -5% 0%, rgba(45,212,191,.07), transparent 55%),
+    var(--bg-0) !important;
+}
+
+/* 2. XOR 3D Cube Visualizer */
+.cube-wrap {
+  perspective: 600px;
+  width: 80px;
+  height: 80px;
+}
+.cube {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.5s;
+}
+.cube-face {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border: 1.5px solid var(--accent-a);
+  background: rgba(45, 212, 191, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--accent-a);
+  box-shadow: 0 0 10px rgba(45, 212, 191, 0.15) inset;
+  backface-visibility: visible;
+}
+.face-front  { transform: rotateY(  0deg) translateZ(40px); }
+.face-back   { transform: rotateY(180deg) translateZ(40px); }
+.face-right  { transform: rotateY( 90deg) translateZ(40px); }
+.face-left   { transform: rotateY(-90deg) translateZ(40px); }
+.face-top    { transform: rotateX( 90deg) translateZ(40px); }
+.face-bottom { transform: rotateX(-90deg) translateZ(40px); }
+
+@keyframes cube-rotate {
+  0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+  100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+}
+.cube-animating {
+  animation: cube-rotate 4s linear infinite;
+}
+.cube-animating .cube-face {
+  border-color: var(--ok);
+  color: var(--ok);
+  background: rgba(52, 211, 153, 0.08);
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.2) inset;
+}
+
+/* 3. PII Screen Shake Animation */
+@keyframes screen-shake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  10%, 30%, 50%, 70%, 90% { transform: translate(-2px, 1px) rotate(-0.5deg); }
+  20%, 40%, 60%, 80% { transform: translate(2px, -1px) rotate(0.5deg); }
+}
+.pii-shake-active {
+  animation: screen-shake 0.4s ease-in-out;
+}
+
+/* 4. View Transition Page Content Swipes */
+.view-transition-container {
+  opacity: 0;
+  transform: translateX(12px);
+  animation: viewTransitionSwipe 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+@keyframes viewTransitionSwipe {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+

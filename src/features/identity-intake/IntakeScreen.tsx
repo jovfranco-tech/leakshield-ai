@@ -260,16 +260,58 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
                   </div>
 
                   {csvImporting ? (
-                    <div className="flex flex-col gap-1.5 mt-1">
-                      <div className="flex justify-between items-center text-[11px] text-t-2 font-mono">
-                        <span className="flex items-center gap-1">
-                          <Icon name="refresh" size={12} className="spin" style={{ color: 'var(--teal)' }} />
-                          Procesando en segundo plano...
+                    <div className="mt-2.5 bg-bg-inset border border-line rounded-lg p-3 w-full">
+                      <div className="flex justify-between items-center text-[11px] text-t-2 font-mono mb-2">
+                        <span className="flex items-center gap-1.5 font-semibold text-teal">
+                          <span className="w-2 h-2 rounded-full bg-teal animate-pulse" />
+                          Simulated Worker Thread #1 Active
                         </span>
-                        <span>{csvProgress}%</span>
+                        <span className="font-bold">{csvProgress}%</span>
                       </div>
-                      <div className="w-full h-1 rounded-full bg-bg-3 overflow-hidden">
+
+                      {/* Animated SVG Ingestion Flow */}
+                      <svg className="w-full h-10 bg-bg-inset rounded border border-line/45 mb-2 overflow-hidden" viewBox="0 0 300 40">
+                        <style>{`
+                          @keyframes flowDot {
+                            0% { transform: translateX(0); opacity: 0.1; }
+                            10%, 90% { opacity: 0.8; }
+                            100% { transform: translateX(200px); opacity: 0.1; }
+                          }
+                          .dot-flow {
+                            animation: flowDot 1.4s linear infinite;
+                          }
+                        `}</style>
+                        {/* Base line */}
+                        <line x1="30" y1="20" x2="270" y2="20" stroke="var(--line-2)" strokeWidth="1.5" strokeDasharray="4, 4" />
+                        
+                        {/* Animated dots along the line */}
+                        <circle cx="30" cy="20" r="4.5" fill="var(--bg-3)" stroke="var(--line-3)" strokeWidth="1" />
+                        <text x="30" y="23.5" textAnchor="middle" fontSize="8" fill="var(--t-2)">📄</text>
+                        
+                        <g transform="translate(45, 0)">
+                          <circle cx="0" cy="20" r="2.5" fill="var(--teal)" className="dot-flow" style={{ animationDelay: "0s" }} />
+                          <circle cx="0" cy="20" r="2.5" fill="var(--cyan)" className="dot-flow" style={{ animationDelay: "0.35s" }} />
+                          <circle cx="0" cy="20" r="2.5" fill="var(--teal)" className="dot-flow" style={{ animationDelay: "0.7s" }} />
+                          <circle cx="0" cy="20" r="2.5" fill="var(--cyan)" className="dot-flow" style={{ animationDelay: "1.05s" }} />
+                        </g>
+
+                        <circle cx="270" cy="20" r="4.5" fill="var(--bg-3)" stroke="var(--teal-line)" strokeWidth="1" />
+                        <text x="270" y="23.5" textAnchor="middle" fontSize="8" fill="var(--teal)">⚙️</text>
+                      </svg>
+
+                      <div className="w-full h-1 rounded-full bg-bg-3 overflow-hidden mb-2">
                         <div className="h-full bg-gradient-to-r from-teal to-cyan transition-all duration-150" style={{ width: `${csvProgress}%` }} />
+                      </div>
+
+                      {/* Simulated Web Worker parsing logs */}
+                      <div className="bg-bg-inset border border-line-2 rounded p-2.5 font-mono text-[10px] text-teal/95 leading-relaxed max-h-[85px] overflow-y-auto flex flex-col gap-0.5 shadow-inner">
+                        <div>[Worker] Spawning parsing worker thread...</div>
+                        {csvProgress >= 10 && <div>[Worker] Reading CSV binary buffer ({csvFile ? (csvFile.size / 1024).toFixed(1) : 0} KB)...</div>}
+                        {csvProgress >= 30 && <div>[Worker] Sanitizing data streams &amp; stripping script injections...</div>}
+                        {csvProgress >= 50 && <div>[Worker] Deduplicating user records (identities cached)...</div>}
+                        {csvProgress >= 70 && <div>[Worker] Running secure local XOR encryption mapping...</div>}
+                        {csvProgress >= 90 && <div>[Worker] Injecting parsed mock keys to state center...</div>}
+                        {csvProgress === 100 && <div className="text-ok font-semibold">[Worker] Completed! Closing thread safe.</div>}
                       </div>
                     </div>
                   ) : (
