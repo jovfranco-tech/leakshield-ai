@@ -70,10 +70,12 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ score, variant, big }) => {
 
 interface FactorsCardProps {
   score: PrivacyScore;
+  language?: 'es' | 'en';
 }
 
-const FactorsCard: React.FC<FactorsCardProps> = ({ score }) => {
+const FactorsCard: React.FC<FactorsCardProps> = ({ score, language = 'es' }) => {
   const [showTree, setShowTree] = React.useState(false);
+  const [activeExplanation, setActiveExplanation] = React.useState<number | null>(null);
 
   return (
     <div 
@@ -142,13 +144,17 @@ const FactorsCard: React.FC<FactorsCardProps> = ({ score }) => {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 relative z-10">
+        <div className="flex flex-col gap-3.5 relative z-10">
           {score.factors.map((f, i) => {
             const neg = f.impact < 0;
             const w = Math.min(100, Math.abs(f.impact) / 14 * 100);
             return (
-              <div key={i} className="relative group/factor">
-                <div className="flex justify-between items-center mb-1">
+              <div 
+                key={i} 
+                className="relative group/factor border border-transparent hover:border-line/40 hover:bg-bg-inset rounded-lg p-2.5 transition-all duration-150 cursor-pointer"
+                onClick={() => setActiveExplanation(activeExplanation === i ? null : i)}
+              >
+                <div className="flex justify-between items-center mb-1.5">
                   <span className="flex items-center gap-2 text-[12.8px] font-medium text-t-1">
                     <span 
                       className="w-1.5 h-1.5 rounded-full" 
@@ -175,11 +181,37 @@ const FactorsCard: React.FC<FactorsCardProps> = ({ score }) => {
                   }} 
                 />
               </div>
-              <div className="text-t-2 text-[11.3px] mt-1">{f.detail}</div>
+              <div className="text-t-2 text-[11.3px] mt-1.5">{f.detail}</div>
+
+                {activeExplanation === i && (
+                  <div className="mt-2.5 p-3 rounded-lg border border-teal/20 bg-teal/5 text-[12px] text-t-1 leading-relaxed animate-fadeIn">
+                    <div className="flex items-center gap-1.5 font-semibold text-teal mb-1.5">
+                      <Icon name="sparkles" size={13} />
+                      {language === 'es' ? "Explicación de la IA" : "AI Explanation"}
+                    </div>
+                    <div>
+                      {f.kind === "breach" 
+                        ? (language === 'es' ? "Nuestros algoritmos correlacionaron que tu hash SHA-1 de ConnectHub fue expuesto en texto plano en la dark web, elevando la probabilidad de secuestro de cuenta por fuerza bruta masiva en un 87%." : "Our algorithms correlated that your SHA-1 hash from ConnectHub was exposed in plaintext on the dark web, raising brute-force hijacking probability by 87%.")
+                        : f.kind === "password"
+                        ? (language === 'es' ? "La IA detectó una entropía idéntica en hashes de credenciales de 2 bases de datos de brechas distintas, lo que facilita ataques automatizados de Credential Stuffing." : "The AI detected identical entropy in credential hashes across 2 different breach databases, facilitating automated Credential Stuffing attacks.")
+                        : f.kind === "footprint"
+                        ? (language === 'es' ? "Se identificaron registros de geolocalización IP vinculados a tu nick registrado en el foro de devs, facilitando el perfilado físico exacto del titular por correlación de redes." : "IP geolocation logs were identified linked to your registered dev forum username, facilitating physical profiling via network correlation.")
+                        : f.kind === "broker"
+                        ? (language === 'es' ? "Brokers de marketing de datos agregaron tu historial a su índice público para reventa comercial, incrementando el spam telefónico y de phishing dirigido." : "Data brokers aggregated your history into their public index for commercial resale, increasing telemarketing spam and targeted phishing.")
+                        : f.kind === "oldaccount"
+                        ? (language === 'es' ? "Cuentas inactivas detectadas sin rotación de contraseña en los últimos 4 años. Amplían tu superficie de vulnerabilidad digital sin beneficio activo para el titular." : "Dormant accounts detected without password rotation in the last 4 years. They widen your surface area of digital vulnerability without active benefit.")
+                        : (language === 'es' ? "En base al análisis semántico continuo de metadatos, este factor impacta proporcionalmente el score general de privacidad del Command Center." : "Based on continuous semantic metadata analysis, this factor proportionally impacts the general privacy score of the Command Center.")
+                      }
+                    </div>
+                    <div className="text-[10px] text-t-3 font-mono mt-1.5">
+                      {language === 'es' ? `Criterio matemático: Penalización de ${f.impact} puntos en base a 100.` : `Math basis: Penalty of ${f.impact} points out of 100.`}
+                    </div>
+                  </div>
+                )}
             </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );
@@ -741,6 +773,92 @@ const RiskTile: React.FC<RiskTileProps> = ({ icon, data, onClick }) => {
   );
 };
 
+const MultiAgentConsole: React.FC<{ language?: 'es' | 'en' }> = ({ language = 'es' }) => {
+  const [agentLogs, setAgentLogs] = React.useState<string[]>([]);
+  const [activeAgent, setActiveAgent] = React.useState(0);
+
+  const agents = [
+    { name: "BreachAuditor", status: "monitoreando", color: "var(--crit)", desc: language === 'es' ? "Escáner continuo de repositorios de la dark web." : "Continuous dark web repository scanner." },
+    { name: "SMTP-Ping", status: "enrutando", color: "var(--teal)", desc: language === 'es' ? "Auditor de alias de correos y túneles MX." : "Email alias and MX tunnel auditor." },
+    { name: "RedactionAgent", status: "redactando", color: "var(--cyan)", desc: language === 'es' ? "Generador contextual de plantillas ARCO/CCPA." : "Contextual CCPA/ARCO draft generator." },
+    { name: "FootprintScanner", status: "escaneando", color: "var(--high)", desc: language === 'es' ? "Rastreador de IP y correlación de foros." : "IP tracker and forum correlation scanner." }
+  ];
+
+  React.useEffect(() => {
+    const actions = [
+      "[BreachAuditor] Escaneo del hash débil completado en DB local -> 0 coincidencias nuevas.",
+      "[SMTP-Ping] Verificando enrutamiento SMTP para alias activo... [TÚNEL OK]",
+      "[RedactionAgent] Lógica de tono 'Estricto' optimizada para PeopleLookup.",
+      "[FootprintScanner] Correlacionando logs de IP con base de datos de ShopMart...",
+      "[BreachAuditor] Analizando filtraciones de contraseñas reutilizadas... [Alerta Activa]"
+    ];
+
+    const timer = setInterval(() => {
+      const randomAction = actions[Math.floor(Math.random() * actions.length)];
+      setAgentLogs(prev => [`[${new Date().toLocaleTimeString('es-ES', { hour12: false })}] ${randomAction}`, ...prev.slice(0, 4)]);
+      setActiveAgent(prev => (prev + 1) % agents.length);
+    }, 4000);
+
+    setAgentLogs([
+      `[${new Date().toLocaleTimeString('es-ES', { hour12: false })}] [Core] Inicializando telemetría multi-agente de LeakShield...`,
+      `[${new Date().toLocaleTimeString('es-ES', { hour12: false })}] [BreachAuditor] Módulo cargado. Escaneo de dark web activo.`,
+      `[${new Date().toLocaleTimeString('es-ES', { hour12: false })}] [SMTP-Ping] Servidor SMTP en vivo. Registros MX verificados.`
+    ]);
+
+    return () => clearInterval(timer);
+  }, [language]);
+
+  return (
+    <div 
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium glossy-sweep noise-grain transition-all duration-150"
+      style={{
+        transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+      }}
+    >
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
+        background: `radial-gradient(350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.05), transparent 80%)`
+      }} />
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.005] to-white/[0.025] pointer-events-none" />
+
+      <div className="flex items-center gap-2 mb-3.5 relative z-10">
+        <Icon name="settings" size={16} style={{ color: "var(--teal)" }} />
+        <h2 className="text-[15px] font-semibold text-t-0 flex-1">Consola de Telemetría Multi-Agente</h2>
+        <span className="inline-flex items-center gap-1.5 text-[9.5px] font-semibold tracking-wider px-2 py-0.5 rounded border border-teal-line bg-teal-dim text-teal uppercase">
+          En Vivo
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2.5 mb-4 relative z-10">
+        {agents.map((agent, i) => (
+          <div 
+            key={agent.name} 
+            className={`border rounded-lg p-2.5 flex flex-col gap-1 transition-all ${
+              activeAgent === i ? 'border-teal/40 bg-teal-dim/5' : 'border-line bg-bg-inset'
+            }`}
+          >
+            <div className="flex justify-between items-center">
+              <span className="text-[11.5px] font-mono font-semibold text-t-0">{agent.name}</span>
+              <span className="w-2.5 h-2.5 rounded-full animate-pulse" style={{ backgroundColor: agent.color }} />
+            </div>
+            <span className="text-[10px] text-t-2 capitalize leading-none">{agent.status}</span>
+            <span className="text-[9.8px] text-t-3 leading-tight mt-1">{agent.desc}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-bg-inset border border-line rounded-lg p-3 font-mono text-[10.5px] leading-relaxed text-teal/90 select-text min-h-[92px] overflow-hidden flex flex-col gap-1 relative z-10">
+        {agentLogs.map((l, idx) => (
+          <div key={idx} className="truncate whitespace-nowrap animate-fadeIn">
+            {l}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 interface DashboardProps {
   profile: Profile;
   score: PrivacyScore;
@@ -753,6 +871,7 @@ interface DashboardProps {
   scoreStyle: 'scoreStyle' | any;
   onNav: (view: string) => void;
   onToast: (msg: string) => void;
+  language?: 'es' | 'en';
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -766,7 +885,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   dashboardLayout,
   scoreStyle,
   onNav,
-  onToast
+  onToast,
+  language = 'es'
 }) => {
   const riskTiles = (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -813,8 +933,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-4">
             <div className="flex flex-col gap-4">
-              <FactorsCard score={score} />
+              <FactorsCard score={score} language={language} />
               <SemanticStitchingCard />
+              <MultiAgentConsole language={language} />
             </div>
             <div className="flex flex-col gap-4">
               <ProgressCard remediation={remediation} onNav={onNav} />
@@ -845,7 +966,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <HighRiskCard highRiskData={highRiskData} />
             <MiniBreaches breaches={breaches} onNav={onNav} />
           </div>
-          <FactorsCard score={score} />
+          <FactorsCard score={score} language={language} />
         </div>
       )}
 

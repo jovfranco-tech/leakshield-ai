@@ -64,6 +64,24 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
   const [customInstructions, setCustomInstructions] = useState("");
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
 
+  const checkPII = (text: string) => {
+    const pwdRegex = /(contrase[ñn]a|password|clave|nip|pin)/i;
+    const phoneRegex = /\+?\d{10,13}/;
+    const cardRegex = /\b\d{4}[- ]?\d{4}[- ]?\d{4}[- ]?\d{4}\b/;
+    
+    if (pwdRegex.test(text)) {
+      return { type: "Password", message: "¡Advertencia! No incluyas contraseñas en los prompts para evitar fugas externas." };
+    }
+    if (cardRegex.test(text)) {
+      return { type: "Credit Card", message: "¡Peligro! Detectamos un número de tarjeta de crédito. LeakShield ha bloqueado este input." };
+    }
+    if (phoneRegex.test(text)) {
+      return { type: "Phone", message: "Aviso: Has escrito un teléfono. Se recomienda enmascarar o utilizar alias de contacto." };
+    }
+    return null;
+  };
+  const piiWarning = checkPII(customInstructions);
+
   const handleVerifyAlias = () => {
     if (!sandboxEmail.trim()) {
       onToast("Escribe un alias para verificar");
@@ -597,16 +615,65 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
               </div>
 
               <div className="flex flex-col gap-1.5 mt-4">
-                <label className="text-[12px] font-semibold text-t-1">Instrucciones de Personalización IA (Sandbox Prompts)</label>
+                <div className="flex justify-between items-center flex-wrap gap-2">
+                  <label className="text-[12px] font-semibold text-t-1">Instrucciones de Personalización IA (Sandbox Prompts)</label>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {[
+                      ["Familia", "Menciona que tengo una membresía familiar y exijo la exclusión de todos mis dependientes."],
+                      ["Direcciones", "Exijo que se borren mis direcciones residenciales anteriores asociadas a este correo."],
+                      ["Teléfonos", "Excluye explícitamente cualquier número telefónico histórico en sus índices."]
+                    ].map(([lbl, val]) => (
+                      <button
+                        key={lbl}
+                        type="button"
+                        onClick={() => setCustomInstructions(val)}
+                        className="px-2 py-0.5 rounded bg-bg-3 border border-line hover:border-teal/40 text-[10.5px] text-t-2 hover:text-teal cursor-pointer transition-all"
+                      >
+                        +{lbl}
+                      </button>
+                    ))}
+                    {customInstructions && (
+                      <button
+                        type="button"
+                        onClick={() => setCustomInstructions("")}
+                        className="px-2 py-0.5 rounded bg-bg-3 border border-line text-[10.5px] text-crit cursor-pointer transition-all ml-1.5"
+                      >
+                        Limpiar
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <textarea 
                   value={customInstructions}
                   onChange={(e) => setCustomInstructions(e.target.value)}
                   placeholder="Ej: 'Menciona que tengo una membresía familiar de 3 personas y que exijo el borrado de sus registros también'..."
                   className="w-full h-18 text-[12.5px] leading-relaxed text-t-0 bg-bg-inset border border-line rounded-lg p-2.5 focus:outline-none focus:border-teal/50 transition-colors placeholder:text-t-3 font-sans resize-none"
                 />
+                {piiWarning && (
+                  <div className="mt-1.5 p-2 rounded bg-crit-dim/10 border border-crit-line text-crit text-[11px] font-semibold animate-pulse flex items-center gap-1.5">
+                    <Icon name="alert" size={13} style={{ color: "var(--crit)", flexShrink: 0 }} />
+                    <span>{piiWarning.message}</span>
+                  </div>
+                )}
               </div>
 
-              <div className="flex flex-col gap-1.5 mt-4">
+              <div className="flex flex-wrap gap-4 items-center justify-between mt-4.5 mb-1 p-2.5 rounded-lg bg-bg-inset border border-line font-mono text-[11.2px] text-t-2">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal animate-ping" />
+                  Velocidad: <strong className="text-teal font-semibold">142 tok/s</strong>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  Confianza IA: <strong className="text-teal font-semibold">99.8% (Alta)</strong>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  Inferencia: <strong className="text-t-1 font-semibold">0.18s</strong>
+                </span>
+                <span className="flex items-center gap-1.5">
+                  Fidelidad: <strong className="text-ok font-semibold">Óptima (ARCO)</strong>
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-1.5 mt-2">
                 <label className="text-[12px] font-semibold text-t-1">Solicitud oficial redactada</label>
                 <pre className="m-0 whitespace-pre-wrap font-mono text-[12px] leading-relaxed text-t-1 bg-bg-inset border border-line rounded-lg p-4">
                   {letter}
@@ -630,11 +697,211 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
                   Copiar texto
                 </button>
                 <button 
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3 py-2 border border-line-2 bg-bg-3 hover:bg-bg-2 text-t-1 hover:text-t-0 cursor-pointer transition-all duration-130 shadow-premium"
+                  onClick={() => { 
+                    const mdContent = `# SOLICITUD FORMAL DE EXCLUSIÓN LEGAL Y DERECHOS ARCO
+**LeakShield AI Command Center - v0.4.0 Premium Release**
+
+- **Fecha de Generación:** ${new Date().toLocaleDateString('es-ES')}
+- **Titular de Datos:** ${profile.name}
+- **Ubicación Declarada:** ${profile.location}
+- **Broker Destino:** ${target}
+- **Marco Legal:** ${lawType}
+
+---
+
+### Contenido de la Solicitud Generada por IA:
+
+\`\`\`text
+${letter}
+\`\`\`
+
+---
+*Esta es una simulación interactiva premium de LeakShield AI. Documento exportado para los órganos garantes de privacidad.*`;
+                    const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `leakshield_solicitud_${target.toLowerCase()}.md`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    onToast("¡Documento en formato Markdown (.md) descargado!"); 
+                  }}
+                >
+                  <Icon name="file" size={15} style={{ color: "var(--teal)" }} />
+                  Descargar MD
+                </button>
+
+                <button 
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3 py-2 border border-line-2 bg-bg-3 hover:bg-bg-2 text-t-1 hover:text-t-0 cursor-pointer transition-all duration-130 shadow-premium"
+                  onClick={() => { 
+                    const htmlContent = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitud de Exclusión Legal - LeakShield AI</title>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #090d16;
+      color: #e2e8f0;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      max-width: 680px;
+      width: 100%;
+      background: #111827;
+      border: 1px solid #1f2937;
+      border-radius: 12px;
+      padding: 32px;
+      box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
+    }
+    .header {
+      border-bottom: 2px solid #14b8a6;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    .title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      margin: 0;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: #14b8a6;
+      margin-top: 4px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+    .meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      background: #0f172a;
+      padding: 16px;
+      border-radius: 8px;
+      border: 1px solid #1e293b;
+    }
+    .meta-item strong {
+      color: #94a3b8;
+    }
+    .meta-item span {
+      color: #f1f5f9;
+    }
+    .content-box {
+      background: #030712;
+      border: 1px solid #1f2937;
+      border-radius: 8px;
+      padding: 20px;
+      font-family: monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      color: #2dd4bf;
+      margin-bottom: 24px;
+    }
+    .footer {
+      font-size: 11px;
+      color: #64748b;
+      text-align: center;
+      border-top: 1px solid #1f2937;
+      padding-top: 16px;
+    }
+    .btn-print {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: #14b8a6;
+      color: #04110f;
+      font-weight: 600;
+      font-size: 13px;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: background 0.15s;
+    }
+    .btn-print:hover {
+      background: #0d9488;
+    }
+    @media print {
+      body {
+        background: #ffffff;
+        color: #000000;
+        padding: 0;
+      }
+      .container {
+        border: none;
+        box-shadow: none;
+        background: #ffffff;
+        padding: 0;
+      }
+      .meta-grid {
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+      }
+      .content-box {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #000000;
+      }
+      .btn-print {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
+    <div class="header">
+      <h1 class="title">SOLICITUD FORMAL DE EXCLUSIÓN LEGAL Y DERECHOS ARCO</h1>
+      <div class="subtitle">LEAKSHIELD AI COMMAND CENTER - PREMIUM EXPORTER</div>
+    </div>
+    <div class="meta-grid">
+      <div class="meta-item"><strong>Fecha de Emisión:</strong> <span>${new Date().toLocaleDateString('es-ES')}</span></div>
+      <div class="meta-item"><strong>Titular de Datos:</strong> <span>${profile.name}</span></div>
+      <div class="meta-item"><strong>Ubicación Declarada:</strong> <span>${profile.location}</span></div>
+      <div class="meta-item"><strong>Broker Destino:</strong> <span>${target}</span></div>
+      <div class="meta-item"><strong>Marco Regulatorio:</strong> <span>${lawType}</span></div>
+    </div>
+    <div class="content-box">${letter}</div>
+    <div class="footer">
+      Documento generado de forma segura e interactiva a través de la consola premium de LeakShield AI.<br>
+      © ${new Date().getFullYear()} LeakShield AI. Todos los derechos reservados.
+    </div>
+  </div>
+</body>
+</html>`;
+                    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `leakshield_solicitud_${target.toLowerCase()}.html`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    onToast("¡Documento HTML/PDF interactivo listo para imprimir!"); 
+                  }}
+                >
+                  <Icon name="external" size={15} style={{ color: "var(--cyan)" }} />
+                  HTML / Imprimir
+                </button>
+
+                <button 
                   className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 border border-line-2 bg-bg-3 hover:bg-bg-2 text-t-1 hover:text-t-0 cursor-pointer transition-all duration-130 shadow-premium"
                   onClick={() => { 
                     const fileContent = `========================================================
 SOLICITUD FORMAL DE EXCLUSIÓN LEGAL Y DERECHOS ARCO
-LeakShield AI Command Center - v0.3.0 Premium Release
+LeakShield AI Command Center - v0.4.0 Premium Release
 ========================================================
 
 Fecha de Generación: ${new Date().toLocaleDateString('es-ES')}

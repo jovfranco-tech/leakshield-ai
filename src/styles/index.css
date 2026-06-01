@@ -231,3 +231,27 @@
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
 }
 
+/* ── Phase II Premium Styling ── */
+.focus-glow-teal {
+  outline: none;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.focus-glow-teal:focus-visible {
+  border-color: rgba(45, 212, 191, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.15), 0 0 14px -2px rgba(45, 212, 191, 0.3) !important;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.shimmer-grain {
+  background: linear-gradient(90deg, var(--bg-inset) 25%, var(--bg-3) 50%, var(--bg-inset) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite linear;
+}
+
+.kanban-elastic-transition {
+  transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.2s, box-shadow 0.2s;
+}
+

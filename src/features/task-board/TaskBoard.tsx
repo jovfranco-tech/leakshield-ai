@@ -39,6 +39,22 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
   const [group, setGroup] = useState<'priority' | 'status'>('priority');
   const [draggedOverCol, setDraggedOverCol] = useState<string | null>(null);
   const [historyStack, setHistoryStack] = useState<Task[][]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const getFilteredItems = (items: Task[]) => {
+    if (!searchQuery.trim()) return items;
+    try {
+      const regex = new RegExp(searchQuery, 'i');
+      return items.filter(t => regex.test(t.title) || regex.test(t.module) || regex.test(t.effort));
+    } catch (err) {
+      const query = searchQuery.toLowerCase();
+      return items.filter(t => 
+        t.title.toLowerCase().includes(query) || 
+        t.module.toLowerCase().includes(query) || 
+        t.effort.toLowerCase().includes(query)
+      );
+    }
+  };
 
   const pushHistory = (current: Task[]) => {
     setHistoryStack(prev => [...prev, [...current]]);
@@ -124,12 +140,12 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
   };
 
   const cols = group === 'priority'
-    ? (["Critical", "High", "Medium", "Low"] as const).map(k => ({ k, items: tasks.filter(t => t.priority === k) }))
+    ? (["Critical", "High", "Medium", "Low"] as const).map(k => ({ k, items: getFilteredItems(tasks.filter(t => t.priority === k)) }))
     : (["Pending", "In Progress", "Sent", "Resolved"] as const).map(k => ({ 
         k, 
-        items: tasks.filter(t => 
+        items: getFilteredItems(tasks.filter(t => 
           (t.status === "Monitor" ? "Pending" : t.status) === k || (k === "Pending" && t.status === "Monitor")
-        ) 
+        )) 
       }));
 
   const resolved = tasks.filter(t => t.status === "Resolved").length;
@@ -169,6 +185,27 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
             <Icon name="check-circle" size={13} style={{ color: "var(--ok)", marginRight: 3 }} />
             {resolved}/{tasks.length} {language === 'es' ? "resueltas" : "resolved"}
           </span>
+
+          <div className="relative">
+            <input 
+              type="text"
+              placeholder={language === 'es' ? "Buscar con Regex (ej: brecha|alta)..." : "Regex search (e.g. breach|high)..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="bg-bg-inset border border-line focus:border-teal/40 rounded-lg px-3 py-1.5 pl-8 pr-7 text-t-0 text-[12.5px] font-sans outline-none w-[220px] transition-all focus-glow-teal font-mono placeholder:font-sans placeholder:text-t-3"
+            />
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-t-2">
+              <Icon name="search" size={13} />
+            </span>
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-t-2 hover:text-t-0 bg-transparent border-0 cursor-pointer p-0.5 flex items-center"
+              >
+                <Icon name="x" size={10} />
+              </button>
+            )}
+          </div>
           
           <div className="flex bg-bg-inset p-1 rounded-lg border border-line">
             <button 
@@ -214,6 +251,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
             }}
             onDrop={(e) => {
               e.preventDefault();
+              if (navigator.vibrate) navigator.vibrate(20);
               const taskId = e.dataTransfer.getData('text/plain');
               handleMoveTask(taskId, col.k);
               setDraggedOverCol(null);
@@ -244,12 +282,13 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
                   key={t.id} 
                   draggable={true}
                   onDragStart={(e) => {
+                    if (navigator.vibrate) navigator.vibrate(10);
                     e.dataTransfer.setData('text/plain', t.id);
                     e.dataTransfer.effectAllowed = 'move';
                   }}
                   onMouseMove={handleMouseMove}
                   onMouseLeave={handleMouseLeave}
-                  className="group relative overflow-hidden border border-line rounded-md p-3.5 bg-bg-2 shadow-sm hover:border-line-2 cursor-grab active:cursor-grabbing transition-all duration-120 glossy-sweep noise-grain outline-none focus-visible:ring-2 focus-visible:ring-teal/50"
+                  className="group relative overflow-hidden border border-line rounded-md p-3.5 bg-bg-2 shadow-sm hover:border-line-2 cursor-grab active:cursor-grabbing transition-all duration-120 glossy-sweep noise-grain focus-glow-teal kanban-elastic-transition"
                   style={{
                     transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
                     transition: 'transform 0.15s ease-out, border-color 0.2s, box-shadow 0.2s'

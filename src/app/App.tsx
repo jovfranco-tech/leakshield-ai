@@ -71,7 +71,7 @@ const secureLoad = (key: string) => {
 };
 
 // Premium Touch: Threat Mesh Canvas Network Background Component (Zero-Dependency)
-const ThreatMeshBackground: React.FC = () => {
+const ThreatMeshBackground: React.FC<{ scoreValue?: number }> = ({ scoreValue = 72 }) => {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -106,13 +106,14 @@ const ThreatMeshBackground: React.FC = () => {
 
     const particleCount = 28;
     const particles: Array<{ x: number; y: number; vx: number; vy: number; r: number }> = [];
+    const speedMult = Math.max(0.2, (100 - scoreValue) / 30);
 
     for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.35,
-        vy: (Math.random() - 0.5) * 0.35,
+        vx: (Math.random() - 0.5) * 0.35 * speedMult,
+        vy: (Math.random() - 0.5) * 0.35 * speedMult,
         r: Math.random() * 1.5 + 1
       });
     }
@@ -557,6 +558,20 @@ export const AppInternal: React.FC = () => {
   const [accent, setAccent] = useState<string[]>(["#2DD4BF", "#22D3EE"]);
   const [persistentStorage, setPersistentStorage] = useState(false);
   const [language, setLanguage] = useState<'es' | 'en'>('es');
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+  useEffect(() => {
+    const updateOnlineStatus = () => {
+      setIsOnline(navigator.onLine);
+      showToast(navigator.onLine ? "Conexión restaurada en vivo" : "Sin conexión a internet (modo offline local)");
+    };
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+    };
+  }, []);
 
   // Regulatory Deletion Form State
   const [selectedLawBroker, setSelectedLawBroker] = useState<'DataFind' | 'InfoAggregate'>('DataFind');
@@ -643,9 +658,48 @@ export const AppInternal: React.FC = () => {
   }, []);
 
   const nav = (v: string) => {
-    setView(v as ViewType);
-    document.querySelector(".content-container-column")?.scrollTo(0, 0);
+    const changeView = () => {
+      setView(v as ViewType);
+      document.querySelector(".content-container-column")?.scrollTo(0, 0);
+    };
+    if ((document as any).startViewTransition) {
+      (document as any).startViewTransition(changeView);
+    } else {
+      changeView();
+    }
   };
+
+  // Global keyboard shortcuts (A11y & Productivity: d=dashboard, c=copilot, t=tasks)
+  useEffect(() => {
+    const handleGlobalKeys = (e: KeyboardEvent) => {
+      const activeEl = document.activeElement;
+      if (activeEl && (
+        activeEl.tagName === 'INPUT' || 
+        activeEl.tagName === 'TEXTAREA' || 
+        activeEl.getAttribute('contenteditable') === 'true'
+      )) {
+        return;
+      }
+      
+      const key = e.key.toLowerCase();
+      if (key === 'd') {
+        e.preventDefault();
+        nav('dashboard');
+        showToast("Navegación rápida: Dashboard");
+      } else if (key === 'c') {
+        e.preventDefault();
+        nav('copilot');
+        showToast("Navegación rápida: Copiloto de IA");
+      } else if (key === 't') {
+        e.preventDefault();
+        nav('tasks');
+        showToast("Navegación rápida: Tablero de Tareas");
+      }
+    };
+    
+    window.addEventListener('keydown', handleGlobalKeys);
+    return () => window.removeEventListener('keydown', handleGlobalKeys);
+  }, []);
 
   // Premium Functional Touch: ARCO/CCPA Download Letter Simulator (Real File Generation)
   const handleDownloadDraft = (letterText: string, broker: string) => {
@@ -750,6 +804,7 @@ export const AppInternal: React.FC = () => {
             scoreStyle={scoreStyle}
             onNav={nav}
             onToast={showToast}
+            language={language}
           />
         );
       case "identity":
@@ -884,7 +939,13 @@ export const AppInternal: React.FC = () => {
 
   return (
     <div className={`app-shell w-full h-screen overflow-hidden ${inGridRail ? 'has-rail' : ''} relative`}>
-      <ThreatMeshBackground />
+      {!isOnline && (
+        <div className="fixed top-0 left-0 right-0 z-[100] bg-crit-dim border-b border-crit text-crit font-semibold text-[12px] py-1.5 px-4 flex items-center justify-center gap-2 animate-fadeIn">
+          <span className="demo-blip" style={{ backgroundColor: 'var(--crit)' }} />
+          <span>Modo Offline: Operando en contingencia local segura sin conexión a internet</span>
+        </div>
+      )}
+      <ThreatMeshBackground scoreValue={dynamicScore.value} />
 
       {/* Left side Nav Rail */}
       <NavRail view={view} onNav={nav} profile={demoProfile} language={language} />
