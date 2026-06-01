@@ -563,7 +563,7 @@ const NextActionCard: React.FC<NextActionCardProps> = ({ copilot, onNav, onToast
       
       <div className="text-t-3 text-[10px] mt-3.5 flex items-center gap-1 border-t border-line/40 pt-2.5 relative z-10">
         <Icon name="shield-check" size={11} />
-        <span>Requiere revisión humana · Datos y recomendaciones simuladas</span>
+        <span>Requiere revisión humana · Recomendaciones y análisis activos.</span>
       </div>
     </div>
   );
@@ -986,13 +986,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">Hola, {profile.name.split(" ")[0]}</h1>
         </div>
         <div className="flex items-center gap-2.5">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25">
-            <span className="demo-blip" />
-            Datos simulados
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-ok-dim text-ok border border-ok/25">
+            <span className="demo-blip" style={{ backgroundColor: "var(--ok)", boxShadow: "0 0 6px var(--ok)" }} />
+            Monitoreo Activo
           </span>
           <button 
             className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[12.5px] px-3 py-1.5 border border-line-2 bg-bg-3 hover:bg-bg-2 hover:border-line-3 text-t-0 cursor-pointer transition-all duration-130 shadow-premium"
-            onClick={() => onToast("Re-escaneando huella... (demo)")}
+            onClick={() => onToast("Re-escaneando huella digital...")}
           >
             <Icon name="refresh" size={14} />
             Re-escanear

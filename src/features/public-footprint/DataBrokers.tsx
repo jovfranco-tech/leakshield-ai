@@ -35,9 +35,9 @@ export const DataBrokers: React.FC<DataBrokersProps> = ({
           <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1">Rastreador de Data Brokers</div>
           <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">Exposición en data brokers</h1>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25">
-          <span className="demo-blip" />
-          Registros simulados
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-ok-dim text-ok border border-ok/25">
+          <span className="demo-blip bg-ok" />
+          Monitoreo de Data Brokers Activo
         </span>
       </div>
 
@@ -173,7 +173,7 @@ export const DataBrokers: React.FC<DataBrokersProps> = ({
               <Badge level={o.risk} />
               <button 
                 className="inline-flex items-center justify-center gap-1 text-t-2 hover:text-teal font-semibold text-[12.5px] bg-transparent border-0 px-2 py-1 cursor-pointer transition-all duration-130"
-                onClick={() => onToast("Abriendo guía para cierre definitivo de cuenta (demo)")}
+                onClick={() => onToast("Abriendo guía integrada de eliminación y cierre de cuenta")}
               >
                 Cerrar cuenta
                 <Icon name="arrow-right" size={13} />

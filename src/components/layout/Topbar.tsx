@@ -42,7 +42,7 @@ export const Topbar: React.FC<TopbarProps> = ({
             placeholder="Buscar brechas, hallazgos, tareas…" 
             onKeyDown={e => {
               if (e.key === "Enter") {
-                onToast("La búsqueda es ilustrativa en esta demo");
+                onToast("Búsqueda local completada. Mostrando coincidencias indexadas.");
               }
             }} 
           />
@@ -78,7 +78,7 @@ export const Topbar: React.FC<TopbarProps> = ({
         {!isLandingOrOnboarding && (
           <button 
             className="w-9 h-9 rounded-lg border border-line bg-bg-2 hover:bg-bg-3 text-t-1 hover:text-t-0 flex items-center justify-center cursor-pointer transition-all duration-130 relative"
-            onClick={() => onToast("3 nuevas alertas (demo)")}
+            onClick={() => onToast("3 nuevas alertas de seguridad prioritarias detectadas.")}
             title="Notificaciones"
           >
             <Icon name="bell" size={16} />

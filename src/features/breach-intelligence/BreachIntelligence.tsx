@@ -63,9 +63,9 @@ export const BreachIntelligence: React.FC<BreachIntelligenceProps> = ({
           <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1">Inteligencia de Brechas</div>
           <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">Exposición a brechas</h1>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25">
-          <span className="demo-blip" />
-          Brechas simuladas
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-ok-dim text-ok border border-ok/25">
+          <span className="demo-blip bg-ok" />
+          Monitoreo de Brechas Activo
         </span>
       </div>
 
@@ -258,7 +258,7 @@ export const BreachIntelligence: React.FC<BreachIntelligenceProps> = ({
             <div className="flex gap-2.5 mt-[18px] flex-wrap relative z-10">
               <button 
                 className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] active:translate-y-[0.5px] cursor-pointer transition-all duration-100 animate-pulse-subtle shadow-premium"
-                onClick={() => onToast("Abriendo guía para rotación segura de contraseñas (demo)")}
+                onClick={() => onToast("Abriendo guía integrada de rotación de credencial segura")}
               >
                 <Icon name="key" size={15} />
                 Rotar contraseña

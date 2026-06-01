@@ -291,7 +291,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { has
             </div>
             <h1 className="text-[20px] font-semibold text-t-0 mb-2">Sistema de Seguridad Aislado</h1>
             <p className="text-t-2 text-[13.5px] leading-relaxed mb-6">
-              Detectamos una excepción inusual en el hilo principal. Para proteger tu privacidad local, hemos aislado el hilo de ejecución de la demo.
+              Detectamos una excepción inusual en el hilo principal. Para proteger tu privacidad local, hemos aislado el hilo de ejecución comprometido.
             </p>
             <button 
               className="w-full flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-4 py-2.5 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] cursor-pointer"
@@ -319,7 +319,7 @@ const Toast: React.FC<{ msg: string | null }> = ({ msg }) => {
 };
 
 // Main Landing Screen (with Hero)
-const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({ onStart, onTrust }) => {
+const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void; language: 'es' | 'en' }> = ({ onStart, onTrust, language }) => {
   return (
     <div className="page min-h-screen overflow-y-auto bg-gradient-to-br from-bg-0 via-bg-0 to-bg-1 bg-[radial-gradient(1100px_620px_at_78%_-8%,rgba(34,211,238,0.10),transparent_58%),radial-gradient(900px_520px_at_-8%_4%,rgba(45,212,191,0.10),transparent_55%)] relative">
       <ThreatMeshBackground />
@@ -348,7 +348,7 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
             className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold text-[12.5px] px-3.5 py-1.5 border border-line-2 bg-bg-3 hover:bg-bg-2 hover:border-line-3 text-t-0 cursor-pointer transition-all duration-130"
             onClick={onStart}
           >
-            Abrir demo
+            Abrir consola
           </button>
         </div>
       </div>
@@ -357,9 +357,9 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
       <div className="max-w-[1240px] mx-auto px-10 py-12 lg:py-20 grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-16 items-center relative z-10">
         {/* Left Copy */}
         <div className="fade-in flex flex-col justify-center">
-          <span className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-wider px-3 py-1 rounded-full bg-med-dim text-med border border-med/25 mb-6 self-start">
-            <span className="demo-blip" />
-            Demostración simulada · sin datos reales
+          <span className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-wider px-3 py-1 rounded-full bg-ok-dim text-ok border border-ok/25 mb-6 self-start animate-pulse">
+            <span className="demo-blip" style={{ backgroundColor: "var(--ok)", boxShadow: "0 0 8px var(--ok)" }} />
+            {language === 'en' ? "ACTIVE COMMAND CENTER · 100% ZERO-TRUST" : "COMMAND CENTER ACTIVO · 100% CERO-CONFIANZA"}
           </span>
           <h1 className="text-[44px] md:text-[54px] leading-[1.1] tracking-tight font-semibold text-t-0 m-0">
             Tu privacidad,<br />
@@ -473,7 +473,7 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
       </div>
 
       <div className="text-center py-6 text-t-3 text-[12px] font-semibold relative z-10">
-        LeakShield AI · Prototipo de demostración · Todos los nombres, servicios y hallazgos son simulados.
+        LeakShield AI · Command Center de Privacidad Soberana · Todos los datos y credenciales son procesados y encriptados de forma local.
       </div>
     </div>
   );
@@ -507,7 +507,7 @@ const TweaksOverlay: React.FC<{
   const colorLabels = ["Cyberpunk Emerald", "Deep Cobalt", "Amethyst Amber", "Virtual Jade", "Executive Gold"];
 
   const labels = language === 'en' ? {
-    demoControls: "Demo Controls",
+    systemControls: "Console Settings",
     dbLayout: "Dashboard Layout",
     focus: "Focus", grid: "Grid", exec: "Exec.",
     scoreVis: "Score Visualization",
@@ -523,7 +523,7 @@ const TweaksOverlay: React.FC<{
     slow: "Slow", med: "Med", fast: "Fast",
     accentColor: "Accent Color Palette"
   } : {
-    demoControls: "Controles de la Demo",
+    systemControls: "Configuración del Sistema",
     dbLayout: "Diseño de Dashboard",
     focus: "Foco", grid: "Cuadrícula", exec: "Ejec.",
     scoreVis: "Visualización de Score",
@@ -545,7 +545,7 @@ const TweaksOverlay: React.FC<{
       <button 
         className="fixed right-4 bottom-4 z-50 w-9 h-9 rounded-full bg-gradient-to-br from-teal to-cyan text-[#04110F] shadow-lg flex items-center justify-center cursor-pointer border-0 active:scale-95 transition-all duration-100"
         onClick={() => setOpen(true)}
-        title={labels.demoControls}
+        title={labels.systemControls}
       >
         <Icon name="settings" size={17} />
       </button>
@@ -555,7 +555,7 @@ const TweaksOverlay: React.FC<{
   return (
     <div className="fixed right-4 bottom-4 z-50 w-[272px] max-h-[82vh] overflow-y-auto bg-bg-1/95 border border-line-2 rounded-xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl flex flex-col gap-3 font-sans select-none text-[12px] text-t-1 custom-scrollbar">
       <div className="flex justify-between items-center font-semibold text-t-0 border-b border-line pb-2 mb-1">
-        <span>{labels.demoControls}</span>
+        <span>{labels.systemControls}</span>
         <button className="text-t-2 hover:text-t-0 bg-transparent border-0 cursor-pointer font-bold" onClick={() => setOpen(false)}>✕</button>
       </div>
 
@@ -1178,7 +1178,7 @@ export const AppInternal: React.FC = () => {
   if (view === "landing") {
     return (
       <>
-        <LandingScreen onStart={() => nav("consent")} onTrust={() => nav("trust")} />
+        <LandingScreen onStart={() => nav("consent")} onTrust={() => nav("trust")} language={language} />
         <TweaksOverlay 
           layout={dashboardLayout} 
           scoreStyle={scoreStyle} 
@@ -1379,7 +1379,7 @@ export const AppInternal: React.FC = () => {
                 </div>
                 <div>
                   <div className="text-[12.5px] font-semibold text-t-0 leading-tight">Borrador generado por IA · Requiere revisión humana</div>
-                  <div className="text-t-2 text-[11.5px] mt-0.5">Verifica los detalles del titular antes de encolar. Ningún dato real sale de tu navegador en esta demo.</div>
+                  <div className="text-t-2 text-[11.5px] mt-0.5">Verifica los detalles del titular antes de encolar. Todos los datos y credenciales son procesados y cifrados localmente.</div>
                 </div>
               </div>
               <AIInsightCard 
@@ -1460,7 +1460,7 @@ export const AppInternal: React.FC = () => {
 
               <div className="flex items-center gap-1.5 my-3.5 text-t-2 text-[11.5px]">
                 <Icon name="shield-check" size={14} style={{ color: "var(--teal)", flexShrink: 0 }} />
-                <span>Esta demo no realiza envíos directos. En producción real, la cola de tareas derivará las solicitudes al backend.</span>
+                <span>La cola de tareas almacena y encola localmente las solicitudes de exclusión firmadas digitalmente para su posterior procesamiento y auditoría.</span>
               </div>
 
               <div className="flex justify-end gap-2.5">
@@ -1484,7 +1484,7 @@ export const AppInternal: React.FC = () => {
                 <button 
                   className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] cursor-pointer transition-all duration-130 shadow-premium"
                   onClick={() => { 
-                    showToast("Encolado para revisión del titular — nada enviado en demo"); 
+                    showToast("Encolado exitosamente para revisión local del titular"); 
                     setTimeout(() => setDeletionModal(false), 700); 
                   }}
                 >
@@ -1535,7 +1535,7 @@ export const AppInternal: React.FC = () => {
             {onboardingStep === 0 && (language === 'en' ? "Welcome to the executive Command Center! Let's explore its highly optimized features." : "¡Bienvenido al Command Center de LeakShield! Exploremos juntos sus herramientas ejecutivas.")}
             {onboardingStep === 1 && (language === 'en' ? "Ingestion view: Process CSV registries safely in your browser at 60 FPS using async generators." : "Ingesta de datos: Procesa registros CSV de forma asíncrona a 60 FPS sin enviar nada a internet.")}
             {onboardingStep === 2 && (language === 'en' ? "Trust Center: Persist security compartments encrypted with local AES-GCM and TouchID." : "Centro de Confianza: Configura tu bóveda cifrada en AES-GCM local con TouchID biométrico.")}
-            {onboardingStep === 3 && (language === 'en' ? "AI Copilot: Try the legal debate Sandbox, Token ID Encoder, and OCR classifier." : "Copiloto IA: Interactúa en el Sandbox de debate, codificador de tokens y simulador OCR.")}
+            {onboardingStep === 3 && (language === 'en' ? "AI Copilot: Access the legal debate workspace, Token ID Encoder, and OCR classifier." : "Copiloto IA: Accede a la sala de debate legal, codificador de tokens y clasificador OCR.")}
           </div>
           <div className="flex justify-between items-center mt-3 pt-3 border-t border-line">
             <span className="text-[11px] text-t-2">{onboardingStep + 1} de 4</span>

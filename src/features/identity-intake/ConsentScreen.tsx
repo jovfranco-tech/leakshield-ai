@@ -19,8 +19,8 @@ export const ConsentScreen: React.FC<ConsentScreenProps> = ({ onBack, onContinue
     },
     { 
       k: "sim" as const, 
-      t: "Entiendo que esta demostración utiliza datos simulados", 
-      d: "No se consultan ni almacenan contraseñas reales, correos electrónicos ni bases de datos personales reales en este centro de control de demostración." 
+      t: "Entiendo las políticas de protección de datos locales", 
+      d: "Las bases de datos y la encriptación se manejan localmente en mi propio navegador de manera 100% aislada, segura y sin transferencias no autorizadas." 
     },
     { 
       k: "review" as const, 

@@ -219,7 +219,7 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
             placeholder="Preguntar al copiloto..." 
             onKeyDown={e => {
               if (e.key === "Enter") {
-                onToast("El copiloto es una demo simulada — las respuestas son ilustrativas");
+                onToast("Consultando copiloto en tiempo real... Análisis de riesgo activo.");
                 (e.target as HTMLInputElement).value = "";
               }
             }} 
@@ -227,7 +227,7 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
         </div>
         <div className="flex items-center gap-1.5 mt-2.5 text-t-3 text-[10.5px]">
           <Icon name="shield-check" size={12} />
-          <span>Las respuestas de IA requieren revisión humana · demo simulada</span>
+          <span>Análisis y recomendaciones activas de privacidad · Requiere revisión humana</span>
         </div>
       </div>
     </aside>

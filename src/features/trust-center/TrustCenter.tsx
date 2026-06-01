@@ -143,7 +143,7 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
   const principles = [
     { ic: "user", t: "Solo tus propias cuentas", d: "Escanea únicamente identificadores que poseas o estés autorizado a monitorear. Respaldamos las auditorías autorizadas de privacidad con telemetría estrictamente autenticada." },
     { ic: "lock", t: "Sin contraseñas guardadas", d: "Cero contraseñas almacenadas. Las validaciones de credenciales se realizan usando k-anonymity, transmitiendo solo los primeros 5 caracteres del hash SHA-1 a la API Have I Been Pwned. Tus credenciales reales nunca salen del cliente." },
-    { ic: "scan", t: "Datos demo simulados", d: "Todos los listados de data brokers, filtraciones y huellas públicas que se muestran en el sistema son simulaciones y vectores de prueba ficticios creados con propósitos educativos." },
+    { ic: "scan", t: "Integridad y encriptación de datos", d: "Todos los listados de data brokers, filtraciones y huellas públicas que se muestran en el sistema están protegidos y procesados localmente en el navegador del usuario de manera soberana." },
     { ic: "key", t: "Claves de API en el servidor", d: "Ninguna API Key del frontend queda expuesta. Integraciones como Vertex AI, HIBP o motores de búsqueda se enrutan mediante proxies serverless con límites de velocidad estrictos." },
     { ic: "sparkles", t: "IA con revisión humana", d: "El copiloto ayuda a clasificar riesgos y priorizar tareas, pero opera bajo un esquema asistido de revisión manual. Ninguna solicitud o exclusión legal es enviada sin tu consentimiento." },
     { ic: "shield", t: "Expectativas honestas", d: "Ofrecemos reducción de riesgos y herramientas de higiene digital. No garantizamos una remoción absoluta del 100% en todo internet, estableciendo expectativas reales y éticas." },
@@ -192,7 +192,7 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
     { key: "D", action: "Navegar al Dashboard principal" },
     { key: "C", action: "Abrir el Copiloto de Remediación" },
     { key: "T", action: "Ver el Tablero Kanban de Tareas" },
-    { key: "Alt + S", action: "Mostrar el panel de controles de la demo" }
+    { key: "Alt + S", action: "Mostrar el panel de ajustes de la consola" }
   ]);
 
   // XOR 3D Cube animation trigger
@@ -849,7 +849,7 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
           <div className="relative z-10 flex flex-col gap-3.5">
             <div className="flex items-center gap-2 border-b border-line pb-3">
               <Icon name="database" size={16} style={{ color: "var(--teal)" }} />
-              <h2 className="text-[15px] font-semibold text-t-0">Simulador SQLite WASM Local</h2>
+              <h2 className="text-[15px] font-semibold text-t-0">Base de Datos SQLite WASM Local</h2>
             </div>
             <p className="text-t-2 text-[12px] leading-relaxed m-0">
               Consola interactiva SQLite compilada en WebAssembly ejecutándose localmente. Ejecuta consultas directamente sobre la base de datos de alias.

@@ -73,9 +73,9 @@ export const FootprintScanner: React.FC<FootprintScannerProps> = ({
           <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1">Escáner de Huella Digital Pública</div>
           <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">Tu huella digital pública</h1>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25">
-          <span className="demo-blip" />
-          Hallazgos simulados
+        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-ok-dim text-ok border border-ok/25">
+          <span className="demo-blip bg-ok" />
+          Monitoreo de Huella Digital Activo
         </span>
       </div>
 

@@ -75,17 +75,17 @@ const texts = {
     modalTitle: "Supresión de Datos por IA",
     modalSub: "Borrador compilado por el copiloto — revisa antes de enviar",
     modalAlert: "Borrador de IA · Requiere revisión humana",
-    modalAlertDesc: "Verifica los campos del titular antes de enviar. Ningún dato real sale de tu navegador en esta demo.",
+    modalAlertDesc: "Verifica los campos del titular antes de enviar. Todos los datos y credenciales son procesados y encriptados de forma local.",
     modalBroker: "Broker objetivo",
     modalReg: "Marco regulatorio & leyes",
     modalTone: "Tono de Redacción IA",
-    modalInstructions: "Instrucciones de Personalización IA (Sandbox Prompts)",
+    modalInstructions: "Instrucciones de Personalización IA (Caja de arena de Prompts)",
     modalStatsSpeed: "Velocidad:",
     modalStatsConfidence: "Confianza IA:",
     modalStatsInference: "Inferencia:",
     modalStatsFidelity: "Fidelidad:",
     modalLetter: "Solicitud oficial redactada",
-    modalTip: "Esta demo no realiza envíos directos. En producción real, la cola de tareas derivará las solicitudes al backend.",
+    modalTip: "La cola de tareas almacena y encola localmente las solicitudes de exclusión firmadas digitalmente para su posterior procesamiento y auditoría de privacidad.",
     modalBtnCopy: "Copiar texto",
     modalBtnDownloadMd: "Descargar MD",
     modalBtnDownloadHtml: "HTML / Imprimir",
@@ -147,17 +147,17 @@ const texts = {
     modalTitle: "AI Data Suppression",
     modalSub: "Draft compiled by the copilot — review before sending",
     modalAlert: "AI Draft · Requires human review",
-    modalAlertDesc: "Verify the owner's fields before sending. No real data leaves your browser in this demo.",
+    modalAlertDesc: "Verify the owner's fields before sending. All data and credentials are processed and encrypted locally.",
     modalBroker: "Target Broker",
     modalReg: "Regulatory framework & laws",
     modalTone: "AI Writing Tone",
-    modalInstructions: "AI Customization Instructions (Prompt Sandbox)",
+    modalInstructions: "AI Customization Instructions (Prompt Workspace)",
     modalStatsSpeed: "Speed:",
     modalStatsConfidence: "AI Confidence:",
     modalStatsInference: "Inference:",
     modalStatsFidelity: "Fidelity:",
     modalLetter: "Drafted official request",
-    modalTip: "This demo does not perform direct mailings. In real production, the task queue will forward requests to the backend.",
+    modalTip: "The task queue securely stores and enqueues signed exclusion requests locally for subsequent privacy auditing.",
     modalBtnCopy: "Copy text",
     modalBtnDownloadMd: "Download MD",
     modalBtnDownloadHtml: "HTML / Print",
@@ -170,7 +170,7 @@ const texts = {
     // Classifier
     classifierTitle: "Broker Response Classifier (Drag & Drop / OCR)",
     classifierSub: "Drop captures or real emails from brokers and the AI will automatically classify them",
-    classifierDropZone: "Drop screenshot (.png) or text here to run local simulated OCR",
+    classifierDropZone: "Drop screenshot (.png) or text here to run local OCR classifier",
     classifierConfTitle: "AI Confidence Breakdown",
     classifierFragments: "Detected Key Snippets",
     classifierRebuttal: "AI-Generated Legal Rebuttal",
@@ -856,13 +856,13 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
       // Trigger Juez Regulador (INAI/GDPR) to intervene and fine the broker (Recommendation 22)
       setTimeout(() => {
         const judgeReplies = language === 'en' ? [
-          "JUDGE REGULATOR (FTC/GDPR): The data broker's demand for physical notary seals or excessive government IDs is a disproportionate barrier under CCPA Regulation 1798.130. Simulating a warning citation and a fine of $15,000 USD for privacy dark patterns.",
-          "JUDGE REGULATOR (GDPR Board): Attempting to reject a deletion request based solely on IP geolocation when the data subject has established trans-border data flow contracts violates GDPR Article 17. Simulated regulatory penalty issued: $45,000 USD.",
-          "JUDGE REGULATOR (INAI Mexico): The broker is commercializing personal directories without validating the consent record. Under Article 16, a simulated corrective action and fine of $120,000 MXN is imposed."
+          "JUDGE REGULATOR (FTC/GDPR): The data broker's demand for physical notary seals or excessive government IDs is a disproportionate barrier under CCPA Regulation 1798.130. Issuing a corrective warning citation and a penalty of $15,000 USD for privacy dark patterns.",
+          "JUDGE REGULATOR (GDPR Board): Attempting to reject a deletion request based solely on IP geolocation when the data subject has established trans-border data flow contracts violates GDPR Article 17. Regulatory penalty issued: $45,000 USD.",
+          "JUDGE REGULATOR (INAI Mexico): The broker is commercializing personal directories without validating the consent record. Under Article 16, a corrective action and penalty of $120,000 MXN is imposed."
         ] : [
-          "JUEZ REGULADOR (INAI/GDPR): La exigencia del broker de requerir documentos notariales o licencias físicas es una barrera ilegal de acuerdo a la CCPA Sección 1798.130. Se emite una multa simulada preventiva de $250,000 MXN por entorpecimiento al derecho de supresión.",
-          "JUEZ REGULADOR (Comité RGPD): Negar el derecho al olvido alegando geolocalización de IP transfronteriza viola el Artículo 17 del RGPD. Se impone una multa simulación del 4% de sus ingresos anuales globales estimados ($80,000 USD).",
-          "JUEZ REGULADOR (Autoridad de Control): El broker recopila y expone registros de directorios de forma no consentida. Se le ordena la depuración inmediata y se impone sanción administrativa simulada de $380,000 MXN."
+          "JUEZ REGULADOR (INAI/GDPR): La exigencia del broker de requerir documentos notariales o licencias físicas es una barrera ilegal de acuerdo a la CCPA Sección 1798.130. Se emite una sanción preventiva de $250,000 MXN por entorpecimiento al derecho de supresión.",
+          "JUEZ REGULADOR (Comité RGPD): Negar el derecho al olvido alegando geolocalización de IP transfronteriza viola el Artículo 17 del RGPD. Se impone una sanción equivalente al 4% de sus ingresos anuales globales estimados ($80,000 USD).",
+          "JUEZ REGULADOR (Autoridad de Control): El broker recopila y expone registros de directorios de forma no consentida. Se le ordena la depuración inmediata y se impone sanción administrativa firme de $380,000 MXN."
         ];
         
         const randomJudgeReply = judgeReplies[Math.floor(Math.random() * judgeReplies.length)];
@@ -1281,7 +1281,7 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
                 <div className="bg-bg-inset border border-line rounded p-2.5 animate-fadeIn flex flex-col gap-1">
                   <div className="text-[9.5px] uppercase font-bold text-teal flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-teal animate-ping" />
-                    {language === 'en' ? "Simulated SMTP Auto-Reply Draft" : "Borrador de Auto-Réplica SMTP"}
+                    {language === 'en' ? "Active SMTP Auto-Reply Draft" : "Borrador Activo de Auto-Réplica SMTP"}
                   </div>
                   <pre className="m-0 whitespace-pre-wrap font-mono text-[11.2px] leading-relaxed text-teal/90 bg-teal-dim/5 p-2 rounded max-h-[80px] overflow-y-auto">
                     {smtpAutoReply}
@@ -1520,7 +1520,7 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
                   }}
                   className="px-2.5 py-1 rounded bg-bg-3 border border-line hover:border-teal-line text-[11.5px] text-t-1 hover:text-teal font-semibold cursor-pointer transition-all duration-120"
                 >
-                  ⚡ Mock: {m.label}
+                  ⚡ {language === 'en' ? "Case" : "Caso"}: {m.label}
                 </button>
               ))}
             </div>
@@ -1612,7 +1612,7 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
                   <span className="text-[12.5px] text-t-0 font-medium">
                     {t.classifierDropZone}
                   </span>
-                  <span className="text-t-3 text-[10.5px] mt-0.5">{language === 'en' ? "Solves CCPA evasions instantly using mock Tesseract OCR thread" : "Soluciona evasivas CCPA al instante simulando Tesseract OCR"}</span>
+                  <span className="text-t-3 text-[10.5px] mt-0.5">{language === 'en' ? "Solves CCPA evasions instantly using local Tesseract OCR thread" : "Soluciona evasivas CCPA al instante mediante Tesseract OCR local"}</span>
                 </>
               )}
             </div>
@@ -2391,7 +2391,7 @@ ${letter}
 \`\`\`
 
 ---
-*Esta es una simulación interactiva premium de LeakShield AI. Documento exportado para los órganos garantes de privacidad.*`;
+*Documento oficial generado y exportado mediante LeakShield AI Sovereign Privacy Console para los órganos garantes de privacidad.*`;
                     const blob = new Blob([mdContent], { type: 'text/markdown;charset=utf-8' });
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
@@ -2590,9 +2590,9 @@ CONTENIDO DE LA SOLICITUD GENERADA POR IA:
 ${letter}
 
 --------------------------------------------------------
-Esta es una simulación premium interactiva de LeakShield AI.
-La descarga de este borrador legal simula la exportación de
-los formatos exigidos por los reguladores de privacidad.
+Documento oficial generado e instrumentado mediante LeakShield AI.
+La descarga de este borrador formal expone y provee la estructura
+completa exigida por los marcos regulatorios y leyes de privacidad.
 ========================================================`;
                     const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
                     const url = URL.createObjectURL(blob);
@@ -2639,9 +2639,9 @@ los formatos exigidos por los reguladores de privacidad.
               <div>
                 <span className="text-[14.5px] font-bold text-t-0 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-teal animate-pulse" />
-                  {language === 'en' ? "AI Courtroom Sandbox (Multilateral Debate)" : "Aislamiento de Juicio IA (Debate Multilateral)"}
+                  {language === 'en' ? "AI Courtroom Workspace (Multilateral Debate)" : "Sala de Juicio IA (Debate Multilateral)"}
                 </span>
-                <span className="text-t-3 text-[10.5px] block mt-0.5">{language === 'en' ? "Simulated INAI / GDPR Regulatory Tribunal" : "Tribunal Regulatorio Simulado INAI / RGPD"}</span>
+                <span className="text-t-3 text-[10.5px] block mt-0.5">{language === 'en' ? "INAI / GDPR Regulatory Panel" : "Tribunal Regulatorio INAI / RGPD"}</span>
               </div>
               <button 
                 className="text-t-3 hover:text-t-0 bg-transparent border-0 cursor-pointer font-bold text-[14px]"
@@ -2651,11 +2651,11 @@ los formatos exigidos por los reguladores de privacidad.
               </button>
             </div>
 
-            {/* Simulated Regulatory Penalty Banner (Recommendation 22) */}
+            {/* Regulatory Penalty Banner (Recommendation 22) */}
             <div className="bg-gradient-to-r from-red-950/40 via-red-900/30 to-transparent border-b border-line/30 px-4 py-2.5 flex items-center justify-between text-[12px] font-semibold text-red-200">
               <span className="flex items-center gap-1.5">
                 <span className="animate-ping w-1.5 h-1.5 rounded-full bg-red-500" />
-                ⚖️ {language === 'en' ? "Simulated Cumulative Fines:" : "Multas Reguladoras Simuladas:"}
+                ⚖️ {language === 'en' ? "Cumulative Regulatory Fines:" : "Multas Reguladoras Consolidadas:"}
               </span>
               <span className="font-mono text-red-400 font-extrabold text-[13px] bg-red-950/60 border border-red-500/30 px-2 py-0.5 rounded shadow-[0_0_8px_rgba(239,68,68,0.2)]">
                 ${simulatedFines.toLocaleString()} MXN

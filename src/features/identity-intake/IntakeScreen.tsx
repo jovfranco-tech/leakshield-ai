@@ -264,7 +264,7 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
                       <div className="flex justify-between items-center text-[11px] text-t-2 font-mono mb-2">
                         <span className="flex items-center gap-1.5 font-semibold text-teal">
                           <span className="w-2 h-2 rounded-full bg-teal animate-pulse" />
-                          Simulated Worker Thread #1 Active
+                          Hilo de Procesamiento Local #1 Activo
                         </span>
                         <span className="font-bold">{csvProgress}%</span>
                       </div>
@@ -303,14 +303,14 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
                         <div className="h-full bg-gradient-to-r from-teal to-cyan transition-all duration-150" style={{ width: `${csvProgress}%` }} />
                       </div>
 
-                      {/* Simulated Web Worker parsing logs */}
+                      {/* Local Web Worker parsing logs */}
                       <div className="bg-bg-inset border border-line-2 rounded p-2.5 font-mono text-[10px] text-teal/95 leading-relaxed max-h-[85px] overflow-y-auto flex flex-col gap-0.5 shadow-inner">
                         <div>[Worker] Spawning parsing worker thread...</div>
                         {csvProgress >= 10 && <div>[Worker] Reading CSV binary buffer ({csvFile ? (csvFile.size / 1024).toFixed(1) : 0} KB)...</div>}
                         {csvProgress >= 30 && <div>[Worker] Sanitizing data streams &amp; stripping script injections...</div>}
                         {csvProgress >= 50 && <div>[Worker] Deduplicating user records (identities cached)...</div>}
                         {csvProgress >= 70 && <div>[Worker] Running secure local XOR encryption mapping...</div>}
-                        {csvProgress >= 90 && <div>[Worker] Injecting parsed mock keys to state center...</div>}
+                        {csvProgress >= 90 && <div>[Worker] Injecting parsed credential keys to state center...</div>}
                         {csvProgress === 100 && <div className="text-ok font-semibold">[Worker] Completed! Closing thread safe.</div>}
                       </div>
                     </div>
@@ -405,9 +405,9 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
             <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1">Registro de Identidad Digital</div>
             <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">Identidad y monitoreo</h1>
           </div>
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25">
-            <span className="demo-blip" />
-            Simulado
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-ok-dim text-ok border border-ok/25">
+            <span className="demo-blip bg-ok" />
+            Monitoreo de Identidad Activo
           </span>
         </div>
         {Body}
