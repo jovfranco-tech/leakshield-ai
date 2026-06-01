@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LeakShield AI — Vision & Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg-0:#080B0F;--bg-1:#0D1218;--bg-2:#121A22;--bg-3:#18222D;--bg-inset:#0A0E13;
+  --line:rgba(255,255,255,.07);--line-2:rgba(255,255,255,.12);
+  --t-0:#EAF1F6;--t-1:#9CABB8;--t-2:#647585;--t-3:#48586A;
+  --teal:#2DD4BF;--cyan:#22D3EE;--teal-dim:rgba(45,212,191,.13);--teal-line:rgba(45,212,191,.30);
+  --crit:#FB6E72;--high:#F4A14A;--med:#E4C465;--low:#7FA7C4;--ok:#34D399;
+  --font:"Geist",ui-sans-serif,system-ui,sans-serif;--mono:"Geist Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:
+  radial-gradient(1100px 600px at 85% -5%,rgba(34,211,238,.06),transparent 55%),
+  radial-gradient(900px 520px at -5% 2%,rgba(45,212,191,.06),transparent 50%),var(--bg-0);
+  color:var(--t-0);font-family:var(--font);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased}
+::selection{background:rgba(45,212,191,.3)}
+a{color:var(--teal);text-decoration:none}
+.mono{font-family:var(--mono)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 32px}
+.layout{display:grid;grid-template-columns:230px 1fr;gap:48px;align-items:start;max-width:1180px;margin:0 auto;padding:0 32px}
+
+/* header */
+.hero{border-bottom:1px solid var(--line);padding:30px 0 46px}
+.brandrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:46px}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(145deg,var(--teal),var(--cyan));color:#04110F;box-shadow:0 6px 18px -6px rgba(45,212,191,.6)}
+.name{font-weight:600;font-size:16px}.name small{display:block;font-size:10.5px;color:var(--t-2);text-transform:uppercase;letter-spacing:.08em;font-weight:500}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;padding:5px 12px;border-radius:20px;background:var(--med-dim,rgba(228,196,101,.13));color:var(--med);border:1px solid rgba(228,196,101,.25)}
+.eyebrow{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);font-weight:600}
+h1.title{font-size:48px;line-height:1.05;letter-spacing:-.03em;font-weight:600;margin:14px 0 0;max-width:760px}
+.lede{font-size:18px;color:var(--t-1);max-width:620px;margin-top:18px}
+.tagline{font-family:var(--mono);font-size:13px;color:var(--teal);margin-top:20px;letter-spacing:.02em}
+
+/* TOC */
+.toc{position:sticky;top:28px;padding:20px 0}
+.toc a{display:flex;gap:11px;padding:7px 0;color:var(--t-2);font-size:13px;font-weight:500;border:none}
+.toc a:hover{color:var(--t-0)}
+.toc a .n{font-family:var(--mono);font-size:11px;color:var(--t-3)}
+.toc .lbl{font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--t-3);font-weight:600;margin:18px 0 6px}
+
+/* sections */
+section{padding:42px 0;border-bottom:1px solid var(--line)}
+section:last-child{border-bottom:none}
+.sec-n{font-family:var(--mono);font-size:13px;color:var(--teal);font-weight:500}
+h2{font-size:27px;letter-spacing:-.02em;font-weight:600;margin:8px 0 18px}
+h3{font-size:16px;font-weight:600;margin:26px 0 10px}
+p{color:var(--t-1);margin:0 0 14px}
+strong{color:var(--t-0);font-weight:600}
+ul{margin:0 0 16px;padding-left:0;list-style:none}
+li{color:var(--t-1);padding:7px 0 7px 26px;position:relative}
+li::before{content:"";position:absolute;left:4px;top:15px;width:6px;height:6px;border-radius:50%;background:var(--teal)}
+li strong{color:var(--t-0)}
+
+.card{background:var(--bg-2);border:1px solid var(--line);border-radius:16px;padding:22px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kv{font-size:13px}.kv .k{color:var(--t-2);font-size:11px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:6px}
+
+/* swatches */
+.sw{border-radius:12px;height:78px;border:1px solid var(--line);display:flex;align-items:flex-end;padding:10px;font-size:11px;font-family:var(--mono)}
+.swrow{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:14px 0}
+.swname{font-size:11px;color:var(--t-1);margin-top:6px;font-family:var(--mono)}
+
+/* type specimen */
+.spec{border-left:2px solid var(--teal-line);padding-left:18px;margin:12px 0}
+.spec .meta{font-family:var(--mono);font-size:11px;color:var(--t-2);margin-top:4px}
+
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:7px;border:1px solid transparent}
+.badge .d{width:6px;height:6px;border-radius:50%;background:currentColor}
+.bC{color:var(--crit);background:rgba(251,110,114,.13);border-color:rgba(251,110,114,.25)}
+.bH{color:var(--high);background:rgba(244,161,74,.13);border-color:rgba(244,161,74,.25)}
+.bM{color:var(--med);background:rgba(228,196,101,.13);border-color:rgba(228,196,101,.25)}
+.bL{color:var(--low);background:rgba(127,167,196,.13);border-color:rgba(127,167,196,.25)}
+.bO{color:var(--ok);background:rgba(52,211,153,.13);border-color:rgba(52,211,153,.25)}
+
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:5px 11px;border-radius:8px;background:var(--bg-3);color:var(--t-1);border:1px solid var(--line);margin:3px}
+.btnp{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(180deg,var(--teal),#1fb3a0);color:#04110F;font-weight:600;font-size:13px;padding:9px 16px;border-radius:10px;border:none}
+.btng{display:inline-flex;align-items:center;gap:8px;background:var(--bg-3);color:var(--t-0);font-weight:600;font-size:13px;padding:9px 16px;border-radius:10px;border:1px solid var(--line-2)}
+
+.aibox{background:linear-gradient(180deg,rgba(45,212,191,.06),var(--bg-2));border:1px solid var(--teal-line);border-radius:14px;padding:18px;position:relative;overflow:hidden}
+.aibox::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(var(--teal),var(--cyan))}
+.aitag{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);display:inline-flex;gap:6px;align-items:center;margin-bottom:8px}
+
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0}
+.step{background:var(--bg-2);border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-size:13px;font-weight:500;color:var(--t-0)}
+.arrow{color:var(--t-3)}
+
+.phase{display:grid;grid-template-columns:120px 1fr;gap:18px;padding:16px 0;border-bottom:1px solid var(--line)}
+.phase:last-child{border:none}
+.phase .ph{font-family:var(--mono);font-size:12px;color:var(--teal);font-weight:600}
+
+.foot{padding:40px 0 70px;color:var(--t-3);font-size:13px;text-align:center}
+svg.i{width:1em;height:1em;vertical-align:-.12em}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.toc{display:none}.grid2,.grid3,.grid4{grid-template-columns:1fr 1fr}h1.title{font-size:36px}}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="wrap">
+    <div class="brandrow">
+      <div class="brand">
+        <div class="mark"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#04110F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6l7-3z"/><path d="M9 11.5l2 2 4-4"/></svg></div>
+        <div class="name">LeakShield AI<small>Privacy Command Center</small></div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <span class="pill"><span style="width:6px;height:6px;border-radius:50%;background:var(--med);display:inline-block"></span>Concept · simulated</span>
+        <a class="btng" href="index.html">Open the prototype →</a>
+      </div>
+    </div>
+    <div class="eyebrow">Product Vision &amp; Design System</div>
+    <h1 class="title">A privacy command center that turns exposure into a plan you can finish.</h1>
+    <p class="lede">LeakShield AI detects leaks, prioritizes risk, and guides remediation — with an AI copilot woven through every flow, not bolted on as a chatbot.</p>
+    <div class="tagline">Detect leaks. Prioritize risk. Clean your digital footprint.</div>
+  </div>
+</div>
+
+<div class="layout">
+  <!-- TOC -->
+  <nav class="toc">
+    <div class="lbl">Strategy</div>
+    <a href="#vision"><span class="n">01</span> Design vision</a>
+    <a href="#arch"><span class="n">02</span> UX architecture</a>
+    <a href="#nav"><span class="n">03</span> Navigation</a>
+    <a href="#screens"><span class="n">04</span> Main screens</a>
+    <div class="lbl">System</div>
+    <a href="#visual"><span class="n">05</span> Visual direction</a>
+    <a href="#ds"><span class="n">06</span> Design system</a>
+    <a href="#components"><span class="n">07</span> Key components</a>
+    <div class="lbl">Product</div>
+    <a href="#dashboard"><span class="n">08</span> Dashboard</a>
+    <a href="#copilot"><span class="n">09</span> AI Copilot</a>
+    <a href="#mvp"><span class="n">10</span> MVP roadmap</a>
+  </nav>
+
+  <main>
+    <section id="vision">
+      <div class="sec-n">01</div>
+      <h2>Design vision</h2>
+      <p>Most privacy tools either frighten people or overwhelm them. LeakShield AI takes the opposite stance: it behaves like a <strong>calm, executive command center</strong> — the kind of dark, considered interface you'd trust to run something important. Risk is communicated with precision, never alarm.</p>
+      <p>The product is <strong>AI-native from the core</strong>. The copilot doesn't sit in a corner waiting to chat; it reads your exposure, ranks what matters, drafts the work, and sequences a plan — while the human stays the decision-maker on every action.</p>
+      <div class="grid4" style="margin-top:20px">
+        <div class="card"><div class="aitag">Principle</div><strong>Clarity over alarm</strong><p style="font-size:13px;margin:8px 0 0">Restrained risk colors, no red walls.</p></div>
+        <div class="card"><div class="aitag">Principle</div><strong>Decision-ready</strong><p style="font-size:13px;margin:8px 0 0">Every finding ends in an action.</p></div>
+        <div class="card"><div class="aitag">Principle</div><strong>AI you steer</strong><p style="font-size:13px;margin:8px 0 0">Drafts &amp; recommends; you approve.</p></div>
+        <div class="card"><div class="aitag">Principle</div><strong>Privacy-first</strong><p style="font-size:13px;margin:8px 0 0">Consent-led, no stored passwords.</p></div>
+      </div>
+    </section>
+
+    <section id="arch">
+      <div class="sec-n">02</div>
+      <h2>UX architecture</h2>
+      <p>Information is organized along the user's mental model: <strong>Monitor → Find → Act</strong>. You set up what's watched, review what was found, then work a prioritized plan. The copilot spans all three as a persistent context-aware layer.</p>
+      <div class="grid3" style="margin-top:18px">
+        <div class="card"><div class="kv"><div class="k">Monitor</div></div><p style="font-size:13.5px;margin:0">Dashboard &amp; Identity Intake — what we watch and your current standing.</p></div>
+        <div class="card"><div class="kv"><div class="k">Find</div></div><p style="font-size:13.5px;margin:0">Breach Intelligence, Public Footprint, Data Brokers — classified findings.</p></div>
+        <div class="card"><div class="kv"><div class="k">Act</div></div><p style="font-size:13.5px;margin:0">AI Copilot &amp; Task Board — remediation, generation, tracking.</p></div>
+      </div>
+      <h3>Primary user flow</h3>
+      <div class="flow">
+        <span class="step">Landing</span><span class="arrow">→</span>
+        <span class="step">Consent</span><span class="arrow">→</span>
+        <span class="step">Identity Intake</span><span class="arrow">→</span>
+        <span class="step">Scan</span><span class="arrow">→</span>
+        <span class="step">Dashboard + Score</span><span class="arrow">→</span>
+        <span class="step">Copilot plan</span><span class="arrow">→</span>
+        <span class="step">Remediate &amp; track</span>
+      </div>
+    </section>
+
+    <section id="nav">
+      <div class="sec-n">03</div>
+      <h2>Navigation</h2>
+      <p>A persistent left rail grouped by <strong>Monitor / Findings / Act / Settings</strong>, with live counts as ambient signal. The center column is the workspace. A <strong>persistent copilot rail</strong> docks on the right on desktop and becomes a slide-over on smaller screens — always one tap away, never in the way.</p>
+      <ul>
+        <li><strong>Left rail</strong> — sectioned destinations, badge counts (4 breaches, 6 findings, 9 tasks), user identity footer.</li>
+        <li><strong>Top bar</strong> — contextual title, global search, copilot toggle, alerts.</li>
+        <li><strong>Copilot rail</strong> — context summary, next best action, and the live plan, everywhere you go.</li>
+      </ul>
+    </section>
+
+    <section id="screens">
+      <div class="sec-n">04</div>
+      <h2>Main screens</h2>
+      <div class="grid2">
+        <div class="card"><strong>Landing / Hero</strong><p style="font-size:13.5px;margin:8px 0 0">Positioning, score preview, AI-native value props.</p></div>
+        <div class="card"><strong>Onboarding &amp; Consent</strong><p style="font-size:13.5px;margin:8px 0 0">Explicit, privacy-first consent before any scan.</p></div>
+        <div class="card"><strong>Digital Identity Intake</strong><p style="font-size:13.5px;margin:8px 0 0">Capture emails, usernames, phone, region; manage monitoring.</p></div>
+        <div class="card"><strong>Executive Dashboard</strong><p style="font-size:13.5px;margin:8px 0 0">Score, risk tiles, AI next action, factors, progress.</p></div>
+        <div class="card"><strong>Breach Intelligence</strong><p style="font-size:13.5px;margin:8px 0 0">Master/detail with severity, data classes, AI analysis.</p></div>
+        <div class="card"><strong>Public Footprint Scanner</strong><p style="font-size:13.5px;margin:8px 0 0">Classified findings with per-item AI &amp; actions.</p></div>
+        <div class="card"><strong>AI Remediation Copilot</strong><p style="font-size:13.5px;margin:8px 0 0">Plan board, generators, score projection, activity.</p></div>
+        <div class="card"><strong>Privacy Task Board</strong><p style="font-size:13.5px;margin:8px 0 0">Kanban by priority or status; click to advance.</p></div>
+        <div class="card"><strong>Trust Center</strong><p style="font-size:13.5px;margin:8px 0 0">Security boundaries, data controls, honest limits.</p></div>
+      </div>
+    </section>
+
+    <section id="visual">
+      <div class="sec-n">05</div>
+      <h2>Visual direction</h2>
+      <p>Dark, premium, executive. A near-black charcoal canvas with slate surfaces, hairline borders, and faint teal/cyan light blooms. <strong>Teal is the signal color</strong> — it means "secure, AI, go." Risk uses a restrained, desaturated scale so attention is earned, not screamed.</p>
+      <div class="grid3" style="margin-top:18px">
+        <div class="card"><div class="kv"><div class="k">Mood</div></div>Command center · calm · precise</div>
+        <div class="card"><div class="kv"><div class="k">Light</div></div>Subtle radial glows, soft elevation shadows</div>
+        <div class="card"><div class="kv"><div class="k">Avoided</div></div>Hacker terminals, neon, gradients-as-decoration, alarm-red walls</div>
+      </div>
+    </section>
+
+    <section id="ds">
+      <div class="sec-n">06</div>
+      <h2>Design system</h2>
+
+      <h3>Color — surfaces</h3>
+      <div class="swrow">
+        <div><div class="sw" style="background:#080B0F">bg-0</div><div class="swname">#080B0F</div></div>
+        <div><div class="sw" style="background:#0D1218">bg-1</div><div class="swname">#0D1218</div></div>
+        <div><div class="sw" style="background:#121A22">bg-2</div><div class="swname">#121A22</div></div>
+        <div><div class="sw" style="background:#18222D">bg-3</div><div class="swname">#18222D</div></div>
+        <div><div class="sw" style="background:#EAF1F6;color:#080B0F">t-0</div><div class="swname">#EAF1F6</div></div>
+        <div><div class="sw" style="background:#9CABB8;color:#080B0F">t-1</div><div class="swname">#9CABB8</div></div>
+      </div>
+      <h3>Color — accent &amp; risk</h3>
+      <div class="swrow">
+        <div><div class="sw" style="background:#2DD4BF;color:#04110F">teal</div><div class="swname">#2DD4BF</div></div>
+        <div><div class="sw" style="background:#22D3EE;color:#04110F">cyan</div><div class="swname">#22D3EE</div></div>
+        <div><div class="sw" style="background:#FB6E72;color:#1a0708">crit</div><div class="swname">#FB6E72</div></div>
+        <div><div class="sw" style="background:#F4A14A;color:#1a0d02">high</div><div class="swname">#F4A14A</div></div>
+        <div><div class="sw" style="background:#E4C465;color:#1a1402">med</div><div class="swname">#E4C465</div></div>
+        <div><div class="sw" style="background:#34D399;color:#04140d">ok</div><div class="swname">#34D399</div></div>
+      </div>
+
+      <h3>Typography — Geist + Geist Mono</h3>
+      <div class="spec"><div style="font-size:40px;font-weight:600;letter-spacing:-.03em;line-height:1.1">Privacy, run like a command center</div><div class="meta">Display · 600 · -3% tracking</div></div>
+      <div class="spec"><div style="font-size:22px;font-weight:600">Executive Privacy Dashboard</div><div class="meta">Heading · 600</div></div>
+      <div class="spec"><div style="font-size:15px;color:var(--t-1)">Body copy guides without jargon — calm, plain, and decision-oriented.</div><div class="meta">Body · 400 · 15px</div></div>
+      <div class="spec"><div class="mono" style="font-size:34px;font-weight:600;color:var(--med)">64<span style="font-size:14px;color:var(--t-2)"> / 100</span></div><div class="meta">Geist Mono · tabular numerals for all metrics &amp; scores</div></div>
+      <div class="spec"><div class="eyebrow">Section label · uppercase · tracked</div><div class="meta">Labels · 600 · +16% tracking</div></div>
+
+      <h3>Foundations</h3>
+      <div class="grid4">
+        <div class="card"><div class="kv"><div class="k">Radius</div></div><span class="mono" style="font-size:13px">8 · 12 · 16 · 22</span></div>
+        <div class="card"><div class="kv"><div class="k">Spacing</div></div><span class="mono" style="font-size:13px">4px base scale</span></div>
+        <div class="card"><div class="kv"><div class="k">Borders</div></div><span class="mono" style="font-size:13px">1px hairline α</span></div>
+        <div class="card"><div class="kv"><div class="k">Elevation</div></div><span class="mono" style="font-size:13px">soft + inset</span></div>
+      </div>
+    </section>
+
+    <section id="components">
+      <div class="sec-n">07</div>
+      <h2>Key components</h2>
+      <p>A small, composable kit. Everything is built from these.</p>
+      <div class="grid2">
+        <div class="card">
+          <div class="kv"><div class="k">Risk badges</div></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+            <span class="badge bC"><span class="d"></span>Critical</span><span class="badge bH"><span class="d"></span>High</span>
+            <span class="badge bM"><span class="d"></span>Medium</span><span class="badge bL"><span class="d"></span>Low</span><span class="badge bO"><span class="d"></span>Resolved</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="kv"><div class="k">Buttons</div></div>
+          <div style="display:flex;gap:10px;margin-top:4px"><span class="btnp">Start the fix</span><span class="btng">View plan</span></div>
+        </div>
+        <div class="card">
+          <div class="kv"><div class="k">Chips &amp; data classes</div></div>
+          <div style="margin-top:2px"><span class="chip">Email</span><span class="chip" style="color:var(--crit);border-color:rgba(251,110,114,.25);background:rgba(251,110,114,.13)">Password</span><span class="chip">Phone</span><span class="chip">Public</span></div>
+        </div>
+        <div class="card">
+          <div class="kv"><div class="k">AI insight card</div></div>
+          <div class="aibox" style="margin-top:4px"><div class="aitag">✦ AI Analyst</div><div style="font-size:13px;color:var(--t-0)">One reused password links your 2 critical breaches — fix it first.</div></div>
+        </div>
+      </div>
+      <p style="margin-top:16px;font-size:13.5px">Also in the kit: score visualizations (numeric / ring / meter), risk tiles, master-detail rows, kanban cards, status pills, the consent checklist, toggles, search, modal generators, and the copilot rail.</p>
+    </section>
+
+    <section id="dashboard">
+      <div class="sec-n">08</div>
+      <h2>Executive dashboard</h2>
+      <p>The dashboard answers three questions at a glance: <strong>How exposed am I? What's the single most important thing to do? Am I making progress?</strong></p>
+      <ul>
+        <li><strong>Privacy Exposure Score</strong> — a 0–100 composite (breach severity, credential reuse, footprint, brokers) with a 30-day trend and a plain-language "why."</li>
+        <li><strong>Risk tiles</strong> — Breach, Footprint, Old Accounts, Data Brokers — each a one-tap entry into its module.</li>
+        <li><strong>AI recommended next action</strong> — the highest impact ÷ effort fix, with projected score gain.</li>
+        <li><strong>Remediation progress</strong> + <strong>high-risk exposed data</strong> + top breaches.</li>
+      </ul>
+      <p style="font-size:13.5px">Three layouts ship as live options in the prototype: <strong>Executive</strong> (hero score + AI action), <strong>Grid</strong> (uniform metrics), and <strong>Focus</strong> (single priority feed). The score itself renders as numeric, ring, or banded meter.</p>
+    </section>
+
+    <section id="copilot">
+      <div class="sec-n">09</div>
+      <h2>AI Remediation Copilot</h2>
+      <p>The copilot is the product's spine. It appears as a <strong>persistent context-aware rail</strong> that reframes itself per screen, plus inline AI cards inside every module. It is useful, ethical, and premium by design.</p>
+      <div class="grid3" style="margin:18px 0">
+        <div class="card"><div class="aitag">✦ Useful</div><p style="font-size:13px;margin:6px 0 0">Sequences a Today / This Week / Later plan by impact ÷ effort; drafts deletion requests and alias strategy.</p></div>
+        <div class="card"><div class="aitag">✦ Ethical</div><p style="font-size:13px;margin:6px 0 0">Every output is labeled, reviewable, and never sent automatically. Confidence is shown, not hidden.</p></div>
+        <div class="card"><div class="aitag">✦ Premium</div><p style="font-size:13px;margin:6px 0 0">Live "thinking" summaries, clean confidence meters, and a score projection that makes effort feel worth it.</p></div>
+      </div>
+      <p>Surface modes ship as a live toggle: a <strong>persistent rail</strong> (default) or <strong>inline AI cards</strong> woven through each module for a lighter footprint.</p>
+      <div class="aibox" style="margin-top:8px">
+        <div class="aitag">✦ Copilot · example</div>
+        <p style="margin:0;color:var(--t-0)">"You have 2 critical items tied to one reused password. Fixing that single credential closes your largest gap — about <strong style="color:var(--teal)">+12 points</strong>. I've drafted the broker deletion request; review and send when ready."</p>
+      </div>
+    </section>
+
+    <section id="mvp">
+      <div class="sec-n">10</div>
+      <h2>MVP roadmap — next phase</h2>
+      <p>The prototype is the visual + UX source of truth. The recommended build path, privacy-first throughout:</p>
+      <div style="margin-top:12px">
+        <div class="phase"><div class="ph">Phase 1<br/>Foundation</div><div><strong>Ship the shell.</strong><p style="font-size:13.5px;margin:6px 0 0">React + Vite + TypeScript + Tailwind. Tokenize this design system, build the component kit, wire navigation and simulated data. Dark-mode-first, responsive.</p></div></div>
+        <div class="phase"><div class="ph">Phase 2<br/>Real signal</div><div><strong>Connect detection.</strong><p style="font-size:13.5px;margin:6px 0 0">Serverless functions (keys server-side) for breach lookup, footprint &amp; broker scans. One-way credential matching — never store passwords. Per-source confidence.</p></div></div>
+        <div class="phase"><div class="ph">Phase 3<br/>AI core</div><div><strong>Ground the copilot.</strong><p style="font-size:13.5px;margin:6px 0 0">Server-side LLM orchestration for scoring rationale, prioritization, and request drafting. Human-in-the-loop gates on every action; full audit trail.</p></div></div>
+        <div class="phase"><div class="ph">Phase 4<br/>Closing the loop</div><div><strong>Automate remediation.</strong><p style="font-size:13.5px;margin:6px 0 0">Tracked deletion pipelines, recurring monitoring &amp; alerts, alias provisioning. Honest status — no guarantees of complete removal.</p></div></div>
+      </div>
+      <div class="card" style="margin-top:22px;background:linear-gradient(165deg,rgba(45,212,191,.06),var(--bg-2));border-color:var(--teal-line)">
+        <div class="aitag">Guardrails carried into every phase</div>
+        <p style="margin:6px 0 0;font-size:13.5px">Own/authorized data only · no stored passwords · no real passwords requested · keys stay server-side · no simulated hacking · no third-party lookups without consent · clear disclaimers · no absolute legal promises.</p>
+      </div>
+    </section>
+
+    <div class="foot">
+      LeakShield AI · Product vision &amp; design system · All data simulated · <a href="index.html">Open the prototype →</a>
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

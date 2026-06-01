@@ -1,0 +1,87 @@
+import { FootprintFinding, OldAccount, DataBroker } from '../types/privacy';
+
+export const demoFootprint: FootprintFinding[] = [
+  {
+    id: "f1",
+    title: "@alexrivera — public profile",
+    type: "Social profile",
+    source: "Social platform",
+    visibility: "Public",
+    level: "High",
+    exposes: ["Photo", "City", "Employer"],
+    action: "Set profile to private or limit audience.",
+    ai: "High-visibility profile links your real name to your employer and city.",
+    riskReduced: "Restricts unsolicited background profiling",
+  },
+  {
+    id: "f2",
+    title: "People-directory listing",
+    type: "Directory",
+    source: "PeopleLookup",
+    visibility: "Public",
+    level: "High",
+    exposes: ["Full name", "Home address", "Age range"],
+    action: "Submit an opt-out / suppression request.",
+    ai: "Directory aggregates public records — opt-out removes the home address.",
+    riskReduced: "Suppresses physical address public lookup vectors (+3 score points)",
+  },
+  {
+    id: "f3",
+    title: "DataFind profile",
+    type: "Data broker",
+    source: "DataFind",
+    visibility: "Public",
+    level: "High",
+    exposes: ["Name", "Relatives", "Past addresses"],
+    action: "File broker removal (in progress).",
+    ai: "Brokers resell this data. Removal request already drafted.",
+    riskReduced: "Suppresses listing from public commercial data resell feeds (+3 score points)",
+  },
+  {
+    id: "f4",
+    title: "Legacy forum account @arivera_tech",
+    type: "Old account",
+    source: "DevForum",
+    visibility: "Public",
+    level: "Medium",
+    exposes: ["Username", "Old posts", "Email"],
+    action: "Close or anonymize the dormant account.",
+    ai: "Inactive 4 years — closing it shrinks your attack surface.",
+    riskReduced: "Decreases historical tracking footprints (+3 score points)",
+  },
+  {
+    id: "f5",
+    title: "Conference speaker bio",
+    type: "Article",
+    source: "Tech conference site",
+    visibility: "Public",
+    level: "Low",
+    exposes: ["Name", "Job title"],
+    action: "Low risk — leave as-is or request edit.",
+    ai: "Professionally beneficial; minimal privacy risk.",
+    riskReduced: "Maintains standard professional presence",
+  },
+  {
+    id: "f6",
+    title: "Email in public code commit",
+    type: "Exposed contact info",
+    source: "Public repository",
+    visibility: "Public",
+    level: "Medium",
+    exposes: ["work.alias@example.com"],
+    action: "Scrub email from commit history.",
+    ai: "Exposed email invites targeted phishing — scrub or rotate the alias.",
+    riskReduced: "Closes targeted credential phishing vectors (+3 score points)",
+  },
+];
+
+export const demoOldAccounts: OldAccount[] = [
+  { id: "o1", service: "DevForum (@arivera_tech)", lastSeen: "4 years ago", risk: "Medium", reason: "Breached + dormant" },
+  { id: "o2", service: "FitTrack", lastSeen: "2 years ago", risk: "Low", reason: "Holds DOB" },
+  { id: "o3", service: "Old newsletter signup", lastSeen: "3 years ago", risk: "Low", reason: "Sells data" },
+];
+
+export const demoDataBrokers: DataBroker[] = [
+  { id: "db1", name: "DataFind", exposes: ["Name", "Address history", "Relatives"], status: "Removal in progress", since: "Listed since 2021" },
+  { id: "db2", name: "InfoAggregate", exposes: ["Name", "Phone", "Email"], status: "Deletion request sent", since: "Listed since 2022" },
+];

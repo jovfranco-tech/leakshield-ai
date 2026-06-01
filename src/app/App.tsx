@@ -1,0 +1,783 @@
+import React, { useState, useEffect } from 'react';
+import { NavRail } from '../components/layout/NavRail';
+import { Topbar } from '../components/layout/Topbar';
+import { CopilotRail } from '../components/layout/CopilotRail';
+import { Icon } from '../components/ui/Icon';
+import { ScoreRing } from '../components/ui/ScoreRing';
+import { AIInsightCard } from '../components/ui/AIInsightCard';
+
+// Primitives
+import { demoProfile } from '../data/demoPersona';
+import { demoBreaches, highRiskDataClasses } from '../data/demoBreaches';
+import { demoFootprint, demoOldAccounts, demoDataBrokers } from '../data/demoFootprint';
+
+// Features
+import { Dashboard } from '../features/dashboard/Dashboard';
+import { ConsentScreen } from '../features/identity-intake/ConsentScreen';
+import { IntakeScreen } from '../features/identity-intake/IntakeScreen';
+import { BreachIntelligence } from '../features/breach-intelligence/BreachIntelligence';
+import { FootprintScanner } from '../features/public-footprint/FootprintScanner';
+import { DataBrokers } from '../features/public-footprint/DataBrokers';
+import { CopilotWorkspace } from '../features/remediation-copilot/CopilotWorkspace';
+import { TaskBoard } from '../features/task-board/TaskBoard';
+import { TrustCenter } from '../features/trust-center/TrustCenter';
+
+// Libs & Services
+import { calculateScore } from '../lib/riskScoring';
+import { generateDeletionRequest } from '../lib/aiOrchestration';
+import { taskService } from '../services/taskService';
+import { aiService } from '../services/aiService';
+import { ViewType, DashboardLayout, ScoreStyle, CopilotPresentation, TITLES } from './routes';
+import { Task, CopilotData, BreachFinding } from '../types/privacy';
+
+// Toast Component
+const Toast: React.FC<{ msg: string | null }> = ({ msg }) => {
+  if (!msg) return null;
+  return (
+    <div className="fade-in fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-bg-3 border border-line-2 rounded-xl px-4 py-2.5 shadow-[0_20px_50px_-16px_rgba(0,0,0,0.7)] flex gap-2.5 items-center max-w-[90vw]">
+      <Icon name="check-circle" size={17} style={{ color: "var(--teal)" }} />
+      <span className="text-[13px] font-semibold text-t-0">{msg}</span>
+    </div>
+  );
+};
+
+// Main Landing Screen (with Hero)
+const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({ onStart, onTrust }) => {
+  return (
+    <div className="page min-h-screen overflow-y-auto bg-gradient-to-br from-bg-0 via-bg-0 to-bg-1 bg-[radial-gradient(1100px_620px_at_78%_-8%,rgba(34,211,238,0.10),transparent_58%),radial-gradient(900px_520px_at_-8%_4%,rgba(45,212,191,0.10),transparent_55%)]">
+      {/* Top Header */}
+      <div className="flex justify-between items-center px-10 py-5.5 max-w-[1240px] mx-auto">
+        <div className="flex items-center gap-3">
+          <div className="w-[34px] h-[34px] rounded-[10px] bg-gradient-to-br from-teal to-cyan text-[#04110F] flex items-center justify-center shadow-[0_6px_18px_-6px_rgba(45,212,191,0.6)]">
+            <Icon name="shield-check" size={19} />
+          </div>
+          <div className="font-semibold text-[15px] tracking-tight text-t-0">LeakShield AI</div>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <a 
+            className="text-t-2 hover:text-teal font-semibold text-[12.5px] px-3 py-1.5 transition-all duration-130 no-underline" 
+            href="Vision & Strategy.html"
+          >
+            Vision &amp; system
+          </a>
+          <button 
+            className="text-t-2 hover:text-teal font-semibold text-[12.5px] px-3 py-1.5 cursor-pointer bg-transparent border-0 transition-all duration-130"
+            onClick={onTrust}
+          >
+            Trust Center
+          </button>
+          <button 
+            className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold text-[12.5px] px-3.5 py-1.5 border border-line-2 bg-bg-3 hover:bg-bg-2 hover:border-line-3 text-t-0 cursor-pointer transition-all duration-130"
+            onClick={onStart}
+          >
+            Open demo
+          </button>
+        </div>
+      </div>
+
+      {/* Hero Body */}
+      <div className="max-w-[1240px] mx-auto px-10 py-10 lg:py-16 grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-14 items-center">
+        {/* Left Copy */}
+        <div className="fade-in">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25 mb-5.5">
+            <span className="demo-blip" />
+            Simulated demo · no real data
+          </span>
+          <h1 className="text-[44px] md:text-[54px] leading-[1.04] tracking-tight font-semibold text-t-0 m-0">
+            Your privacy,<br />
+            <span className="bg-gradient-to-r from-teal to-cyan bg-clip-text text-transparent">run like a command center.</span>
+          </h1>
+          <p className="text-[17px] md:text-[18px] text-t-1 leading-[1.55] max-w-[480px] mt-5">
+            Detect leaks. Prioritize risk. Clean your digital footprint. LeakShield AI is a privacy copilot that finds your exposure and turns it into a plan you can actually finish.
+          </p>
+          
+          <div className="flex items-center gap-3 mt-7.5">
+            <button 
+              className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold text-[14px] px-5 py-3 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] active:translate-y-[0.5px] cursor-pointer transition-all duration-100 shadow-premium"
+              onClick={onStart}
+            >
+              <Icon name="scan" size={17} />
+              Start privacy scan
+            </button>
+            <button 
+              className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold text-[14px] px-5 py-3 border border-line-2 bg-bg-3 hover:bg-bg-2 hover:border-line-3 text-t-0 cursor-pointer transition-all duration-130"
+              onClick={onTrust}
+            >
+              <Icon name="lock" size={16} />
+              How we protect you
+            </button>
+          </div>
+
+          <div className="flex gap-5.5 mt-8.5 text-t-2 text-[12.5px] flex-wrap">
+            {["No passwords stored", "Your data, your control", "AI you review before acting"].map(t => (
+              <span key={t} className="flex items-center gap-1.5 font-medium">
+                <Icon name="check-circle" size={15} style={{ color: "var(--teal)" }} />
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Preview */}
+        <div className="fade-in relative hidden lg:block">
+          <div className="border border-line rounded-lg p-6 bg-gradient-to-b from-bg-2 to-bg-1 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.8)]">
+            <div className="flex justify-between items-center mb-4.5">
+              <span className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold">Privacy Score</span>
+              <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2.5 py-0.5 rounded-[7px] border border-med/25 bg-med-dim text-med">
+                <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                Fair
+              </span>
+            </div>
+            
+            <div className="flex items-center gap-4.5">
+              <ScoreRing value={64} size={132} />
+              <div className="flex flex-col gap-2.5 flex-1">
+                {[
+                  ["Breach risk", "High", "crit"],
+                  ["Footprint", "Medium", "med"],
+                  ["Brokers", "2 listings", "high"]
+                ].map(([k, v, c]) => (
+                  <div key={k} className="flex justify-between items-center text-[12.5px]">
+                    <span className="text-t-1">{k}</span>
+                    <span className="flex items-center gap-1.5 font-semibold text-t-0">
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: `var(--${c})` }} />
+                      {v}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="relative border border-teal-line bg-gradient-to-b from-teal/6 to-bg-2 rounded-lg p-3.5 overflow-hidden mt-4.5">
+              <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-teal to-cyan" />
+              <span className="inline-flex items-center gap-1.2 text-[10.5px] font-semibold tracking-wider uppercase text-teal mb-1.5">
+                <Icon name="sparkles" size={13} style={{ marginRight: 4 }} />
+                Copilot
+              </span>
+              <div className="text-[12.5px] leading-[1.5] text-t-0">
+                One reused password links your 2 critical breaches. Fix it first — <span className="text-teal font-semibold">+12 score</span>.
+              </div>
+            </div>
+          </div>
+          
+          <div className="border border-line rounded-lg p-4 bg-bg-3 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] absolute -right-4 -bottom-6 w-[188px]">
+            <div className="flex items-center gap-2">
+              <Icon name="check-circle" size={18} style={{ color: "var(--ok)" }} />
+              <div>
+                <div className="font-semibold text-[12.5px] text-t-0 leading-tight">2 of 9 resolved</div>
+                <div className="text-t-2 text-[11px] mt-0.5 leading-none">remediation active</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Features Strip */}
+      <div className="border-t border-b border-line bg-bg-1/50 backdrop-blur-sm mt-10">
+        <div className="max-w-[1240px] mx-auto px-10 py-7.5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
+          {[
+            ["scan", "Detect", "Breaches, public footprint, brokers & old accounts in one scan."],
+            ["sparkles", "Prioritize", "AI ranks by sensitivity and impact — not just recency."],
+            ["file", "Remediate", "Drafts deletion requests and a Today / This Week / Later plan."],
+            ["shield-check", "Control", "You review every AI action. Nothing happens without you."],
+          ].map(([ic, t, d]) => (
+            <div key={t}>
+              <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-teal-dim border border-teal-line text-teal mb-3">
+                <Icon name={ic} size={16} />
+              </div>
+              <div className="text-[14px] font-semibold text-t-0 mb-1 leading-tight">{t}</div>
+              <div className="text-t-2 text-[12px] leading-relaxed">{d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="text-center py-6 text-t-3 text-[12px] font-semibold">
+        LeakShield AI · Demonstration prototype · All names, services and findings are simulated.
+      </div>
+    </div>
+  );
+};
+
+// Reusable Tweaks configuration UI (rendered dynamically)
+const TweaksOverlay: React.FC<{
+  layout: DashboardLayout;
+  scoreStyle: ScoreStyle;
+  copilotMode: CopilotPresentation;
+  accent: string[];
+  onChange: (key: string, val: any) => void;
+}> = ({ layout, scoreStyle, copilotMode, accent, onChange }) => {
+  const [open, setOpen] = useState(false);
+
+  const colors = [
+    ["#2DD4BF", "#22D3EE"], // Teal/Cyan
+    ["#34D399", "#2DD4BF"], // Emerald/Teal
+    ["#8B5CF6", "#22D3EE"], // Violet/Cyan
+    ["#2DD4BF", "#8B5CF6"]  // Teal/Violet
+  ];
+
+  if (!open) {
+    return (
+      <button 
+        className="fixed right-4 bottom-4 z-50 w-9 h-9 rounded-full bg-gradient-to-br from-teal to-cyan text-[#04110F] shadow-lg flex items-center justify-center cursor-pointer border-0 active:scale-95 transition-all duration-100"
+        onClick={() => setOpen(true)}
+        title="Open demo settings panel"
+      >
+        <Icon name="settings" size={17} />
+      </button>
+    );
+  }
+
+  return (
+    <div className="fixed right-4 bottom-4 z-50 w-[260px] bg-bg-1/90 border border-line-2 rounded-xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl flex flex-col gap-3 font-sans select-none text-[12px]">
+      <div className="flex justify-between items-center font-semibold text-t-0 border-b border-line pb-2 mb-1">
+        <span>Demo controls</span>
+        <button className="text-t-2 hover:text-t-0 bg-transparent border-0 cursor-pointer font-bold" onClick={() => setOpen(false)}>✕</button>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Dashboard Layout</span>
+        <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
+          {(["executive", "grid", "focus"] as const).map(l => (
+            <button 
+              key={l}
+              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${layout === l ? 'bg-bg-3 text-t-0' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
+              onClick={() => onChange('dashboardLayout', l)}
+            >
+              {l === 'focus' ? 'Focus' : l === 'grid' ? 'Grid' : 'Exec'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Privacy Score Display</span>
+        <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
+          {(["numeric", "ring", "bar"] as const).map(s => (
+            <button 
+              key={s}
+              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${scoreStyle === s ? 'bg-bg-3 text-t-0' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
+              onClick={() => onChange('scoreStyle', s)}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">AI Copilot Rail</span>
+        <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
+          {(["rail", "inline"] as const).map(m => (
+            <button 
+              key={m}
+              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${copilotMode === m ? 'bg-bg-3 text-t-0' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
+              onClick={() => onChange('copilotMode', m)}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1.5">
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Accent Color Palette</span>
+        <div className="flex gap-2">
+          {colors.map((c, i) => {
+            const active = accent[0] === c[0] && accent[1] === c[1];
+            return (
+              <button 
+                key={i}
+                className={`w-7 h-7 rounded-md relative flex items-center justify-center cursor-pointer border-0 shadow-sm transition-transform duration-100 active:scale-95`}
+                style={{ background: `linear-gradient(135deg, ${c[0]}, ${c[1]})` }}
+                onClick={() => onChange('accent', c)}
+              >
+                {active && (
+                  <svg className="w-3.5 h-3.5 text-bg-0" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M2.5 6.5l2 2 5-5" />
+                  </svg>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const App: React.FC = () => {
+  const [view, setView] = useState<ViewType>("landing");
+  const [toast, setToast] = useState<string | null>(null);
+  const [deletionModal, setDeletionModal] = useState(false);
+  const [narrow, setNarrow] = useState(false);
+  const [railOpen, setRailOpen] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Dynamic state
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [copilotData, setCopilotData] = useState<CopilotData>({
+    summary: "",
+    nextBest: { title: "", why: "", impact: "", effort: "" },
+    plan: { Today: [], 'This Week': [], Later: [] }
+  });
+
+  // Tweak State
+  const [dashboardLayout, setDashboardLayout] = useState<DashboardLayout>("executive");
+  const [scoreStyle, setScoreStyle] = useState<ScoreStyle>("numeric");
+  const [copilotMode, setCopilotMode] = useState<CopilotPresentation>("rail");
+  const [accent, setAccent] = useState<string[]>(["#2DD4BF", "#22D3EE"]);
+
+  // Set accents dynamically
+  useEffect(() => {
+    document.documentElement.style.setProperty("--accent-a", accent[0]);
+    document.documentElement.style.setProperty("--accent-b", accent[1]);
+    document.documentElement.style.setProperty("--teal", accent[0]);
+    document.documentElement.style.setProperty("--cyan", accent[1]);
+  }, [accent]);
+
+  // Load dynamic data on mount & task updates
+  useEffect(() => {
+    const loadTasksAndPlan = async () => {
+      const list = await taskService.getTasks();
+      setTasks(list);
+      
+      const plan = await aiService.getRemediationPlan(list);
+      setCopilotData({
+        summary: "You have 2 critical items tied to one reused password. Fixing that single credential closes your largest gap and could lift your score by ~12 points.",
+        nextBest: {
+          title: "Rotate your reused password",
+          why: "One password is exposed in 2 breaches (ConnectHub + DevForum). It's your single highest-impact fix.",
+          impact: "+12 score",
+          effort: "~5 min",
+        },
+        plan
+      });
+    };
+    loadTasksAndPlan();
+  }, []);
+
+  const handleUpdateTasks = async (updated: Task[]) => {
+    setTasks(updated);
+    // Persist status updates to service
+    for (const t of updated) {
+      await taskService.updateTaskStatus(t.id, t.status);
+    }
+    // Refresh plan sequence
+    const plan = await aiService.getRemediationPlan(updated);
+    setCopilotData((prev: CopilotData) => ({ ...prev, plan }));
+  };
+
+  const handleResetTasks = async () => {
+    const fresh = await taskService.resetTasks();
+    setTasks(fresh);
+    const plan = await aiService.getRemediationPlan(fresh);
+    setCopilotData((prev: CopilotData) => ({ ...prev, plan }));
+  };
+
+  // Resize listener
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width:1180px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+
+  const showToast = (m: string) => {
+    setToast(m);
+    const windowToken = (window as any);
+    clearTimeout(windowToken.__t);
+    windowToken.__t = setTimeout(() => setToast(null), 2400);
+  };
+
+  const nav = (v: string) => {
+    setView(v as ViewType);
+    document.querySelector(".content-container-column")?.scrollTo(0, 0);
+  };
+
+  const dynamicScore = calculateScore(tasks);
+  
+  // Dynamic risk summary card objects
+  const breachesCount = demoBreaches.length;
+  const criticalCount = demoBreaches.filter((b: BreachFinding) => b.severity === 'Critical' && tasks.find(t => t.id === 't1')?.status !== 'Resolved').length;
+  const highCount = demoBreaches.filter((b: BreachFinding) => b.severity === 'High' && tasks.find(t => t.id === 't2')?.status !== 'Resolved').length;
+  
+  const brokerCount = demoDataBrokers.filter(b => tasks.find(t => t.id === (b.id === 'db1' ? 't4' : 't7'))?.status !== 'Resolved').length;
+
+  const dynamicRisk = {
+    breach: { 
+      label: "Breach Risk", 
+      level: criticalCount > 0 ? "Critical" : "High", 
+      value: `${breachesCount} breaches`, 
+      sub: `${criticalCount} critical · ${highCount} high`, 
+      trend: -1 
+    } as const,
+    footprint: { 
+      label: "Footprint Risk", 
+      level: "Medium" as const, 
+      value: "6 findings", 
+      sub: "1 high-visibility", 
+      trend: -2 
+    },
+    oldAccounts: { 
+      label: "Old Accounts", 
+      level: "Medium" as const, 
+      value: "3 dormant", 
+      sub: "inactive 2–4 yrs", 
+      trend: 0 
+    },
+    broker: { 
+      label: "Data-Broker Exposure", 
+      level: brokerCount > 0 ? "High" : "ok", 
+      value: `${brokerCount} listings`, 
+      sub: brokerCount > 1 ? "opt-out active" : brokerCount === 1 ? "1 suppression drafted" : "0 listings", 
+      trend: 0 
+    } as const,
+  };
+
+  // Remediation totals
+  const resolved = tasks.filter(t => t.status === "Resolved").length;
+  const inProgress = tasks.filter(t => t.status === "In Progress").length;
+  const total = tasks.length;
+  const percent = total > 0 ? Math.round((resolved / total) * 100) : 0;
+
+  const dynamicProgress = { resolved, inProgress, total, percent };
+
+  // AI-native strategy aliases
+  const handleResolveTaskFromBreach = (taskId: string, isResolved: boolean) => {
+    const updated = tasks.map(t => t.id === taskId ? { ...t, status: (isResolved ? 'Resolved' : 'Pending') as Task['status'] } : t);
+    handleUpdateTasks(updated);
+  };
+
+  const toggleRail = () => {
+    if (narrow) {
+      setDrawerOpen(o => !o);
+    } else {
+      setRailOpen(o => !o);
+    }
+  };
+
+  const isLandingOrOnboarding = ["landing", "consent", "intake"].includes(view);
+  const railEnabled = copilotMode === "rail" && !isLandingOrOnboarding && view !== "copilot";
+  const inGridRail = railEnabled && !narrow && railOpen;
+  const drawerRail = railEnabled && narrow;
+
+  // View Router Render
+  const renderScreen = () => {
+    switch (view) {
+      case "dashboard":
+        return (
+          <Dashboard 
+            profile={demoProfile}
+            score={dynamicScore}
+            remediation={dynamicProgress}
+            breaches={demoBreaches}
+            highRiskData={highRiskDataClasses}
+            risk={dynamicRisk}
+            copilot={copilotData}
+            dashboardLayout={dashboardLayout}
+            scoreStyle={scoreStyle}
+            onNav={nav}
+            onToast={showToast}
+          />
+        );
+      case "identity":
+        return <IntakeScreen profile={demoProfile} inApp onToast={showToast} />;
+      case "breaches":
+        return (
+          <BreachIntelligence 
+            breaches={demoBreaches}
+            inlineAI={copilotMode === "inline"}
+            onToast={showToast}
+            onResolveTask={handleResolveTaskFromBreach}
+          />
+        );
+      case "footprint":
+        return (
+          <FootprintScanner 
+            findings={demoFootprint}
+            inlineAI={copilotMode === "inline"}
+            onToast={showToast}
+            onOpenDeletion={() => setDeletionModal(true)}
+          />
+        );
+      case "brokers":
+        return (
+          <DataBrokers 
+            brokers={demoDataBrokers}
+            oldAccounts={demoOldAccounts}
+            inlineAI={copilotMode === "inline"}
+            onToast={showToast}
+            onOpenDeletion={() => setDeletionModal(true)}
+          />
+        );
+      case "copilot":
+        return (
+          <CopilotWorkspace 
+            profile={demoProfile}
+            copilotData={copilotData}
+            onToast={showToast}
+            onNav={nav}
+            currentScoreValue={dynamicScore.value}
+          />
+        );
+      case "tasks":
+        return (
+          <TaskBoard 
+            tasks={tasks}
+            onUpdateTasks={handleUpdateTasks}
+            onToast={showToast}
+          />
+        );
+      case "trust":
+        return <TrustCenter onToast={showToast} onResetTasks={handleResetTasks} />;
+      default:
+        return null;
+    }
+  };
+
+  // Full-screen Onboarding Layouts
+  if (view === "landing") {
+    return (
+      <>
+        <LandingScreen onStart={() => nav("consent")} onTrust={() => nav("trust")} />
+        <TweaksOverlay layout={dashboardLayout} scoreStyle={scoreStyle} copilotMode={copilotMode} accent={accent} onChange={(k, v) => {
+          if (k === 'dashboardLayout') setDashboardLayout(v);
+          if (k === 'scoreStyle') setScoreStyle(v);
+          if (k === 'copilotMode') setCopilotMode(v);
+          if (k === 'accent') setAccent(v);
+        }} />
+      </>
+    );
+  }
+
+  if (view === "consent") {
+    return (
+      <>
+        <ConsentScreen onBack={() => nav("landing")} onContinue={() => nav("intake")} />
+        <TweaksOverlay layout={dashboardLayout} scoreStyle={scoreStyle} copilotMode={copilotMode} accent={accent} onChange={(k, v) => {
+          if (k === 'dashboardLayout') setDashboardLayout(v);
+          if (k === 'scoreStyle') setScoreStyle(v);
+          if (k === 'copilotMode') setCopilotMode(v);
+          if (k === 'accent') setAccent(v);
+        }} />
+      </>
+    );
+  }
+
+  if (view === "intake") {
+    return (
+      <div className="page min-h-screen bg-bg-0">
+        <IntakeScreen profile={demoProfile} onComplete={() => nav("dashboard")} onToast={showToast} />
+        <TweaksOverlay layout={dashboardLayout} scoreStyle={scoreStyle} copilotMode={copilotMode} accent={accent} onChange={(k, v) => {
+          if (k === 'dashboardLayout') setDashboardLayout(v);
+          if (k === 'scoreStyle') setScoreStyle(v);
+          if (k === 'copilotMode') setCopilotMode(v);
+          if (k === 'accent') setAccent(v);
+        }} />
+        <Toast msg={toast} />
+      </div>
+    );
+  }
+
+  return (
+    <div className={`app-shell w-full h-screen overflow-hidden ${inGridRail ? 'has-rail' : ''}`}>
+      {/* Left side Nav Rail */}
+      <NavRail view={view} onNav={nav} profile={demoProfile} />
+
+      {/* Main Column */}
+      <main className="main-column flex flex-col h-full min-w-0 overflow-hidden relative">
+        <Topbar 
+          view={view}
+          title={TITLES[view] || ""}
+          onToast={showToast}
+          copilotMode={copilotMode}
+          onNav={nav}
+          railEnabled={railEnabled}
+          railOpen={railOpen}
+          drawerOpen={drawerOpen}
+          toggleRail={toggleRail}
+        />
+        
+        {/* Scrollable Screen Content */}
+        <div className="content-container-column flex-1 overflow-y-auto px-6.5 py-6.5 pb-14">
+          {renderScreen()}
+        </div>
+      </main>
+
+      {/* Persistent Copilot Rail (Wide Screens) */}
+      {inGridRail && (
+        <CopilotRail 
+          view={view}
+          copilotData={copilotData}
+          onNav={nav}
+          onToast={showToast}
+          onOpenDeletion={() => setDeletionModal(true)}
+        />
+      )}
+
+      {/* Overlay Copilot Drawer (Narrow Screens) */}
+      {drawerRail && (
+        <>
+          {drawerOpen && (
+            <div 
+              className="scrim fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px] animate-fadeIn" 
+              onClick={() => setDrawerOpen(false)} 
+            />
+          )}
+          <CopilotRail 
+            view={view}
+            copilotData={copilotData}
+            className={`fixed top-0 right-0 h-full w-[min(372px,88vw)] z-50 shadow-[-40px_0_90px_-30px_rgba(0,0,0,0.85)] transition-transform duration-[0.26s] cubic-bezier(0.2,0.7,0.2,1) ${
+              drawerOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
+            onNav={(v) => { 
+              setDrawerOpen(false); 
+              nav(v); 
+            }} 
+            onToast={showToast} 
+            onOpenDeletion={() => { 
+              setDrawerOpen(false); 
+              setDeletionModal(true); 
+            }} 
+          />
+        </>
+      )}
+
+      {/* Deletion Draft Modal Trigger */}
+      {deletionModal && (
+        <div 
+          className="fixed inset-0 z-[60] bg-black/72 backdrop-blur-[6px] grid place-items-center p-6 cursor-pointer"
+          onClick={() => setDeletionModal(false)}
+        >
+          <div 
+            className="fade-in cursor-default flex flex-col w-full max-w-[720px] max-h-[88vh] overflow-hidden bg-bg-1 border border-line-2 rounded-xl shadow-[0_40px_100px_-30px_rgba(0,0,0,0.8)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center px-[22px] py-[18px] border-b border-line sticky top-0 bg-bg-1 z-10 flex-shrink-0">
+              <div>
+                <div className="text-[17px] font-semibold tracking-tight text-t-0">AI Deletion Request</div>
+                <div className="text-t-2 text-[12.5px] mt-0.5">Drafted by the copilot — review before sending</div>
+              </div>
+              <button 
+                className="w-9 h-9 rounded-lg border border-line bg-bg-2 hover:bg-bg-3 hover:text-t-0 text-t-1 flex items-center justify-center cursor-pointer transition-all duration-130"
+                onClick={() => setDeletionModal(false)}
+              >
+                <Icon name="x" size={16} />
+              </button>
+            </div>
+            
+            <div className="p-[22px] overflow-y-auto flex-1">
+              <div className="mb-4 bg-high/10 border border-high/30 rounded-lg p-3.5 flex items-center gap-3">
+                <div className="w-[30px] h-[30px] rounded-full flex items-center justify-center bg-high/20 text-high flex-shrink-0">
+                  <Icon name="alert" size={15} style={{ color: 'var(--high)' }} />
+                </div>
+                <div>
+                  <div className="text-[12.5px] font-semibold text-t-0 leading-tight">AI-generated draft · Human review required</div>
+                  <div className="text-t-2 text-[11.5px] mt-0.5">Verify all pre-filled identity details before submitting. No data is transmitted in this demo.</div>
+                </div>
+              </div>
+              <AIInsightCard 
+                tag="AI Drafting" 
+                lead 
+                confidence="High"
+                body="I generated a formal deletion request tailored to this broker using regional compliance frameworks. Review the text, then choose to copy or queue it." 
+              />
+              
+              <div className="flex flex-col gap-1.5 mt-4">
+                <label className="text-[12px] font-semibold text-t-1">Target broker</label>
+                <div className="flex gap-1 bg-bg-inset p-1 rounded-lg border border-line w-fit">
+                  {["DataFind", "InfoAggregate"].map(t => (
+                    <button 
+                      key={t} 
+                      className={`px-3 py-1 rounded-md text-[12px] font-semibold cursor-pointer border-0 transition-all duration-120 bg-transparent ${
+                        (t === 'DataFind') 
+                          ? "bg-bg-3 text-t-0" 
+                          : "text-t-1 hover:text-t-0"
+                      }`} 
+                      onClick={() => showToast(`Selected broker: ${t}`)}
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5 mt-4">
+                <label className="text-[12px] font-semibold text-t-1">Framework & legal scope</label>
+                <div className="flex gap-1 bg-bg-inset p-1 rounded-lg border border-line w-fit flex-wrap">
+                  {(['CCPA', 'GDPR', 'ARCO', 'Generic'] as const).map(law => (
+                    <button 
+                      key={law} 
+                      className={`px-3.5 py-1 rounded-md text-[11.5px] font-semibold cursor-pointer border-0 transition-all duration-120 bg-transparent ${
+                        law === 'CCPA' 
+                          ? "bg-bg-3 text-teal shadow-premium" 
+                          : "text-t-1 hover:text-t-0"
+                      }`} 
+                      onClick={() => showToast(`Selected legal scope: ${law}`)}
+                    >
+                      {law === 'Generic' ? 'Generic Support' : law}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5 mt-4">
+                <label className="text-[12px] font-semibold text-t-1">Generated request</label>
+                <pre className="m-0 whitespace-pre-wrap font-mono text-[12px] leading-relaxed text-t-1 bg-bg-inset border border-line rounded-lg p-4">
+                  {generateDeletionRequest("DataFind", "CCPA", demoProfile.name, demoProfile.location)}
+                </pre>
+              </div>
+
+              <div className="flex items-center gap-1.5 my-3.5 text-t-2 text-[11.5px]">
+                <Icon name="shield-check" size={14} style={{ color: "var(--teal)", flexShrink: 0 }} />
+                <span>No data is stored or transmitted in this demo. Real sends would route through a server-side queue.</span>
+              </div>
+
+              <div className="flex justify-end gap-2.5">
+                <button 
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 border border-line-2 bg-bg-3 hover:bg-bg-2 text-t-1 hover:text-t-0 cursor-pointer transition-all duration-130"
+                  onClick={() => { 
+                    navigator.clipboard?.writeText(generateDeletionRequest("DataFind", "CCPA", demoProfile.name, demoProfile.location)); 
+                    showToast("Draft copied to clipboard"); 
+                  }}
+                >
+                  <Icon name="file" size={15} />
+                  Copy draft
+                </button>
+                <button 
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] cursor-pointer transition-all duration-130"
+                  onClick={() => { 
+                    showToast("Queued for review — nothing sent in demo"); 
+                    setTimeout(() => setDeletionModal(false), 700); 
+                  }}
+                >
+                  <Icon name="send" size={15} />
+                  Queue for review
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Demo Tweak Controls */}
+      <TweaksOverlay 
+        layout={dashboardLayout} 
+        scoreStyle={scoreStyle} 
+        copilotMode={copilotMode} 
+        accent={accent}
+        onChange={(k, v) => {
+          if (k === 'dashboardLayout') setDashboardLayout(v);
+          if (k === 'scoreStyle') setScoreStyle(v);
+          if (k === 'copilotMode') setCopilotMode(v);
+          if (k === 'accent') setAccent(v);
+        }} 
+      />
+
+      <Toast msg={toast} />
+    </div>
+  );
+};
+export default App;

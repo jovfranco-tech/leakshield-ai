@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* surfaces — charcoal / slate / near-black */
+    --bg-0: #080B0F;        /* app base */
+    --bg-1: #0D1218;        /* panels */
+    --bg-2: #121A22;        /* cards */
+    --bg-3: #18222D;        /* elevated / hover */
+    --bg-inset: #0A0E13;    /* wells */
+    --line: rgba(255,255,255,.07);
+    --line-2: rgba(255,255,255,.12);
+    --line-3: rgba(255,255,255,.18);
+
+    /* text */
+    --t-0: #EAF1F6;
+    --t-1: #9CABB8;
+    --t-2: #647585;
+    --t-3: #48586A;
+
+    /* accents — teal / cyan */
+    --teal: #2DD4BF;
+    --cyan: #22D3EE;
+    --teal-dim: rgba(45,212,191,.13);
+    --teal-line: rgba(45,212,191,.30);
+    --cyan-dim: rgba(34,211,238,.12);
+
+    /* risk — restrained, non-alarmist */
+    --crit: #FB6E72;
+    --crit-dim: rgba(251,110,114,.13);
+    --high: #F4A14A;
+    --high-dim: rgba(244,161,74,.13);
+    --med: #E4C465;
+    --med-dim: rgba(228,196,101,.13);
+    --low: #7FA7C4;
+    --low-dim: rgba(127,167,196,.13);
+    --ok: #34D399;
+    --ok-dim: rgba(52,211,153,.13);
+
+    --r-sm: 8px; 
+    --r-md: 12px; 
+    --r-lg: 16px; 
+    --r-xl: 22px;
+    
+    --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 12px 32px -12px rgba(0,0,0,.6);
+    --glow: 0 0 0 1px var(--teal-line), 0 0 40px -8px rgba(45,212,191,.35);
+
+    --nav-w: 248px; 
+    --rail-w: 372px;
+    --font: "Geist", ui-sans-serif, system-ui, -apple-system, sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+    --accent-a: var(--teal);
+    --accent-b: var(--cyan);
+  }
+
+  body {
+    background-color: var(--bg-0);
+    color: var(--t-0);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgba(45,212,191,.3);
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-2);
+    border-radius: 20px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--line-3);
+    background-clip: content-box;
+  }
+}
+
+@layer components {
+  /* ── app shell layouts ── */
+  .app-shell {
+    display: grid;
+    grid-template-columns: var(--nav-w) 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .app-shell.has-rail {
+    grid-template-columns: var(--nav-w) 1fr var(--rail-w);
+  }
+
+  .nav-rail {
+    background-color: var(--bg-1);
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .main-column {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(34,211,238,.05), transparent 60%),
+      radial-gradient(900px 500px at -5% 0%, rgba(45,212,191,.05), transparent 55%),
+      var(--bg-0);
+  }
+
+  /* ── components ── */
+  .btn-primary-grad {
+    background: linear-gradient(180deg, var(--accent-a), color-mix(in oklab, var(--accent-a), black 14%));
+    color: #04110F;
+    box-shadow: 0 8px 22px -10px rgba(45,212,191,.7);
+    transition: filter 0.13s, transform 0.1s;
+  }
+  .btn-primary-grad:hover {
+    filter: brightness(1.07);
+  }
+  .btn-primary-grad:active {
+    transform: translateY(0.5px);
+  }
+
+  .demo-blip {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--med);
+    box-shadow: 0 0 0 0 var(--med);
+    animation: blip 2.4s infinite;
+  }
+
+  /* ── animations ── */
+  .fade-in {
+    animation: fadeIn .4s ease both;
+  }
+  .spin {
+    animation: spin 1s linear infinite;
+  }
+  .stagger > * {
+    animation: fadeIn .45s ease both;
+  }
+  .stagger > *:nth-child(2) { animation-delay: .05s; }
+  .stagger > *:nth-child(3) { animation-delay: .1s; }
+  .stagger > *:nth-child(4) { animation-delay: .15s; }
+  .stagger > *:nth-child(5) { animation-delay: .2s; }
+  .stagger > *:nth-child(6) { animation-delay: .25s; }
+}
+
+@keyframes blip {
+  0% { box-shadow: 0 0 0 0 rgba(228,196,101,.5); }
+  70% { box-shadow: 0 0 0 7px rgba(228,196,101,0); }
+  100% { box-shadow: 0 0 0 0 rgba(228,196,101,0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* responsive overrides */
+@media (max-width: 1180px) {
+  .app-shell.has-rail {
+    grid-template-columns: var(--nav-w) 1fr;
+  }
+}
+@media (max-width: 860px) {
+  .app-shell, .app-shell.has-rail {
+    grid-template-columns: 1fr;
+  }
+}
