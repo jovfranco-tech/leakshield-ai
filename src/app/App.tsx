@@ -75,7 +75,7 @@ const secureLoad = (key: string) => {
 };
 
 // Premium Touch: Threat Mesh Canvas Network Background Component (Zero-Dependency)
-const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'medium' | 'fast'; theme?: 'dark' | 'light' | 'luxury' }> = ({ scoreValue = 72, speed = 'medium', theme = 'dark' }) => {
+const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'medium' | 'fast'; theme?: 'dark' | 'light' | 'luxury' | 'tactical' }> = ({ scoreValue = 72, speed = 'medium', theme = 'dark' }) => {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -115,6 +115,17 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'me
     };
     document.addEventListener('visibilitychange', handleVisibility);
 
+    // Battery monitoring governor (Recommendation 15)
+    let isLowPower = false;
+    if ('getBattery' in navigator) {
+      (navigator as any).getBattery().then((battery: any) => {
+        isLowPower = battery.level < 0.20 && !battery.charging;
+        battery.addEventListener('levelchange', () => {
+          isLowPower = battery.level < 0.20 && !battery.charging;
+        });
+      });
+    }
+
     // Particle Cursor Gravity listener (Recommendation 3)
     let mouseX = -9999;
     let mouseY = -9999;
@@ -139,6 +150,8 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'me
       });
     }
 
+    let frameCount = 0;
+
     const draw = () => {
       // Throttle CPU when page is in the background
       if (!isVisible) {
@@ -146,9 +159,22 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'me
         return;
       }
 
+      // Conserve battery dynamically by throttling to 30 FPS on low battery
+      if (isLowPower) {
+        frameCount++;
+        if (frameCount % 2 === 0) {
+          animationId = requestAnimationFrame(draw);
+          return;
+        }
+      }
+
       ctx.clearRect(0, 0, width, height);
-      ctx.strokeStyle = theme === 'light' ? 'rgba(15, 23, 42, 0.04)' : theme === 'luxury' ? 'rgba(212, 175, 55, 0.05)' : 'rgba(45, 212, 191, 0.035)';
-      ctx.fillStyle = theme === 'light' ? 'rgba(15, 23, 42, 0.08)' : theme === 'luxury' ? 'rgba(212, 175, 55, 0.1)' : 'rgba(45, 212, 191, 0.08)';
+      ctx.strokeStyle = theme === 'light' ? 'rgba(15, 23, 42, 0.04)' : theme === 'luxury' ? 'rgba(212, 175, 55, 0.05)' : theme === 'tactical' ? 'rgba(255, 51, 82, 0.045)' : 'rgba(45, 212, 191, 0.035)';
+      ctx.fillStyle = theme === 'light' ? 'rgba(15, 23, 42, 0.08)' : theme === 'luxury' ? 'rgba(212, 175, 55, 0.1)' : theme === 'tactical' ? 'rgba(255, 51, 82, 0.12)' : 'rgba(45, 212, 191, 0.08)';
+
+      // Bio-reactive pulsing latido based on exposure severity (Recommendation 1)
+      const pulsePeriod = Math.max(700, scoreValue * 20); // slower pulse if secure, faster warning pulse if exposed
+      const pulseScale = 1 + Math.sin(Date.now() / pulsePeriod) * 0.20;
 
       for (let i = 0; i < particleCount; i++) {
         const p = particles[i];
@@ -180,7 +206,8 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'me
         if (p.y < 0 || p.y > height) p.vy *= -1;
 
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        // Multiply by pulseScale to breathe bio-reactively
+        ctx.arc(p.x, p.y, p.r * pulseScale, 0, Math.PI * 2);
         ctx.fill();
 
         for (let j = i + 1; j < particleCount; j++) {
@@ -205,7 +232,7 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'me
           continue;
         }
         ctx.beginPath();
-        ctx.strokeStyle = theme === 'light' ? `rgba(15, 23, 42, ${rp.opacity * 0.7})` : theme === 'luxury' ? `rgba(212, 175, 55, ${rp.opacity * 0.9})` : `rgba(34, 211, 238, ${rp.opacity})`;
+        ctx.strokeStyle = theme === 'light' ? `rgba(15, 23, 42, ${rp.opacity * 0.7})` : theme === 'luxury' ? `rgba(212, 175, 55, ${rp.opacity * 0.9})` : theme === 'tactical' ? `rgba(255, 51, 82, ${rp.opacity})` : `rgba(34, 211, 238, ${rp.opacity})`;
         ctx.lineWidth = 1.4;
         ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
         ctx.stroke();
@@ -224,7 +251,7 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'me
     };
   }, [scoreValue, speed, theme]);
 
-  return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none opacity-60" />;
+  return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none opacity-60 threat-mesh-canvas" />;
 };;
 
 // Centralized Error Boundary Component to isolate failures beautifully
@@ -446,7 +473,7 @@ const TweaksOverlay: React.FC<{
   accent: string[];
   persistentStorage: boolean;
   language: 'es' | 'en';
-  theme: 'dark' | 'light' | 'luxury';
+  theme: 'dark' | 'light' | 'luxury' | 'tactical';
   particleSpeed: 'slow' | 'medium' | 'fast';
   density: 'compact' | 'normal' | 'relaxed';
   noiseOpacity: number;
@@ -476,7 +503,7 @@ const TweaksOverlay: React.FC<{
     session: "Session", local: "Local (XOR)",
     lang: "Language",
     theme: "Interface Theme",
-    dark: "Dark", light: "Light (Exec)", luxury: "Luxury Gold",
+    dark: "Dark", light: "Light (Exec)", luxury: "Luxury Gold", tactical: "Tactical Red",
     meshSpeed: "ThreatMesh Speed",
     slow: "Slow", med: "Med", fast: "Fast",
     accentColor: "Accent Color Palette"
@@ -492,7 +519,7 @@ const TweaksOverlay: React.FC<{
     session: "Sesión", local: "Local (XOR)",
     lang: "Idioma / Localization",
     theme: "Tema de Interfaz",
-    dark: "Oscuro", light: "Claro (Ejec.)", luxury: "Lujo Oro",
+    dark: "Oscuro", light: "Claro (Ejec.)", luxury: "Lujo Oro", tactical: "Táctico Rojo",
     meshSpeed: "Velocidad ThreatMesh",
     slow: "Lenta", med: "Media", fast: "Rápida",
     accentColor: "Paleta de Colores de Acento"
@@ -564,14 +591,14 @@ const TweaksOverlay: React.FC<{
 
       <div className="flex flex-col gap-1">
         <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">{labels.theme}</span>
-        <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
-          {(["dark", "light", "luxury"] as const).map(th => (
+        <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line flex-wrap gap-0.5">
+          {(["dark", "light", "luxury", "tactical"] as const).map(th => (
             <button 
               key={th}
-              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${theme === th ? 'bg-bg-3 text-t-0 shadow-premium' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
+              className={`flex-grow text-center py-1 px-1 rounded-md capitalize font-semibold cursor-pointer border-0 text-[11px] ${theme === th ? 'bg-bg-3 text-t-0 shadow-premium font-bold' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
               onClick={() => onChange('theme', th)}
             >
-              {th === 'dark' ? labels.dark : th === 'light' ? labels.light : labels.luxury}
+              {th === 'dark' ? labels.dark : th === 'light' ? labels.light : th === 'luxury' ? labels.luxury : labels.tactical}
             </button>
           ))}
         </div>
@@ -695,6 +722,12 @@ export const AppInternal: React.FC = () => {
   const [railOpen, setRailOpen] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Camera gestures navigation simulator states (v0.8.0 Premium - Recommendation 3)
+  const [cameraTrackingOpen, setCameraTrackingOpen] = useState(false);
+  const [gesturesEnabled, setGesturesEnabled] = useState(false);
+  const [faceMeshCalibrated, setFaceMeshCalibrated] = useState(false);
+  const [simulatedFaceX, setSimulatedFaceX] = useState(0); // Range: -50 to 50 for lateral head tilts
+
   // Dynamic state loaded via decoupled hooks
   const [copilotData, setCopilotData] = useState<CopilotData>({
     summary: "",
@@ -709,7 +742,7 @@ export const AppInternal: React.FC = () => {
   const [accent, setAccent] = useState<string[]>(["#2DD4BF", "#22D3EE"]);
   const [persistentStorage, setPersistentStorage] = useState(false);
   const [language, setLanguage] = useState<'es' | 'en'>('es');
-  const [theme, setTheme] = useState<'dark' | 'light' | 'luxury'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light' | 'luxury' | 'tactical'>('dark');
   const [density, setDensity] = useState<'compact' | 'normal' | 'relaxed'>('normal');
   const [noiseOpacity, setNoiseOpacity] = useState<number>(0.018);
   const [activeProfile, setActiveProfile] = useState<'personal' | 'trabajo' | 'finanzas'>('personal');
@@ -723,11 +756,13 @@ export const AppInternal: React.FC = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
-    document.body.classList.remove('light-theme', 'luxury-theme');
+    document.body.classList.remove('light-theme', 'luxury-theme', 'tactical-theme');
     if (theme === 'light') {
       document.body.classList.add('light-theme');
     } else if (theme === 'luxury') {
       document.body.classList.add('luxury-theme');
+    } else if (theme === 'tactical') {
+      document.body.classList.add('tactical-theme');
     }
   }, [theme]);
 
@@ -873,7 +908,7 @@ export const AppInternal: React.FC = () => {
     };
     
     // Play acoustic micro-signal on navigation click
-    playSound('click');
+    playSound('lens' as any);
 
     const cleanUpLens = () => {
       setTimeout(() => setLensTransitioning(false), 450);
@@ -1105,6 +1140,7 @@ export const AppInternal: React.FC = () => {
             onNav={nav}
             currentScoreValue={dynamicScore.value}
             language={language}
+            theme={theme}
           />
         );
       case "tasks":
@@ -1721,6 +1757,152 @@ export const AppInternal: React.FC = () => {
                 {language === 'en' ? "Close Auditor" : "Cerrar Auditor"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Camera Gesture Tracker Button (v0.8.0 - Recommendation 3) */}
+      <button 
+        className="fixed right-16 bottom-4 z-50 w-9 h-9 rounded-full bg-bg-3 border border-line-2 hover:border-teal-line text-t-1 hover:text-teal shadow-lg flex items-center justify-center cursor-pointer active:scale-95 transition-all duration-100 no-print"
+        onClick={() => { setCameraTrackingOpen(prev => !prev); playSound('click'); }}
+        title={language === 'en' ? "Camera Gestures Navigation" : "Navegación por Gestos de Cámara"}
+      >
+        <span className="text-base">📸</span>
+      </button>
+
+      {/* Simulated Camera Tracking FaceMesh Navigation Panel (v0.8.0 - Recommendation 3) */}
+      {cameraTrackingOpen && (
+        <div className="fixed right-4 bottom-16 z-50 w-[260px] bg-bg-1 border border-line-2 rounded-xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl animate-fadeIn font-sans select-none text-[12px] text-t-1 no-print">
+          <div className="flex justify-between items-center font-semibold text-t-0 border-b border-line pb-2 mb-3">
+            <span className="flex items-center gap-1.5">
+              <span className={`w-2 h-2 rounded-full ${gesturesEnabled ? 'bg-ok animate-pulse' : 'bg-t-3'}`} />
+              {language === 'en' ? "Camera Head-Tilt Gestures" : "Navegación por Gestos (v0.8.0)"}
+            </span>
+            <button className="text-t-2 hover:text-t-0 bg-transparent border-0 cursor-pointer font-bold" onClick={() => setCameraTrackingOpen(false)}>✕</button>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <span>{language === 'en' ? "Enable gesture routing" : "Activar gestos de cámara"}</span>
+              <button 
+                className={`w-9 h-5 rounded-full relative transition-all border-0 cursor-pointer ${gesturesEnabled ? 'bg-teal' : 'bg-bg-inset border border-line'}`}
+                onClick={() => {
+                  setGesturesEnabled(!gesturesEnabled);
+                  playSound('touchid' as any);
+                  if (!gesturesEnabled) {
+                    setFaceMeshCalibrated(false);
+                    setTimeout(() => {
+                      setFaceMeshCalibrated(true);
+                      playSound('success');
+                      showToast(language === 'en' ? "FaceMesh calibrated successfully!" : "¡Modelo FaceMesh calibrado con éxito!");
+                    }, 1200);
+                  }
+                }}
+              >
+                <div className={`w-4 h-4 rounded-full bg-[#04110F] absolute top-0.5 transition-all ${gesturesEnabled ? 'left-4.5' : 'left-0.5'}`} />
+              </button>
+            </div>
+
+            {/* Virtual High-Tech Camera Monitor Canvas Feed */}
+            <div className="relative h-28 bg-bg-inset border border-line rounded-lg overflow-hidden flex items-center justify-center">
+              {/* Scanline or target crosshair */}
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.003] to-white/[0.015] pointer-events-none" />
+              <div className="absolute left-1/2 top-0 bottom-0 w-[1px] bg-teal/10 pointer-events-none" />
+              <div className="absolute top-1/2 left-0 right-0 h-[1px] bg-teal/10 pointer-events-none" />
+
+              {gesturesEnabled ? (
+                <>
+                  {!faceMeshCalibrated ? (
+                    <div className="flex flex-col items-center justify-center text-center animate-pulse text-teal font-mono text-[10.5px]">
+                      <span className="spin text-lg mb-1.5">⚙️</span>
+                      <span>{language === 'en' ? "CALIBRATING FACEMESH..." : "CALIBRANDO FACEMESH..."}</span>
+                    </div>
+                  ) : (
+                    <>
+                      {/* High-tech vector wireframe face drawn dynamically using SVG */}
+                      <svg className="w-full h-full" viewBox="0 0 200 100">
+                        {/* Eyes, nose, mouth dots shifting with simulatedFaceX */}
+                        <g transform={`translate(${100 + simulatedFaceX}, 50)`} className="transition-transform duration-150">
+                          {/* Face contour oval */}
+                          <ellipse cx="0" cy="0" rx="30" ry="40" stroke="var(--teal)" strokeWidth="1" fill="none" opacity="0.3" />
+                          {/* Horizontal mesh lines */}
+                          <path d="M -30 0 Q 0 10 30 0" stroke="var(--teal)" strokeWidth="0.5" fill="none" opacity="0.2" />
+                          <path d="M -25 -15 Q 0 -5 25 -15" stroke="var(--teal)" strokeWidth="0.5" fill="none" opacity="0.15" />
+                          <path d="M -25 15 Q 0 25 25 15" stroke="var(--teal)" strokeWidth="0.5" fill="none" opacity="0.15" />
+                          
+                          {/* Eyes */}
+                          <circle cx="-10" cy="-10" r="1.5" fill="var(--teal)" className="animate-pulse" />
+                          <circle cx="10" cy="-10" r="1.5" fill="var(--teal)" className="animate-pulse" />
+                          {/* Nose bridge line */}
+                          <line x1="0" y1="-10" x2="0" y2="10" stroke="var(--teal)" strokeWidth="1" />
+                          {/* Mouth */}
+                          <path d="M -8 18 Q 0 22 8 18" stroke="var(--teal)" strokeWidth="1" fill="none" />
+                        </g>
+
+                        {/* Angle feedback indicator */}
+                        <text x="10" y="20" fontSize="9" fontFamily="var(--mono)" fill="var(--t-2)">
+                          TILT: {simulatedFaceX > 20 ? "RIGHT ➡️" : simulatedFaceX < -20 ? "⬅️ LEFT" : "CENTER ●"}
+                        </text>
+                      </svg>
+                    </>
+                  )}
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center text-center text-t-3">
+                  <span className="text-2xl mb-1 filter grayscale">👤</span>
+                  <span>{language === 'en' ? "Camera stream standby" : "Flujo de cámara en espera"}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Slider to simulate tilts manually (for mouse/touch screens without webcam) */}
+            {gesturesEnabled && faceMeshCalibrated && (
+              <div className="flex flex-col gap-1.5 bg-bg-inset border border-line p-2.5 rounded-lg">
+                <div className="flex justify-between items-center text-[10px] tracking-wide uppercase text-t-2 font-semibold">
+                  <span>{language === 'en' ? "Simulate Face Tilt (Manual)" : "Simular Giro Facial (Manual)"}</span>
+                  <span className="font-mono text-teal font-bold">{simulatedFaceX}°</span>
+                </div>
+                <input 
+                  type="range"
+                  min="-45"
+                  max="45"
+                  value={simulatedFaceX}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    setSimulatedFaceX(val);
+                    
+                    // Navigation dispatcher based on head tilts (Recommendation 3)
+                    if (val < -30) {
+                      playSound('webrtc' as any);
+                      // Go to previous view
+                      const routeCycle: ViewType[] = ['dashboard', 'breaches', 'footprint', 'brokers', 'copilot', 'tasks', 'trust'];
+                      const currentIdx = routeCycle.indexOf(view);
+                      if (currentIdx !== -1) {
+                        const prevIdx = (currentIdx - 1 + routeCycle.length) % routeCycle.length;
+                        nav(routeCycle[prevIdx]);
+                        showToast(language === 'en' ? "Gestures: nav previous section" : "Gestos: navegando sección anterior");
+                      }
+                      setSimulatedFaceX(0); // Reset
+                    } else if (val > 30) {
+                      playSound('webrtc' as any);
+                      // Go to next view
+                      const routeCycle: ViewType[] = ['dashboard', 'breaches', 'footprint', 'brokers', 'copilot', 'tasks', 'trust'];
+                      const currentIdx = routeCycle.indexOf(view);
+                      if (currentIdx !== -1) {
+                        const nextIdx = (currentIdx + 1) % routeCycle.length;
+                        nav(routeCycle[nextIdx]);
+                        showToast(language === 'en' ? "Gestures: nav next section" : "Gestos: navegando sección siguiente");
+                      }
+                      setSimulatedFaceX(0); // Reset
+                    }
+                  }}
+                  className="w-full accent-teal cursor-pointer h-1 bg-bg-2 rounded"
+                />
+                <span className="text-[9.5px] text-t-3 leading-normal block">
+                  * {language === 'en' ? "Tilt <-30° for previous view, >30° for next" : "Gira <-30° para sección anterior, >30° para siguiente"}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
