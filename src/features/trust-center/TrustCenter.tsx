@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Icon } from '../../components/ui/Icon';
 import { Switch } from '../../components/ui/Switch';
 import { Profile } from '../../types/privacy';
@@ -9,6 +9,96 @@ const handleMouseMove = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>
   const y = e.clientY - rect.top;
   e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
   e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+};
+
+const drawIsometricCube = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string, label: string) => {
+  // Left face
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x - size, y - size * 0.5);
+  ctx.lineTo(x - size, y + size * 0.5);
+  ctx.lineTo(x, y + size);
+  ctx.closePath();
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.stroke();
+
+  // Right face
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.lineTo(x + size, y - size * 0.5);
+  ctx.lineTo(x + size, y + size * 0.5);
+  ctx.lineTo(x, y + size);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Top face
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x, y - size);
+  ctx.lineTo(x - size, y - size * 0.5);
+  ctx.lineTo(x, y);
+  ctx.lineTo(x + size, y - size * 0.5);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  // Label
+  ctx.fillStyle = 'var(--t-1)';
+  ctx.font = '10px var(--mono)';
+  ctx.textAlign = 'center';
+  ctx.fillText(label, x, y + size + 16);
+};
+
+const IsometricTopology: React.FC<{ activeProfile: 'personal' | 'trabajo' | 'finanzas' }> = ({ activeProfile }) => {
+  const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Grid lines for high tech isometric backdrop
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < canvas.width; i += 20) {
+      ctx.beginPath();
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, canvas.height);
+      ctx.stroke();
+    }
+
+    const size = 26;
+    const cPersonal = activeProfile === 'personal' ? 'rgba(45, 212, 191, 0.85)' : 'rgba(45, 212, 191, 0.25)';
+    const cTrabajo = activeProfile === 'trabajo' ? 'rgba(34, 211, 238, 0.85)' : 'rgba(34, 211, 238, 0.25)';
+    const cFinanzas = activeProfile === 'finanzas' ? 'rgba(212, 175, 55, 0.85)' : 'rgba(212, 175, 55, 0.25)';
+
+    // Personal Cube
+    drawIsometricCube(ctx, 60, 68, size, cPersonal, "Personal");
+    
+    // Corporate Cube
+    drawIsometricCube(ctx, 160, 68, size, cTrabajo, "Corporate");
+
+    // Financial Cube
+    drawIsometricCube(ctx, 260, 68, size, cFinanzas, "Financial");
+
+  }, [activeProfile]);
+
+  return (
+    <div className="flex flex-col gap-2.5 bg-bg-inset border border-line rounded-xl p-4.5">
+      <div className="text-[11.5px] font-semibold text-t-1 uppercase tracking-wide flex items-center gap-1.5 select-none">
+        <span className="w-2 h-2 rounded-full bg-teal animate-pulse" />
+        Topología de Identidades en 3D Isométrico
+      </div>
+      <canvas ref={canvasRef} width={320} height={130} className="w-full h-[130px] bg-bg-0/30 rounded-lg border border-line" />
+    </div>
+  );
 };
 
 interface ToggleProps {
@@ -37,9 +127,10 @@ interface TrustCenterProps {
   onToast: (msg: string) => void;
   onResetTasks?: () => void;
   profile?: Profile;
+  activeProfile?: 'personal' | 'trabajo' | 'finanzas';
 }
 
-export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks, profile }) => {
+export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks, profile, activeProfile = 'personal' }) => {
   const userProfile = profile || {
     name: "Jovan Franco",
     emails: ["jovan@secure-corp.com"],
@@ -64,6 +155,10 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
   const [showBiometricModal, setShowBiometricModal] = useState(false);
   const [biometricScanning, setBiometricScanning] = useState(false);
   const [biometricSuccess, setBiometricSuccess] = useState(false);
+
+  // PBKDF2 AES-GCM Local encryption states (Recommendation 12)
+  const [encryptExport, setEncryptExport] = useState(false);
+  const [exportPassword, setExportPassword] = useState("");
 
   // 3. Risk Weight Tuner States
   const [weightPassword, setWeightPassword] = useState(3.5);
@@ -104,6 +199,51 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
     });
   };
 
+  // Web Crypto AES-256-GCM local encryptor helper
+  const encryptCSVLocal = async (plaintext: string, passwordString: string) => {
+    try {
+      const enc = new TextEncoder();
+      const keyMaterial = await window.crypto.subtle.importKey(
+        "raw",
+        enc.encode(passwordString),
+        "PBKDF2",
+        false,
+        ["deriveBits", "deriveKey"]
+      );
+      const salt = window.crypto.getRandomValues(new Uint8Array(16));
+      const key = await window.crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt: salt,
+          iterations: 100000,
+          hash: "SHA-256"
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["encrypt"]
+      );
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const ciphertext = await window.crypto.subtle.encrypt(
+        {
+          name: "AES-GCM",
+          iv: iv
+        },
+        key,
+        enc.encode(plaintext)
+      );
+      
+      const combined = new Uint8Array(salt.byteLength + iv.byteLength + ciphertext.byteLength);
+      combined.set(salt, 0);
+      combined.set(iv, salt.byteLength);
+      combined.set(new Uint8Array(ciphertext), salt.byteLength + iv.byteLength);
+      return combined;
+    } catch (e) {
+      console.error("AES-GCM encrypt failed:", e);
+      return null;
+    }
+  };
+
   // WebAuthn Biometric verification & Blob CSV export
   const handleExportDataCSV = () => {
     setShowBiometricModal(true);
@@ -116,13 +256,13 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
     setBiometricSuccess(false);
     
     // Simulate biometric matching
-    setTimeout(() => {
+    setTimeout(async () => {
       setBiometricScanning(false);
       setBiometricSuccess(true);
       onToast("¡Autenticación biométrica exitosa!");
 
       // Export CSV file dynamically using native Blob URL
-      setTimeout(() => {
+      setTimeout(async () => {
         const csvHeaders = "ID,Alias Email,Base Email,Tag,Category,Created At,Routing Status\n";
         const emailBase = userProfile.emails[0] || "jovan@secure-corp.com";
         const prefix = emailBase.split('@')[0];
@@ -133,16 +273,50 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
           `3,shield.temp-boletin-4e@shield.leakshield.net,${emailBase},boletin,newsletters,2026-06-01,Active`
         ].join("\n");
 
-        const blob = new Blob([csvHeaders + csvRows], { type: 'text/csv;charset=utf-8' });
+        const plaintext = csvHeaders + csvRows;
+        let exportData: Blob | Uint8Array = new Blob([plaintext], { type: 'text/csv;charset=utf-8' });
+
+        if (encryptExport && exportPassword.trim()) {
+          const encrypted = await encryptCSVLocal(plaintext, exportPassword.trim());
+          if (encrypted) {
+            exportData = encrypted;
+            onToast("Cifrado AES-GCM local aplicado de forma segura.");
+          }
+        }
+
+        // FileSystem Access API integration or traditional Blob fallback (Recommendation 11)
+        const fileWindow = window as any;
+        if (typeof fileWindow.showSaveFilePicker !== 'undefined') {
+          try {
+            const handle = await fileWindow.showSaveFilePicker({
+              suggestedName: `leakshield_alias_emails_${prefix}.${encryptExport ? 'enc' : 'csv'}`,
+              types: [{
+                description: encryptExport ? 'Archivo de Bóveda Encriptado (.enc)' : 'CSV Hoja de Cálculo',
+                accept: { [encryptExport ? 'application/octet-stream' : 'text/csv']: [encryptExport ? '.enc' : '.csv'] }
+              }]
+            });
+            const writable = await handle.createWritable();
+            await writable.write(exportData);
+            await writable.close();
+            setShowBiometricModal(false);
+            onToast("Guardado directo en directorio local completado.");
+            return;
+          } catch (e) {
+            console.warn("Direct folder save cancelled or denied, falling back to browser downloads:", e);
+          }
+        }
+
+        // Fallback standard browser link download
+        const blob = exportData instanceof Uint8Array ? new Blob([exportData.buffer as ArrayBuffer], { type: 'application/octet-stream' }) : exportData;
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `leakshield_alias_emails_${prefix}.csv`;
+        link.download = `leakshield_alias_emails_${prefix}.${encryptExport ? 'enc' : 'csv'}`;
         link.click();
         URL.revokeObjectURL(url);
         
         setShowBiometricModal(false);
-        onToast("¡Lote de alias exportado en archivo .csv!");
+        onToast("¡Lote de alias exportado de forma local!");
       }, 500);
     }, 1500);
   };
@@ -156,7 +330,7 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
         </div>
         <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25">
           <span className="demo-blip" />
-          Prototipo v0.6.0
+          Prototipo v0.7.0
         </span>
       </div>
 
@@ -234,29 +408,34 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
             <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
               background: `radial-gradient(350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.04), transparent 80%)`
             }} />
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-3.5 border-b border-line pb-3">
-                <Icon name="settings" size={16} />
-                <h2 className="text-[15px] font-semibold text-t-0">Atajos de Teclado del Command Center</h2>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-[12px]">
-                  <thead>
-                    <tr className="border-b border-line text-t-2">
-                      <th className="py-2.5 font-semibold">Atajo</th>
-                      <th className="py-2.5 font-semibold">Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {shortcuts.map((sh, idx) => (
-                      <tr key={idx} className="border-b border-line/45 last:border-b-0 hover:bg-bg-3/30 transition-colors">
-                        <td className="py-2.5 font-mono text-teal font-semibold select-all">{sh.key}</td>
-                        <td className="py-2.5 text-t-1">{sh.action}</td>
+            <div className="relative z-10 flex flex-col gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-3.5 border-b border-line pb-3">
+                  <Icon name="settings" size={16} />
+                  <h2 className="text-[15px] font-semibold text-t-0">Atajos de Teclado del Command Center</h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-[12px]">
+                    <thead>
+                      <tr className="border-b border-line text-t-2">
+                        <th className="py-2.5 font-semibold">Atajo</th>
+                        <th className="py-2.5 font-semibold">Acción</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {shortcuts.map((sh, idx) => (
+                        <tr key={idx} className="border-b border-line/45 last:border-b-0 hover:bg-bg-3/30 transition-colors">
+                          <td className="py-2.5 font-mono text-teal font-semibold select-all">{sh.key}</td>
+                          <td className="py-2.5 text-t-1">{sh.action}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
+
+              {/* 3D Isometric Identity Topology Canvas (Recommendation 4) */}
+              <IsometricTopology activeProfile={activeProfile} />
             </div>
           </div>
         </div>
@@ -279,21 +458,28 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
                 
                 {/* 3D Cube and text side-by-side */}
                 <div className="grid grid-cols-[auto_1fr] gap-4.5 items-center mb-4 bg-bg-inset border border-line p-4 rounded-xl">
-                  {/* CSS 3D XOR Cube */}
-                  <div 
-                    className="cube-wrap cursor-pointer group-hover:scale-105 transition-transform" 
-                    onClick={handleTriggerXORCube}
-                    title="Hacer clic para forzar rotación de cifrado XOR"
-                  >
-                    <div className={`cube ${cubeAnimating ? "cube-animating" : ""}`} style={{
-                      transform: cubeAnimating ? "" : "rotateX(-25deg) rotateY(45deg)"
-                    }}>
-                      <div className="cube-face face-front">XOR</div>
-                      <div className="cube-face face-back">0x4F</div>
-                      <div className="cube-face face-right">KEY</div>
-                      <div className="cube-face face-left">v0.6</div>
-                      <div className="cube-face face-top">VAULT</div>
-                      <div className="cube-face face-bottom">SEC</div>
+                  {/* CSS 3D XOR Cube Container with Reactive Ambient Glow */}
+                  <div className="relative">
+                    <div className={`absolute inset-0 -m-3 rounded-full blur-xl transition-all duration-700 pointer-events-none opacity-40 ${
+                      cubeAnimating 
+                        ? "bg-gradient-to-tr from-ok/50 to-teal/40 animate-pulse" 
+                        : "bg-gradient-to-tr from-teal/20 to-cyan/20"
+                    }`} />
+                    <div 
+                      className="cube-wrap cursor-pointer group-hover:scale-105 transition-transform relative z-10 mx-auto" 
+                      onClick={handleTriggerXORCube}
+                      title="Hacer clic para forzar rotación de cifrado XOR"
+                    >
+                      <div className={`cube ${cubeAnimating ? "cube-animating" : ""}`} style={{
+                        transform: cubeAnimating ? "" : "rotateX(-25deg) rotateY(45deg)"
+                      }}>
+                        <div className="cube-face face-front">XOR</div>
+                        <div className="cube-face face-back">0x4F</div>
+                        <div className="cube-face face-right">KEY</div>
+                        <div className="cube-face face-left">v0.6</div>
+                        <div className="cube-face face-top">VAULT</div>
+                        <div className="cube-face face-bottom">SEC</div>
+                      </div>
                     </div>
                   </div>
 
@@ -516,6 +702,33 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
                 </p>
               </div>
             </div>
+
+            {/* Local AES-GCM Encryption Controls */}
+            {!biometricScanning && !biometricSuccess && (
+              <div className="text-left border border-line rounded-lg p-3 bg-bg-inset flex flex-col gap-2.5 my-1 animate-fadeIn">
+                <div className="flex items-center justify-between">
+                  <span className="text-[12px] font-semibold text-t-1">¿Cifrar exportación con AES-GCM?</span>
+                  <input 
+                    type="checkbox"
+                    checked={encryptExport}
+                    onChange={(e) => setEncryptExport(e.target.checked)}
+                    className="accent-teal cursor-pointer"
+                  />
+                </div>
+                {encryptExport && (
+                  <div className="flex flex-col gap-1.5 animate-fadeIn">
+                    <label className="text-[10px] text-t-2 uppercase font-bold tracking-wider">Contraseña de Cifrado (PBKDF2)</label>
+                    <input 
+                      type="password"
+                      value={exportPassword}
+                      onChange={(e) => setExportPassword(e.target.value)}
+                      placeholder="Escribe una contraseña segura"
+                      className="bg-bg-2 border border-line-2 rounded px-2.5 py-1.5 text-t-0 font-sans text-[12px] outline-none focus:border-teal-line w-full"
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-2 flex-wrap">
               <button 

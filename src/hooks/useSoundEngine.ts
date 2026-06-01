@@ -44,6 +44,35 @@ export const useSoundEngine = () => {
         gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.22);
         osc.start();
         osc.stop(ctx.currentTime + 0.22);
+      } else if (type === 'touchid') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
+        osc.frequency.exponentialRampToValueAtTime(1760, ctx.currentTime + 0.15); // A6
+        gain.gain.setValueAtTime(0.015, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.15);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.15);
+      } else if (type === 'caution') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        gain.gain.setValueAtTime(0.03, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.05);
+        
+        // Second beep
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.connect(gain2);
+        gain2.connect(ctx.destination);
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(440, ctx.currentTime + 0.08);
+        gain2.gain.setValueAtTime(0, ctx.currentTime);
+        gain2.gain.setValueAtTime(0.03, ctx.currentTime + 0.08);
+        gain2.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.15);
+        
+        osc.start();
+        osc.stop(ctx.currentTime + 0.06);
+        osc2.start(ctx.currentTime + 0.08);
+        osc2.stop(ctx.currentTime + 0.15);
       }
     } catch (e) {
       // Browser autoplay restriction, safe ignore

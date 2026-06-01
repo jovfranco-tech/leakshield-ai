@@ -75,7 +75,7 @@ const secureLoad = (key: string) => {
 };
 
 // Premium Touch: Threat Mesh Canvas Network Background Component (Zero-Dependency)
-const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'medium' | 'fast'; theme?: 'dark' | 'light' }> = ({ scoreValue = 72, speed = 'medium', theme = 'dark' }) => {
+const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'medium' | 'fast'; theme?: 'dark' | 'light' | 'luxury' }> = ({ scoreValue = 72, speed = 'medium', theme = 'dark' }) => {
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -108,6 +108,22 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'me
     };
     window.addEventListener('click', handleClick);
 
+    // Dynamic FPS framerate governor state (Recommendation 15)
+    let isVisible = true;
+    const handleVisibility = () => {
+      isVisible = !document.hidden;
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // Particle Cursor Gravity listener (Recommendation 3)
+    let mouseX = -9999;
+    let mouseY = -9999;
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+
     const particleCount = 28;
     const particles: Array<{ x: number; y: number; vx: number; vy: number; r: number }> = [];
     const baseMult = speed === 'slow' ? 0.3 : speed === 'fast' ? 1.6 : 0.95;
@@ -124,12 +140,39 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'me
     }
 
     const draw = () => {
+      // Throttle CPU when page is in the background
+      if (!isVisible) {
+        animationId = requestAnimationFrame(draw);
+        return;
+      }
+
       ctx.clearRect(0, 0, width, height);
-      ctx.strokeStyle = theme === 'light' ? 'rgba(15, 23, 42, 0.04)' : 'rgba(45, 212, 191, 0.035)';
-      ctx.fillStyle = theme === 'light' ? 'rgba(15, 23, 42, 0.08)' : 'rgba(45, 212, 191, 0.08)';
+      ctx.strokeStyle = theme === 'light' ? 'rgba(15, 23, 42, 0.04)' : theme === 'luxury' ? 'rgba(212, 175, 55, 0.05)' : 'rgba(45, 212, 191, 0.035)';
+      ctx.fillStyle = theme === 'light' ? 'rgba(15, 23, 42, 0.08)' : theme === 'luxury' ? 'rgba(212, 175, 55, 0.1)' : 'rgba(45, 212, 191, 0.08)';
 
       for (let i = 0; i < particleCount; i++) {
         const p = particles[i];
+
+        // Cursor Gravitational Gravity vortex pull
+        if (mouseX !== -9999) {
+          const dx = mouseX - p.x;
+          const dy = mouseY - p.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 200) {
+            const pull = (200 - dist) * 0.00028;
+            p.vx += dx * pull;
+            p.vy += dy * pull;
+
+            // Cap the velocity to keep the mesh stable
+            const pSpeed = Math.hypot(p.vx, p.vy);
+            const limit = speedMult * 1.5;
+            if (pSpeed > limit) {
+              p.vx = (p.vx / pSpeed) * limit;
+              p.vy = (p.vy / pSpeed) * limit;
+            }
+          }
+        }
+
         p.x += p.vx;
         p.y += p.vy;
 
@@ -162,7 +205,7 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'me
           continue;
         }
         ctx.beginPath();
-        ctx.strokeStyle = theme === 'light' ? `rgba(15, 23, 42, ${rp.opacity * 0.7})` : `rgba(34, 211, 238, ${rp.opacity})`;
+        ctx.strokeStyle = theme === 'light' ? `rgba(15, 23, 42, ${rp.opacity * 0.7})` : theme === 'luxury' ? `rgba(212, 175, 55, ${rp.opacity * 0.9})` : `rgba(34, 211, 238, ${rp.opacity})`;
         ctx.lineWidth = 1.4;
         ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
         ctx.stroke();
@@ -175,6 +218,8 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'me
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('click', handleClick);
+      window.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('visibilitychange', handleVisibility);
       cancelAnimationFrame(animationId);
     };
   }, [scoreValue, speed, theme]);
@@ -401,20 +446,23 @@ const TweaksOverlay: React.FC<{
   accent: string[];
   persistentStorage: boolean;
   language: 'es' | 'en';
-  theme: 'dark' | 'light';
+  theme: 'dark' | 'light' | 'luxury';
   particleSpeed: 'slow' | 'medium' | 'fast';
+  density: 'compact' | 'normal' | 'relaxed';
+  noiseOpacity: number;
   onChange: (key: string, val: any) => void;
-}> = ({ layout, scoreStyle, copilotMode, accent, persistentStorage, language, theme, particleSpeed, onChange }) => {
+}> = ({ layout, scoreStyle, copilotMode, accent, persistentStorage, language, theme, particleSpeed, density, noiseOpacity, onChange }) => {
   const [open, setOpen] = useState(false);
 
   const colors = [
     ["#2DD4BF", "#22D3EE"], // Cyberpunk Emerald
     ["#3B82F6", "#60A5FA"], // Deep Cobalt
     ["#A855F7", "#F59E0B"], // Amethyst Amber
-    ["#10B981", "#34D399"]  // Virtual Jade
+    ["#10B981", "#34D399"], // Virtual Jade
+    ["#D4AF37", "#F3E5AB"]  // Executive Gold (v0.7.0 Option)
   ];
 
-  const colorLabels = ["Cyberpunk Emerald", "Deep Cobalt", "Amethyst Amber", "Virtual Jade"];
+  const colorLabels = ["Cyberpunk Emerald", "Deep Cobalt", "Amethyst Amber", "Virtual Jade", "Executive Gold"];
 
   const labels = language === 'en' ? {
     demoControls: "Demo Controls",
@@ -428,7 +476,7 @@ const TweaksOverlay: React.FC<{
     session: "Session", local: "Local (XOR)",
     lang: "Language",
     theme: "Interface Theme",
-    dark: "Dark", light: "Light (Exec)",
+    dark: "Dark", light: "Light (Exec)", luxury: "Luxury Gold",
     meshSpeed: "ThreatMesh Speed",
     slow: "Slow", med: "Med", fast: "Fast",
     accentColor: "Accent Color Palette"
@@ -444,7 +492,7 @@ const TweaksOverlay: React.FC<{
     session: "Sesión", local: "Local (XOR)",
     lang: "Idioma / Localization",
     theme: "Tema de Interfaz",
-    dark: "Oscuro", light: "Claro (Ejec.)",
+    dark: "Oscuro", light: "Claro (Ejec.)", luxury: "Lujo Oro",
     meshSpeed: "Velocidad ThreatMesh",
     slow: "Lenta", med: "Media", fast: "Rápida",
     accentColor: "Paleta de Colores de Acento"
@@ -463,7 +511,7 @@ const TweaksOverlay: React.FC<{
   }
 
   return (
-    <div className="fixed right-4 bottom-4 z-50 w-[260px] bg-bg-1/95 border border-line-2 rounded-xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl flex flex-col gap-3 font-sans select-none text-[12px] text-t-1">
+    <div className="fixed right-4 bottom-4 z-50 w-[272px] max-h-[82vh] overflow-y-auto bg-bg-1/95 border border-line-2 rounded-xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl flex flex-col gap-3 font-sans select-none text-[12px] text-t-1 custom-scrollbar">
       <div className="flex justify-between items-center font-semibold text-t-0 border-b border-line pb-2 mb-1">
         <span>{labels.demoControls}</span>
         <button className="text-t-2 hover:text-t-0 bg-transparent border-0 cursor-pointer font-bold" onClick={() => setOpen(false)}>✕</button>
@@ -517,16 +565,47 @@ const TweaksOverlay: React.FC<{
       <div className="flex flex-col gap-1">
         <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">{labels.theme}</span>
         <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
-          {(["dark", "light"] as const).map(th => (
+          {(["dark", "light", "luxury"] as const).map(th => (
             <button 
               key={th}
               className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${theme === th ? 'bg-bg-3 text-t-0 shadow-premium' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
               onClick={() => onChange('theme', th)}
             >
-              {th === 'dark' ? labels.dark : labels.light}
+              {th === 'dark' ? labels.dark : th === 'light' ? labels.light : labels.luxury}
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">{language === 'en' ? "UI Density" : "Densidad de Interfaz"}</span>
+        <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
+          {(["compact", "normal", "relaxed"] as const).map(den => (
+            <button 
+              key={den}
+              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${density === den ? 'bg-bg-3 text-t-0 shadow-premium' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
+              onClick={() => onChange('density', den)}
+            >
+              {den === 'compact' ? "Comp." : den === 'normal' ? "Norm." : "Relax"}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <div className="flex justify-between items-center text-[10px] tracking-wide uppercase text-t-2 font-semibold">
+          <span>{language === 'en' ? "Noise Opacity" : "Opacidad de Grano"}</span>
+          <span>{noiseOpacity.toFixed(3)}</span>
+        </div>
+        <input 
+          type="range"
+          min="0.0"
+          max="0.08"
+          step="0.002"
+          value={noiseOpacity}
+          onChange={(e) => onChange('noiseOpacity', parseFloat(e.target.value))}
+          className="w-full accent-teal cursor-pointer h-1 bg-bg-inset rounded-lg appearance-none"
+        />
       </div>
 
       <div className="flex flex-col gap-1">
@@ -582,7 +661,7 @@ const TweaksOverlay: React.FC<{
 
       <div className="flex flex-col gap-1.5">
         <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">{labels.accentColor}</span>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 flex-wrap">
           {colors.map((c, i) => {
             const active = accent[0] === c[0] && accent[1] === c[1];
             return (
@@ -595,7 +674,7 @@ const TweaksOverlay: React.FC<{
               >
                 {active && (
                   <svg className="w-3.5 h-3.5 text-bg-0" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M2.5 6.5l2 2 5-5" />
+                     <path d="M2.5 6.5l2 2 5-5" />
                   </svg>
                 )}
               </button>
@@ -630,17 +709,40 @@ export const AppInternal: React.FC = () => {
   const [accent, setAccent] = useState<string[]>(["#2DD4BF", "#22D3EE"]);
   const [persistentStorage, setPersistentStorage] = useState(false);
   const [language, setLanguage] = useState<'es' | 'en'>('es');
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light' | 'luxury'>('dark');
+  const [density, setDensity] = useState<'compact' | 'normal' | 'relaxed'>('normal');
+  const [noiseOpacity, setNoiseOpacity] = useState<number>(0.018);
+  const [activeProfile, setActiveProfile] = useState<'personal' | 'trabajo' | 'finanzas'>('personal');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [shortcutSheetOpen, setShortcutSheetOpen] = useState(false);
+  const [telemetryXorModal, setTelemetryXorModal] = useState(false);
+  const [onboardingStep, setOnboardingStep] = useState<number | null>(0);
+  const [lensTransitioning, setLensTransitioning] = useState(false);
+
   const [particleSpeed, setParticleSpeed] = useState<'slow' | 'medium' | 'fast'>('medium');
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
+    document.body.classList.remove('light-theme', 'luxury-theme');
     if (theme === 'light') {
       document.body.classList.add('light-theme');
-    } else {
-      document.body.classList.remove('light-theme');
+    } else if (theme === 'luxury') {
+      document.body.classList.add('luxury-theme');
     }
   }, [theme]);
+
+  useEffect(() => {
+    document.body.classList.remove('density-compact', 'density-relaxed');
+    if (density === 'compact') {
+      document.body.classList.add('density-compact');
+    } else if (density === 'relaxed') {
+      document.body.classList.add('density-relaxed');
+    }
+  }, [density]);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--noise-opacity', `${noiseOpacity}`);
+  }, [noiseOpacity]);
   
   useEffect(() => {
     let timeoutId: number;
@@ -763,15 +865,26 @@ export const AppInternal: React.FC = () => {
   }, []);
 
   const nav = (v: string) => {
+    setLensTransitioning(true);
     const column = document.querySelector(".content-container-column");
     const changeView = () => {
       setView(v as ViewType);
       column?.scrollTo(0, 0);
     };
+    
+    // Play acoustic micro-signal on navigation click
+    playSound('click');
+
+    const cleanUpLens = () => {
+      setTimeout(() => setLensTransitioning(false), 450);
+    };
+
     if ((document as any).startViewTransition) {
-      (document as any).startViewTransition(changeView);
+      (document as any).startViewTransition(() => {
+        changeView();
+        cleanUpLens();
+      });
     } else {
-      // Elegant CSS Fade fallback for browsers without View Transitions support
       if (column) {
         column.classList.add("fade-out-transition");
         setTimeout(() => {
@@ -780,10 +893,12 @@ export const AppInternal: React.FC = () => {
           column.classList.add("fade-in-transition");
           setTimeout(() => {
             column.classList.remove("fade-in-transition");
+            cleanUpLens();
           }, 240);
         }, 120);
       } else {
         changeView();
+        cleanUpLens();
       }
     }
   };
@@ -791,6 +906,14 @@ export const AppInternal: React.FC = () => {
   // Global keyboard shortcuts (A11y & Productivity: d=dashboard, c=copilot, t=tasks, supporting both raw and Alt/Option modifiers)
   useEffect(() => {
     const handleGlobalKeys = (e: KeyboardEvent) => {
+      // Cmd + K or Ctrl + K for Command Palette
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setSearchOpen(prev => !prev);
+        playSound('click');
+        return;
+      }
+
       const activeEl = document.activeElement;
       if (activeEl && (
         activeEl.tagName === 'INPUT' || 
@@ -803,6 +926,14 @@ export const AppInternal: React.FC = () => {
       const key = e.key.toLowerCase();
       const isAlt = e.altKey;
       
+      // ? key for Keyboard Shortcuts sheet
+      if (e.key === '?') {
+        e.preventDefault();
+        setShortcutSheetOpen(prev => !prev);
+        playSound('click');
+        return;
+      }
+
       if (key === 'd' || (isAlt && key === 'd')) {
         e.preventDefault();
         nav('dashboard');
@@ -832,6 +963,13 @@ export const AppInternal: React.FC = () => {
     link.click();
     URL.revokeObjectURL(url);
     showToast("Solicitud ARCO descargada (.txt format)");
+  };
+
+  // computed profile according to active profile state (Recommendation 13)
+  const computedProfile = {
+    ...demoProfile,
+    name: activeProfile === 'personal' ? demoProfile.name : activeProfile === 'trabajo' ? "Jovan Franco (Corp)" : "Jovan Franco (Private Wealth)",
+    emails: activeProfile === 'personal' ? demoProfile.emails : activeProfile === 'trabajo' ? ["jovan.franco@enterprise-corp.com"] : ["jovan.franco@private-vault.net"],
   };
 
   // Dynamic risk summary card objects
@@ -906,7 +1044,7 @@ export const AppInternal: React.FC = () => {
     return "Remover identificador. Derecho ARCO ejercido. Silencio administrativo interpretado como negativa.";
   };
 
-  const compiledLetterText = `${generateDeletionRequest(selectedLawBroker, selectedLawScope, demoProfile.name, demoProfile.location)}\n\n[Cláusula de Tono IA - ${selectedLawTone.toUpperCase()}]: ${getCustomToneDescription()}`;
+  const compiledLetterText = `${generateDeletionRequest(selectedLawBroker, selectedLawScope, computedProfile.name, computedProfile.location)}\n\n[Cláusula de Tono IA - ${selectedLawTone.toUpperCase()}]: ${getCustomToneDescription()}`;
 
   // View Router Render
   const renderScreen = () => {
@@ -914,7 +1052,7 @@ export const AppInternal: React.FC = () => {
       case "dashboard":
         return (
           <Dashboard 
-            profile={demoProfile}
+            profile={computedProfile}
             score={dynamicScore}
             remediation={dynamicProgress}
             breaches={demoBreaches}
@@ -929,7 +1067,7 @@ export const AppInternal: React.FC = () => {
           />
         );
       case "identity":
-        return <IntakeScreen profile={demoProfile} inApp onToast={showToast} />;
+        return <IntakeScreen profile={computedProfile} inApp onToast={showToast} />;
       case "breaches":
         return (
           <BreachIntelligence 
@@ -961,7 +1099,7 @@ export const AppInternal: React.FC = () => {
       case "copilot":
         return (
           <CopilotWorkspace 
-            profile={demoProfile}
+            profile={computedProfile}
             copilotData={copilotData}
             onToast={showToast}
             onNav={nav}
@@ -999,6 +1137,8 @@ export const AppInternal: React.FC = () => {
           language={language}
           theme={theme}
           particleSpeed={particleSpeed}
+          density={density}
+          noiseOpacity={noiseOpacity}
           onChange={(k, v) => {
             if (k === 'dashboardLayout') setDashboardLayout(v);
             if (k === 'scoreStyle') setScoreStyle(v);
@@ -1008,6 +1148,8 @@ export const AppInternal: React.FC = () => {
             if (k === 'language') setLanguage(v);
             if (k === 'theme') setTheme(v);
             if (k === 'particleSpeed') setParticleSpeed(v);
+            if (k === 'density') setDensity(v);
+            if (k === 'noiseOpacity') setNoiseOpacity(v);
           }} 
         />
       </>
@@ -1027,6 +1169,8 @@ export const AppInternal: React.FC = () => {
           language={language}
           theme={theme}
           particleSpeed={particleSpeed}
+          density={density}
+          noiseOpacity={noiseOpacity}
           onChange={(k, v) => {
             if (k === 'dashboardLayout') setDashboardLayout(v);
             if (k === 'scoreStyle') setScoreStyle(v);
@@ -1036,6 +1180,8 @@ export const AppInternal: React.FC = () => {
             if (k === 'language') setLanguage(v);
             if (k === 'theme') setTheme(v);
             if (k === 'particleSpeed') setParticleSpeed(v);
+            if (k === 'density') setDensity(v);
+            if (k === 'noiseOpacity') setNoiseOpacity(v);
           }} 
         />
       </>
@@ -1055,6 +1201,8 @@ export const AppInternal: React.FC = () => {
           language={language}
           theme={theme}
           particleSpeed={particleSpeed}
+          density={density}
+          noiseOpacity={noiseOpacity}
           onChange={(k, v) => {
             if (k === 'dashboardLayout') setDashboardLayout(v);
             if (k === 'scoreStyle') setScoreStyle(v);
@@ -1064,6 +1212,8 @@ export const AppInternal: React.FC = () => {
             if (k === 'language') setLanguage(v);
             if (k === 'theme') setTheme(v);
             if (k === 'particleSpeed') setParticleSpeed(v);
+            if (k === 'density') setDensity(v);
+            if (k === 'noiseOpacity') setNoiseOpacity(v);
           }} 
         />
         <Toast msg={toast} />
@@ -1100,7 +1250,7 @@ export const AppInternal: React.FC = () => {
         
         {/* Scrollable Screen Content */}
         <div className="content-container-column flex-1 overflow-y-auto px-5 md:px-8 py-6.5 pb-14">
-          <div key={view} className="view-transition-container">
+          <div key={view} className={`view-transition-container ${lensTransitioning ? 'camera-lens-sweep' : ''}`}>
             {renderScreen()}
           </div>
         </div>
@@ -1306,6 +1456,8 @@ export const AppInternal: React.FC = () => {
         language={language}
         theme={theme}
         particleSpeed={particleSpeed}
+        density={density}
+        noiseOpacity={noiseOpacity}
         onChange={(k, v) => {
           if (k === 'dashboardLayout') setDashboardLayout(v);
           if (k === 'scoreStyle') setScoreStyle(v);
@@ -1315,8 +1467,263 @@ export const AppInternal: React.FC = () => {
           if (k === 'language') setLanguage(v);
           if (k === 'theme') setTheme(v);
           if (k === 'particleSpeed') setParticleSpeed(v);
+          if (k === 'density') setDensity(v);
+          if (k === 'noiseOpacity') setNoiseOpacity(v);
         }} 
       />
+
+      {/* Phase V Onboarding Contextual Guide (Recommendation 18) */}
+      {onboardingStep !== null && (
+        <div className="fixed bottom-16 left-6 z-[45] w-[320px] bg-bg-1/90 border border-line-2 rounded-xl p-4.5 shadow-[0_20px_50px_rgba(0,0,0,0.65)] backdrop-blur-xl animate-fadeIn font-sans no-print">
+          <div className="absolute top-3 right-3 text-t-3 hover:text-t-1 cursor-pointer font-bold" onClick={() => setOnboardingStep(null)}>✕</div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-5 h-5 rounded-full bg-teal text-[#04110F] text-[11px] font-bold flex items-center justify-center">i</span>
+            <span className="text-[12.5px] font-bold text-t-0 uppercase tracking-wide">Onboarding Guiado (v0.7.0)</span>
+          </div>
+          <div className="text-[12.5px] text-t-1 leading-relaxed">
+            {onboardingStep === 0 && (language === 'en' ? "Welcome to the executive Command Center! Let's explore its highly optimized features." : "¡Bienvenido al Command Center de LeakShield! Exploremos juntos sus herramientas ejecutivas.")}
+            {onboardingStep === 1 && (language === 'en' ? "Ingestion view: Process CSV registries safely in your browser at 60 FPS using async generators." : "Ingesta de datos: Procesa registros CSV de forma asíncrona a 60 FPS sin enviar nada a internet.")}
+            {onboardingStep === 2 && (language === 'en' ? "Trust Center: Persist security compartments encrypted with local AES-GCM and TouchID." : "Centro de Confianza: Configura tu bóveda cifrada en AES-GCM local con TouchID biométrico.")}
+            {onboardingStep === 3 && (language === 'en' ? "AI Copilot: Try the legal debate Sandbox, Token ID Encoder, and OCR classifier." : "Copiloto IA: Interactúa en el Sandbox de debate, codificador de tokens y simulador OCR.")}
+          </div>
+          <div className="flex justify-between items-center mt-3 pt-3 border-t border-line">
+            <span className="text-[11px] text-t-2">{onboardingStep + 1} de 4</span>
+            <div className="flex gap-1.5">
+              {onboardingStep > 0 && (
+                <button 
+                  className="px-2.5 py-1 rounded bg-bg-3 hover:bg-bg-2 border-0 text-t-1 hover:text-t-0 text-[11px] font-semibold cursor-pointer"
+                  onClick={() => { setOnboardingStep(prev => prev! - 1); playSound('click'); }}
+                >
+                  {language === 'en' ? "Back" : "Atrás"}
+                </button>
+              )}
+              <button 
+                className="px-3 py-1 rounded bg-gradient-to-b from-teal to-cyan text-[#04110F] border-0 text-[11px] font-bold cursor-pointer"
+                onClick={() => {
+                  if (onboardingStep < 3) {
+                    setOnboardingStep(prev => prev! + 1);
+                    playSound('click');
+                    if (onboardingStep === 0) nav('identity');
+                    if (onboardingStep === 1) nav('trust');
+                    if (onboardingStep === 2) nav('copilot');
+                  } else {
+                    setOnboardingStep(null);
+                    playSound('success');
+                    showToast(language === 'en' ? "Onboarding completed!" : "¡Onboarding completado!");
+                  }
+                }}
+              >
+                {onboardingStep === 3 ? (language === 'en' ? "Finish" : "Finalizar") : (language === 'en' ? "Next" : "Siguiente")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phase V Command Palette (Recommendation 20) */}
+      {searchOpen && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/65 backdrop-blur-[4px] grid place-items-center p-6 cursor-pointer no-print"
+          onClick={() => setSearchOpen(false)}
+        >
+          <div 
+            className="fade-in cursor-default flex flex-col w-full max-w-[480px] bg-bg-1 border border-line-2 rounded-xl shadow-[0_30px_90px_rgba(0,0,0,0.85)] relative p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-2.5 border-b border-line pb-3 mb-3">
+              <Icon name="search" size={16} style={{ color: "var(--teal)" }} />
+              <input 
+                type="text"
+                placeholder={language === 'en' ? "Search commands... (e.g. theme, copilot)" : "Buscar comandos... (ej. tema, copiloto)"}
+                className="bg-transparent border-0 outline-none text-t-0 text-[13px] w-full"
+                autoFocus
+                onKeyDown={(e) => {
+                  const val = e.currentTarget.value.toLowerCase().trim();
+                  if (e.key === 'Enter') {
+                    if (val.includes('dashboard') || val.includes('inicio')) { nav('dashboard'); setSearchOpen(false); }
+                    else if (val.includes('copilot') || val.includes('copiloto')) { nav('copilot'); setSearchOpen(false); }
+                    else if (val.includes('trust') || val.includes('confianza')) { nav('trust'); setSearchOpen(false); }
+                    else if (val.includes('intake') || val.includes('ingesta')) { nav('identity'); setSearchOpen(false); }
+                    else if (val.includes('task') || val.includes('tareas')) { nav('tasks'); setSearchOpen(false); }
+                    else if (val.includes('claro') || val.includes('light')) { setTheme('light'); setSearchOpen(false); }
+                    else if (val.includes('oscuro') || val.includes('dark')) { setTheme('dark'); setSearchOpen(false); }
+                    else if (val.includes('lujo') || val.includes('luxury') || val.includes('oro')) { setTheme('luxury'); setSearchOpen(false); }
+                    else if (val.includes('compact') || val.includes('compacto')) { setDensity('compact'); setSearchOpen(false); }
+                    else if (val.includes('relaxed') || val.includes('relajado')) { setDensity('relaxed'); setSearchOpen(false); }
+                    else if (val.includes('normal')) { setDensity('normal'); setSearchOpen(false); }
+                    else if (val.includes('personal')) { setActiveProfile('personal'); setSearchOpen(false); }
+                    else if (val.includes('trabajo') || val.includes('corp')) { setActiveProfile('trabajo'); setSearchOpen(false); }
+                    else if (val.includes('finanzas') || val.includes('finance')) { setActiveProfile('finanzas'); setSearchOpen(false); }
+                    else if (val.includes('telemetria') || val.includes('telemetry')) { setTelemetryXorModal(true); setSearchOpen(false); }
+                    else { showToast(language === 'en' ? "Command not matched" : "Comando no reconocido"); }
+                  }
+                }}
+              />
+            </div>
+            <div className="text-[11px] text-t-2 mb-2 font-semibold uppercase tracking-wider">{language === 'en' ? "Navigation & Actions" : "Navegación y Acciones"}</div>
+            <div className="flex flex-col gap-1 text-[12.5px] text-t-1">
+              {[
+                { c: "Dashboard", desc: language === 'en' ? "Go to Main Dashboard" : "Ir al Dashboard Ejecutivo" },
+                { c: "Copiloto IA", desc: language === 'en' ? "Open AI Remediation Workspace" : "Ir al Copiloto de IA" },
+                { c: "Trust Center", desc: language === 'en' ? "Configure 3D XOR Cryptography" : "Configurar Cubo XOR 3D" },
+                { c: "Tema Luxury", desc: language === 'en' ? "Toggle Luxury Gold Palette" : "Activar Paleta de Oro Ejecutivo" },
+                { c: "Densidad Compacta", desc: language === 'en' ? "Minimize visual padding layout" : "Reducir espaciado de pantalla" },
+                { c: "Telemetría XOR", desc: language === 'en' ? "Inspect encrypted JSON telemetries" : "Auditar logs XOR-JSON" }
+              ].map((item, idx) => (
+                <div 
+                  key={idx} 
+                  className="flex justify-between items-center py-2 px-2.5 rounded-lg hover:bg-bg-3 cursor-pointer group"
+                  onClick={() => {
+                    if (item.c.includes('Dashboard')) nav('dashboard');
+                    else if (item.c.includes('Copiloto')) nav('copilot');
+                    else if (item.c.includes('Trust')) nav('trust');
+                    else if (item.c.includes('Luxury')) setTheme('luxury');
+                    else if (item.c.includes('Compacta')) setDensity('compact');
+                    else if (item.c.includes('Telemetría')) setTelemetryXorModal(true);
+                    setSearchOpen(false);
+                  }}
+                >
+                  <span className="font-semibold text-t-0 group-hover:text-teal">{item.c}</span>
+                  <span className="text-[11px] text-t-2">{item.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phase V Keyboard Shortcuts Sheet (Recommendation 14) */}
+      {shortcutSheetOpen && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/65 backdrop-blur-[4px] grid place-items-center p-6 cursor-pointer no-print"
+          onClick={() => setShortcutSheetOpen(false)}
+        >
+          <div 
+            className="fade-in cursor-default flex flex-col w-full max-w-[400px] bg-bg-1 border border-line-2 rounded-xl shadow-[0_30px_90px_rgba(0,0,0,0.85)] relative p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center border-b border-line pb-3 mb-4">
+              <span className="text-[14px] font-bold text-t-0 flex items-center gap-2">
+                <Icon name="keyboard" size={16} style={{ color: "var(--teal)" }} />
+                {language === 'en' ? "System Keyboard Hotkeys" : "Atajos de Teclado del Sistema"}
+              </span>
+              <button className="text-t-2 hover:text-t-0 bg-transparent border-0 cursor-pointer font-bold" onClick={() => setShortcutSheetOpen(false)}>✕</button>
+            </div>
+            <div className="flex flex-col gap-3 text-[12.5px] text-t-1">
+              {[
+                { k: "D / Alt + D", desc: language === 'en' ? "Navigate to Main Dashboard" : "Navegar al Dashboard Principal" },
+                { k: "C / Alt + C", desc: language === 'en' ? "Navigate to AI Remediation Copilot" : "Navegar al Copiloto de IA" },
+                { k: "T / Alt + T", desc: language === 'en' ? "Navigate to Task Board" : "Navegar al Tablero de Tareas" },
+                { k: "Cmd/Ctrl + K", desc: language === 'en' ? "Open Command Search Palette" : "Abrir Paleta de Comandos Central" },
+                { k: "?", desc: language === 'en' ? "Toggle this Keyboard Shortcuts sheet" : "Mostrar / ocultar esta hoja de atajos" },
+              ].map((item, idx) => (
+                <div key={idx} className="flex justify-between items-center py-1">
+                  <span className="font-semibold text-t-2">{item.desc}</span>
+                  <span className="font-mono bg-bg-inset border border-line px-2 py-0.5 rounded text-[11px] text-teal font-bold">{item.k}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Phase V Telemetry XOR Auditor (Recommendation 19) */}
+      {telemetryXorModal && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/68 backdrop-blur-[5px] grid place-items-center p-6 cursor-pointer no-print"
+          onClick={() => setTelemetryXorModal(false)}
+        >
+          <div 
+            className="fade-in cursor-default flex flex-col w-full max-w-[560px] bg-bg-1 border border-line-2 rounded-xl shadow-[0_30px_90px_rgba(0,0,0,0.85)] relative p-5 max-h-[85vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center border-b border-line pb-3 mb-4">
+              <span className="text-[14.5px] font-bold text-t-0 flex items-center gap-2">
+                <Icon name="database" size={16} style={{ color: "var(--teal)" }} />
+                {language === 'en' ? "Encrypted Live Telemetries Log" : "Auditor de Telemetrías XOR-JSON"}
+              </span>
+              <button className="text-t-2 hover:text-t-0 bg-transparent border-0 cursor-pointer font-bold" onClick={() => setTelemetryXorModal(false)}>✕</button>
+            </div>
+            
+            <div className="mb-4 bg-teal/10 border border-teal/30 rounded-lg p-3 flex items-center gap-3">
+              <Icon name="shield-check" size={16} style={{ color: "var(--teal)" }} />
+              <div className="text-[11.5px] text-t-1">
+                {language === 'en' 
+                  ? "Audit raw telemetries below. Toggle base64+XOR formatting to witness PII local hashing in real-time."
+                  : "Audite logs de telemetría. Active la codificación base64+XOR para visualizar la ofuscación en tiempo real."}
+              </div>
+            </div>
+
+            <div className="text-[11px] text-t-2 mb-1.5 uppercase font-semibold tracking-wider">{language === 'en' ? "Anonymize Sensitive Fields" : "Anonimizar Campos Sensibles"}</div>
+            <div className="flex gap-2 mb-4 flex-wrap">
+              {[
+                { f: "activeProfile", label: "Active Profile" },
+                { f: "score", label: "Dynamic Score" },
+                { f: "networkLatency", label: "INP/FPS Latency" }
+              ].map(fld => (
+                <button
+                  key={fld.f}
+                  className="px-2.5 py-1.5 rounded bg-bg-3 border border-line text-t-1 hover:text-t-0 text-[11.5px] cursor-pointer"
+                  onClick={() => showToast(`Campo ${fld.label} sanitizado en bufer de salida.`)}
+                >
+                  ✕ {fld.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-[11.5px] text-t-2 font-bold uppercase">{language === 'en' ? "Raw JSON Output" : "Salida de Logs en Vivo"}</span>
+              <button 
+                className="text-[11px] font-bold text-teal bg-bg-3 border border-line px-2.5 py-0.5 rounded cursor-pointer"
+                onClick={() => {
+                  const el = document.getElementById("telemetry-raw-text");
+                  if (el) {
+                    navigator.clipboard?.writeText(el.innerText);
+                    showToast("Copiado al portapapeles");
+                  }
+                }}
+              >
+                {language === 'en' ? "Copy Log" : "Copiar Log"}
+              </button>
+            </div>
+
+            <pre 
+              id="telemetry-raw-text" 
+              className="m-0 font-mono text-[11px] text-t-1 bg-bg-inset border border-line p-4 rounded-lg overflow-x-auto max-h-[180px]"
+            >
+              {JSON.stringify({
+                app: "leakshield-ai",
+                version: "0.7.0-FaseV",
+                profile: activeProfile,
+                theme: theme,
+                density: density,
+                score: dynamicScore.value,
+                activeAliasPool: tasks.filter(t => t.status === 'Resolved').length,
+                performance: { FPS: 60, INP_ms: 12 },
+                encryptionKey: "leakshield_v0.7.0_quantum_xor"
+              }, null, 2)}
+            </pre>
+
+            <div className="mt-4 flex justify-end gap-2.5 border-t border-line pt-3.5">
+              <button 
+                className="px-3.5 py-1.5 rounded-lg border border-line-2 bg-bg-3 text-t-1 hover:text-t-0 text-[12px] font-semibold cursor-pointer shadow-premium"
+                onClick={() => {
+                  const encoded = btoa(JSON.stringify({ score: dynamicScore.value, density, activeProfile }));
+                  showToast(`Cifrado de sesión XOR: ${encoded.substring(0, 16)}...`);
+                }}
+              >
+                {language === 'en' ? "Simulate XOR Cipher" : "Simular Cifrado XOR"}
+              </button>
+              <button 
+                className="px-3.5 py-1.5 rounded-lg bg-gradient-to-b from-teal to-cyan text-[#04110F] text-[12px] font-bold cursor-pointer shadow-premium"
+                onClick={() => setTelemetryXorModal(false)}
+              >
+                {language === 'en' ? "Close Auditor" : "Cerrar Auditor"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Toast msg={toast} />
     </div>

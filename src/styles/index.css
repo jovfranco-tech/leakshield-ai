@@ -229,7 +229,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.018; /* 15% lower mate grain for optimal TN/VA screens */
+  opacity: var(--noise-opacity, 0.018);
   mix-blend-mode: overlay;
   z-index: 1;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
@@ -360,16 +360,143 @@
   animation: screen-shake 0.4s ease-in-out;
 }
 
-/* 4. View Transition Page Content Swipes */
-.view-transition-container {
-  opacity: 0;
-  transform: translateX(12px);
-  animation: viewTransitionSwipe 0.38s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+/* ── Phase V v0.7.0 Premium Additions ── */
+
+/* UI Density Variables */
+:root {
+  --ui-padding: 16px;
+  --ui-font-size: 14px;
 }
-@keyframes viewTransitionSwipe {
-  to {
-    opacity: 1;
-    transform: translateX(0);
+.density-compact {
+  --ui-padding: 8px;
+  --ui-font-size: 12.5px;
+}
+.density-relaxed {
+  --ui-padding: 24px;
+  --ui-font-size: 15.5px;
+}
+
+/* 2. Luxury Gold Theme Color Overrides */
+.luxury-theme {
+  --bg-0: #06090E;        /* deep cobalt base */
+  --bg-1: #0A0F1A;        /* deep panels */
+  --bg-2: #101625;        /* cards */
+  --bg-3: #1A2234;        /* elevated / hover */
+  --bg-inset: #070B13;    /* wells */
+  --line: rgba(212, 175, 55, 0.10);
+  --line-2: rgba(212, 175, 55, 0.18);
+  --line-3: rgba(212, 175, 55, 0.28);
+
+  --t-0: #F5F4F0;         /* champagne cream */
+  --t-1: #C6BCA8;         /* light gold tint */
+  --t-2: #8F846F;         /* muted brass */
+  --t-3: #625948;         /* dark bronze */
+
+  --teal: #D4AF37;        /* liquid gold principal accent */
+  --cyan: #F3E5AB;        /* soft vanilla sub-accent */
+  --teal-dim: rgba(212, 175, 55, 0.12);
+  --teal-line: rgba(212, 175, 55, 0.35);
+  --cyan-dim: rgba(243, 229, 171, 0.12);
+
+  --accent-a: #D4AF37;
+  --accent-b: #F3E5AB;
+}
+
+.luxury-theme .main-column {
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(243,229,171,.04), transparent 60%),
+    radial-gradient(900px 500px at -5% 0%, rgba(212,175,55,.04), transparent 55%),
+    var(--bg-0) !important;
+}
+
+/* 3. Holographic Border Sweep (Modern CSS @property) */
+@property --holo-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes holo-sweep {
+  0% { --holo-angle: 0deg; }
+  100% { --holo-angle: 360deg; }
+}
+
+.holo-glow-card {
+  position: relative;
+  border-radius: var(--radius-card);
+  background: var(--bg-2);
+}
+
+.holo-glow-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: calc(var(--radius-card) + 1px);
+  background: conic-gradient(from var(--holo-angle), var(--teal), var(--cyan), #FB6E72, var(--teal));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: xor;
+  mask-composite: exclude;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  -webkit-mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  z-index: 2;
+}
+
+.holo-glow-card:hover::before {
+  opacity: 0.8;
+  animation: holo-sweep 4s linear infinite;
+}
+
+/* 4. Camera Lens Swipe Switcher */
+.camera-lens-sweep {
+  animation: lensSweep 0.45s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+@keyframes lensSweep {
+  0% {
+    filter: blur(10px) grayscale(40%) brightness(1.2);
+    transform: scale(0.995);
+  }
+  100% {
+    filter: blur(0) grayscale(0) brightness(1);
+    transform: scale(1);
+  }
+}
+
+/* 5. Clean Print Layout Rules */
+@media print {
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    line-height: 1.6 !important;
+  }
+  .app-shell {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .nav-rail, .threat-mesh-canvas, .tweaks-panel, .no-print, button, input, select {
+    display: none !important;
+  }
+  .main-column {
+    background: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+  }
+  .print-legal-document {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 20mm !important;
+    color: #000000 !important;
+    font-family: "Times New Roman", Times, serif !important;
+    white-space: pre-wrap !important;
   }
 }
 
