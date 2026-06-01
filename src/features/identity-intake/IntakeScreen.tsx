@@ -20,6 +20,68 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
   const [scanning, setScanning] = useState(false);
   const [scanStep, setScanStep] = useState(0);
 
+  // Enterprise CSV drag-and-drop states
+  const [dragOver, setDragOver] = useState(false);
+  const [csvFile, setCsvFile] = useState<{ name: string; size: number } | null>(null);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvProgress, setCsvProgress] = useState(0);
+
+  const handleSelectCSV = (file: File) => {
+    // Recommendation 12: Restrict file size to max 8 MB
+    if (file.size > 8 * 1024 * 1024) {
+      if (onToast) onToast("⚠️ Archivo demasiado grande. El límite del cargador local es de 8 MB.");
+      return;
+    }
+    setCsvFile({ name: file.name, size: file.size });
+  };
+
+  const handleDropCSV = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = e.dataTransfer.files;
+    if (files && files[0]) {
+      if (files[0].name.endsWith(".csv")) {
+        handleSelectCSV(files[0]);
+      } else {
+        if (onToast) onToast("⚠️ Por favor, selecciona un archivo en formato .csv");
+      }
+    }
+  };
+
+  const handleCancelCSV = () => {
+    setCsvFile(null);
+    setCsvImporting(false);
+    setCsvProgress(0);
+  };
+
+  const handleProcessCSV = () => {
+    if (!csvFile) return;
+    setCsvImporting(true);
+    setCsvProgress(0);
+
+    // Recommendation 11: Simulated Web Worker chunk-based parsing progress proportional to byte size
+    const totalChunks = 10;
+    const processingDelay = Math.min(3000, Math.max(800, Math.round(csvFile.size * 0.15)));
+    const chunkTime = processingDelay / totalChunks;
+    
+    let currentChunk = 0;
+    const interval = window.setInterval(() => {
+      currentChunk++;
+      const progress = Math.min(100, Math.round((currentChunk / totalChunks) * 100));
+      setCsvProgress(progress);
+
+      if (currentChunk >= totalChunks) {
+        clearInterval(interval);
+        setCsvImporting(false);
+        setCsvFile(null);
+        // Inject parsed mock identities safely
+        setEmails(prev => [...new Set([...prev, "backup.admin@secure-corp.com", "privacidad.corp@audit.net"])]);
+        setUsernames(prev => [...new Set([...prev, "audit_shield", "sec_ops"])]);
+        if (onToast) onToast("¡Lote de CSV procesado con éxito e incorporado al monitoreo!");
+      }
+    }, chunkTime);
+  };
+
   const scanSteps = [
     "Inicializando agente de inteligencia autónomo...",
     "Buscando coincidencias en 14,820 bases de datos de brechas...",
@@ -174,6 +236,76 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
               >
                 Añadir
               </button>
+            </div>
+
+            {/* Enterprise CSV Batch Importer (Premium A11y / Performance Worker Simulation) */}
+            <div className="mt-5.5 pt-4 border-t border-line">
+              <label className="text-[12px] font-semibold text-t-1 block mb-2">Importar lote de identificadores corporativos (.csv)</label>
+              
+              {csvFile ? (
+                <div className="p-4 rounded-lg bg-bg-inset border border-teal-line/30 flex flex-col gap-2.5 animate-fadeIn">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-semibold text-t-0 flex items-center gap-1.5 font-mono truncate max-w-[200px]">
+                      <Icon name="file" size={15} style={{ color: "var(--teal)" }} />
+                      {csvFile.name}
+                    </span>
+                    <span className="text-[11px] text-t-2 font-mono">({(csvFile.size / 1024).toFixed(1)} KB)</span>
+                    <button 
+                      className="text-t-3 hover:text-crit text-[11px] cursor-pointer bg-transparent border-0"
+                      onClick={handleCancelCSV}
+                      disabled={csvImporting}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+
+                  {csvImporting ? (
+                    <div className="flex flex-col gap-1.5 mt-1">
+                      <div className="flex justify-between items-center text-[11px] text-t-2 font-mono">
+                        <span className="flex items-center gap-1">
+                          <Icon name="refresh" size={12} className="spin" style={{ color: 'var(--teal)' }} />
+                          Procesando en segundo plano...
+                        </span>
+                        <span>{csvProgress}%</span>
+                      </div>
+                      <div className="w-full h-1 rounded-full bg-bg-3 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-teal to-cyan transition-all duration-150" style={{ width: `${csvProgress}%` }} />
+                      </div>
+                    </div>
+                  ) : (
+                    <button 
+                      className="w-full flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[12.5px] px-3.5 py-2.5 bg-bg-3 hover:bg-bg-2 border border-line-2 text-t-0 cursor-pointer transition-all mt-1"
+                      onClick={handleProcessCSV}
+                    >
+                      <Icon name="scan" size={13} style={{ color: 'var(--teal)' }} />
+                      Comenzar procesamiento local
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div 
+                  className={`border-2 border-dashed rounded-lg p-5.5 text-center flex flex-col items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                    dragOver ? 'border-teal bg-teal-dim/10' : 'border-line hover:border-line-2 bg-bg-inset'
+                  }`}
+                  onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                  onDragLeave={() => setDragOver(false)}
+                  onDrop={handleDropCSV}
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = '.csv';
+                    input.onchange = (e) => {
+                      const files = (e.target as HTMLInputElement).files;
+                      if (files && files[0]) handleSelectCSV(files[0]);
+                    };
+                    input.click();
+                  }}
+                >
+                  <Icon name="file" size={24} className="text-t-3 animate-pulse" />
+                  <span className="text-[12px] text-t-1 font-semibold">Arrastra tu archivo .csv aquí o haz clic para subir</span>
+                  <span className="text-[10px] text-t-3">Tamaño máximo de archivo: 8 MB</span>
+                </div>
+              )}
             </div>
 
             {!inApp && (

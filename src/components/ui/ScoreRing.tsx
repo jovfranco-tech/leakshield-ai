@@ -51,6 +51,21 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({ value, size = 168, stroke 
           0%, 100% { transform: scale(0.65); opacity: 0.25; filter: blur(0.6px); }
           50% { transform: scale(1.35); opacity: 0.95; filter: blur(0px); }
         }
+        @keyframes wobbly-ring-oscillation {
+          0%, 100% { transform: rotate(0deg) scale(1); }
+          25% { transform: rotate(0.6deg) scale(0.997); }
+          50% { transform: rotate(-0.4deg) scale(1.003); }
+          75% { transform: rotate(0.4deg) scale(0.998); }
+        }
+        .wobbly-ring-wrapper {
+          animation: wobbly-ring-oscillation 10s ease-in-out infinite;
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+        }
       `}</style>
 
       {/* Orbit Container 1 (Teal Particle - Elliptic) */}
@@ -112,33 +127,35 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({ value, size = 168, stroke 
         />
       </div>
 
-      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }} className="relative z-10">
-        <defs>
-          <linearGradient id="scoreGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="var(--accent-a)" />
-            <stop offset="100%" stopColor="var(--accent-b)" />
-          </linearGradient>
-        </defs>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--bg-inset)" strokeWidth={stroke} />
-        <circle 
-          cx={size/2} 
-          cy={size/2} 
-          r={r} 
-          fill="none" 
-          stroke="url(#scoreGrad)" 
-          strokeWidth={stroke}
-          strokeLinecap="round" 
-          strokeDasharray={c} 
-          strokeDashoffset={dash}
-          style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(.2,.7,.2,1)" }} 
-        />
-      </svg>
-      <div className="absolute inset-0 grid place-items-center text-center z-20">
-        <div>
-          <div className="font-mono font-semibold tracking-tighter leading-[0.9]" style={{ fontSize: size * .34 }}>
-            <CountUp value={value} />
+      <div className="wobbly-ring-wrapper">
+        <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }} className="relative z-10">
+          <defs>
+            <linearGradient id="scoreGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="var(--accent-a)" />
+              <stop offset="100%" stopColor="var(--accent-b)" />
+            </linearGradient>
+          </defs>
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="var(--bg-inset)" strokeWidth={stroke} />
+          <circle 
+            cx={size/2} 
+            cy={size/2} 
+            r={r} 
+            fill="none" 
+            stroke="url(#scoreGrad)" 
+            strokeWidth={stroke}
+            strokeLinecap="round" 
+            strokeDasharray={c} 
+            strokeDashoffset={dash}
+            style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(.2,.7,.2,1)" }} 
+          />
+        </svg>
+        <div className="absolute inset-0 grid place-items-center text-center z-20 pointer-events-none">
+          <div>
+            <div className="font-mono font-semibold tracking-tighter leading-[0.9]" style={{ fontSize: size * .34 }}>
+              <CountUp value={value} />
+            </div>
+            <div className="text-[10px] uppercase tracking-widest font-semibold text-t-2 mt-0.5">/ 100</div>
           </div>
-          <div className="text-[10px] uppercase tracking-widest font-semibold text-t-2 mt-0.5">/ 100</div>
         </div>
       </div>
     </div>

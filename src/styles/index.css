@@ -43,9 +43,13 @@
     --r-md: 12px; 
     --r-lg: 16px; 
     --r-xl: 22px;
+    --radius-card: 12px;
+    --radius-button: 8px;
     
     --shadow: 0 1px 0 rgba(255,255,255,.03) inset, 0 12px 32px -12px rgba(0,0,0,.6);
+    --shadow-premium: 0 1px 0 rgba(255,255,255,.03) inset, 0 8px 24px -8px rgba(0,0,0,.7), 0 0 0 1px var(--line);
     --glow: 0 0 0 1px var(--teal-line), 0 0 40px -8px rgba(45,212,191,.35);
+    --blur-standard: blur(12px);
 
     --nav-w: 248px; 
     --rail-w: 372px;
@@ -208,7 +212,7 @@
   );
   transform: rotate(25deg);
   pointer-events: none;
-  animation: glossy-sweep-anim 6s cubic-bezier(0.19, 1, 0.22, 1) infinite;
+  animation: glossy-sweep-anim 8s cubic-bezier(0.19, 1, 0.22, 1) infinite;
 }
 
 @keyframes glossy-sweep-anim {
@@ -225,7 +229,7 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-  opacity: 0.022; /* ultra-subtle mate grain */
+  opacity: 0.018; /* 15% lower mate grain for optimal TN/VA screens */
   mix-blend-mode: overlay;
   z-index: 1;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
@@ -234,11 +238,11 @@
 /* ── Phase II Premium Styling ── */
 .focus-glow-teal {
   outline: none;
-  transition: box-shadow 0.15s, border-color 0.15s;
+  transition: box-shadow 0.24s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.24s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .focus-glow-teal:focus-visible {
-  border-color: rgba(45, 212, 191, 0.5) !important;
-  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.15), 0 0 14px -2px rgba(45, 212, 191, 0.3) !important;
+  border-color: rgba(45, 212, 191, 0.6) !important;
+  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.2), 0 0 16px -2px rgba(45, 212, 191, 0.4) !important;
 }
 
 @keyframes skeleton-shimmer {
@@ -253,5 +257,16 @@
 
 .kanban-elastic-transition {
   transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.2s, box-shadow 0.2s;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Alternate offset classes for glossy elements to space and desynchronize sweep */
+.glossy-sweep-slow::after {
+  animation-duration: 10s !important;
+}
+.glossy-sweep-offset::after {
+  animation-delay: 2.5s !important;
 }
 

@@ -108,7 +108,7 @@ const FactorsCard: React.FC<FactorsCardProps> = ({ score, language = 'es' }) => 
         <div className="flex flex-col gap-3 font-mono text-[12px] text-t-1 bg-bg-inset border border-line rounded-lg p-4 animate-fadeIn relative z-10">
           <div className="flex justify-between items-center pb-2 border-b border-line/40">
             <span className="text-[11.5px] font-semibold text-teal uppercase tracking-wider">Algoritmo de Scoring IA</span>
-            <span className="text-t-3 text-[10px] font-mono">v0.3.0 Engine</span>
+            <span className="text-t-3 text-[10px] font-mono">v0.5.0 Engine</span>
           </div>
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-2">
@@ -140,6 +140,36 @@ const FactorsCard: React.FC<FactorsCardProps> = ({ score, language = 'es' }) => 
             </div>
             <div className="mt-1 pt-2.5 border-t border-line/40 text-[11px] text-t-2 leading-relaxed font-sans normal-case">
               * El motor de decisión IA correlaciona el nivel de riesgo global basándose en la accesibilidad de tus credenciales por parte de ciberdelincuentes.
+            </div>
+
+            {/* Animated SVG Tokenizer Flow (Zero-Dependency) */}
+            <div className="mt-4 pt-3 border-t border-line/40 flex flex-col gap-2">
+              <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Visualización de Flujo de Tokenización Semántica:</span>
+              <div className="bg-bg-inset border border-line rounded-lg p-2.5 h-[64px] flex items-center justify-center relative overflow-hidden">
+                <svg className="w-full h-full" viewBox="0 0 400 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <style>{`
+                    @keyframes svg-flow-dash {
+                      to { stroke-dashoffset: -20; }
+                    }
+                    @keyframes svg-pulse-node {
+                      0%, 100% { fill: var(--bg-3); stroke: var(--line-2); }
+                      50% { fill: var(--teal-dim); stroke: var(--teal); }
+                    }
+                  `}</style>
+                  <path d="M48 24h68M168 24h68M288 24h64" stroke="var(--line-2)" strokeWidth="1.5" strokeDasharray="4 4" style={{ animation: "svg-flow-dash 1.2s linear infinite" }} />
+                  <circle cx="28" cy="24" r="14" style={{ animation: "svg-pulse-node 4s infinite" }} strokeWidth="1.5" />
+                  <circle cx="144" cy="24" r="14" style={{ animation: "svg-pulse-node 4s infinite 1.2s" }} strokeWidth="1.5" />
+                  <circle cx="264" cy="24" r="14" style={{ animation: "svg-pulse-node 4s infinite 2.4s" }} strokeWidth="1.5" />
+                  <rect x="360" y="10" width="28" height="28" rx="6" fill="var(--bg-3)" stroke="var(--line-2)" strokeWidth="1.5" />
+                  <text x="28" y="27" fill="var(--t-1)" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">PII</text>
+                  <text x="144" y="27" fill="var(--t-1)" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">EMB</text>
+                  <text x="264" y="27" fill="var(--t-1)" fontSize="8" fontFamily="monospace" textAnchor="middle" fontWeight="bold">VEC</text>
+                  <text x="374" y="27" fill="var(--teal)" fontSize="9" fontFamily="monospace" textAnchor="middle" fontWeight="bold">-{100 - score.value}</text>
+                </svg>
+              </div>
+              <div className="text-[10px] text-t-3 font-mono text-center">
+                PII (Identidad) ➔ EMB (Embeddings Semánticos) ➔ VEC (Espacio Vectorial) ➔ Score de Riesgo
+              </div>
             </div>
           </div>
         </div>
@@ -203,7 +233,28 @@ const FactorsCard: React.FC<FactorsCardProps> = ({ score, language = 'es' }) => 
                         : (language === 'es' ? "En base al análisis semántico continuo de metadatos, este factor impacta proporcionalmente el score general de privacidad del Command Center." : "Based on continuous semantic metadata analysis, this factor proportionally impacts the general privacy score of the Command Center.")
                       }
                     </div>
-                    <div className="text-[10px] text-t-3 font-mono mt-1.5">
+
+                    {/* Recommendation 23: Enriched tactical bullet lists inside IA Explains popover */}
+                    <div className="mt-2.5 pt-2.5 border-t border-teal/10 flex flex-col gap-1 text-[11px] text-t-2">
+                      <span className="font-semibold text-t-1">🛠️ Sugerencias Tácticas de Remediación:</span>
+                      {f.kind === "breach" && (
+                        <span>• Rotar la credencial expuesta de inmediato y activar autenticación multifactor (2FA) en la cuenta comprometida.</span>
+                      )}
+                      {f.kind === "password" && (
+                        <span>• Reemplazar la credencial idéntica por una contraseña robusta de alta entropía generada localmente.</span>
+                      )}
+                      {f.kind === "footprint" && (
+                        <span>• Iniciar el enmascaramiento de alias SMTP y remover metadatos IP históricos de los foros públicos.</span>
+                      )}
+                      {f.kind === "broker" && (
+                        <span>• Enviar la solicitud formal de exclusión legal ARCO/CCPA (genera el borrador con nuestro copiloto de supresión).</span>
+                      )}
+                      {f.kind === "oldaccount" && (
+                        <span>• Proceder con la baja definitiva y revocación de accesos de la cuenta inactiva detectada.</span>
+                      )}
+                    </div>
+
+                    <div className="text-[10px] text-t-3 font-mono mt-2">
                       {language === 'es' ? `Criterio matemático: Penalización de ${f.impact} puntos en base a 100.` : `Math basis: Penalty of ${f.impact} points out of 100.`}
                     </div>
                   </div>
@@ -211,6 +262,9 @@ const FactorsCard: React.FC<FactorsCardProps> = ({ score, language = 'es' }) => 
             </div>
             );
           })}
+          <button className="text-[11px] text-t-3 hover:text-teal font-mono transition-colors flex items-center justify-center gap-1.5 pt-2 border-t border-line/50 mt-1">
+            <Icon name="download" size={10} /> Exportar Análisis JSON
+          </button>
         </div>
       )}
     </div>
@@ -773,7 +827,7 @@ const RiskTile: React.FC<RiskTileProps> = ({ icon, data, onClick }) => {
   );
 };
 
-const MultiAgentConsole: React.FC<{ language?: 'es' | 'en' }> = ({ language = 'es' }) => {
+const MultiAgentConsole: React.FC<{ language?: 'es' | 'en'; onToast: (msg: string) => void }> = ({ language = 'es', onToast }) => {
   const [agentLogs, setAgentLogs] = React.useState<string[]>([]);
   const [activeAgent, setActiveAgent] = React.useState(0);
 
@@ -822,9 +876,35 @@ const MultiAgentConsole: React.FC<{ language?: 'es' | 'en' }> = ({ language = 'e
       }} />
       <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.005] to-white/[0.025] pointer-events-none" />
 
-      <div className="flex items-center gap-2 mb-3.5 relative z-10">
+      <div className="flex items-center gap-2 mb-3.5 relative z-10 flex-wrap sm:flex-nowrap">
         <Icon name="settings" size={16} style={{ color: "var(--teal)" }} />
         <h2 className="text-[15px] font-semibold text-t-0 flex-1">Consola de Telemetría Multi-Agente</h2>
+        
+        {/* Recommendation 21: JSON Structured Telemetry Exporter */}
+        <button
+          className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold px-2.5 py-1 rounded border border-line bg-bg-3 hover:bg-bg-2 hover:border-line-3 text-t-2 hover:text-teal cursor-pointer transition-all mr-2 shadow-sm"
+          onClick={() => {
+            const telemetryData = {
+              app: "LeakShield AI Command Center",
+              version: "v0.5.0 Premium",
+              generatedAt: new Date().toISOString(),
+              agents: agents.map(a => ({ name: a.name, description: a.desc, status: a.status })),
+              logs: agentLogs
+            };
+            const blob = new Blob([JSON.stringify(telemetryData, null, 2)], { type: "application/json;charset=utf-8" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = `leakshield_telemetria_agentes_${new Date().toISOString().slice(0, 10)}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            onToast(language === 'es' ? "Telemetría exportada en JSON" : "Telemetry exported in JSON format");
+          }}
+        >
+          <Icon name="file" size={11} />
+          {language === 'es' ? "Exportar JSON" : "Export JSON"}
+        </button>
+
         <span className="inline-flex items-center gap-1.5 text-[9.5px] font-semibold tracking-wider px-2 py-0.5 rounded border border-teal-line bg-teal-dim text-teal uppercase">
           En Vivo
         </span>
@@ -935,7 +1015,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="flex flex-col gap-4">
               <FactorsCard score={score} language={language} />
               <SemanticStitchingCard />
-              <MultiAgentConsole language={language} />
+              <MultiAgentConsole language={language} onToast={onToast} />
             </div>
             <div className="flex flex-col gap-4">
               <ProgressCard remediation={remediation} onNav={onNav} />

@@ -57,7 +57,13 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
   };
 
   const pushHistory = (current: Task[]) => {
-    setHistoryStack(prev => [...prev, [...current]]);
+    setHistoryStack(prev => {
+      const next = [...prev, [...current]];
+      if (next.length > 15) {
+        return next.slice(next.length - 15); // Limit buffer to last 15 moves to preserve client-side performance
+      }
+      return next;
+    });
   };
 
   const handleUndo = () => {

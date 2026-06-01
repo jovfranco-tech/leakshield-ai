@@ -35,19 +35,22 @@ import { Task, CopilotData, BreachFinding } from '../types/privacy';
 
 // Security Boundary: Encrypted Session Storage Hydration with Quantum XOR Cipher (OWASP PII)
 const secureSave = (key: string, data: any, persistent = false) => {
-  const json = JSON.stringify(data);
-  let result = "";
-  const secretKey = "leakshield_v0.3.0_quantum_key";
-  for (let i = 0; i < json.length; i++) {
-    const charCode = json.charCodeAt(i) ^ secretKey.charCodeAt(i % secretKey.length);
-    result += String.fromCharCode(charCode);
+  try {
+    const json = JSON.stringify(data);
+    let result = "";
+    const secretKey = "leakshield_v0.5.0_quantum_key";
+    for (let i = 0; i < json.length; i++) {
+      const charCode = json.charCodeAt(i) ^ secretKey.charCodeAt(i % secretKey.length);
+      result += String.fromCharCode(charCode);
+    }
+    const encoded = btoa(unescape(encodeURIComponent(result)));
+    const storage = persistent ? localStorage : sessionStorage;
+    storage.setItem(`leakshield_secure_${key}`, encoded);
+    const otherStorage = persistent ? sessionStorage : localStorage;
+    otherStorage.removeItem(`leakshield_secure_${key}`);
+  } catch (e) {
+    console.error("Session secure save failed:", e);
   }
-  const encoded = btoa(unescape(encodeURIComponent(result)));
-  const storage = persistent ? localStorage : sessionStorage;
-  storage.setItem(`leakshield_secure_${key}`, encoded);
-  // Remove from the other storage to prevent conflicts
-  const otherStorage = persistent ? sessionStorage : localStorage;
-  otherStorage.removeItem(`leakshield_secure_${key}`);
 };
 
 const secureLoad = (key: string) => {
@@ -59,13 +62,14 @@ const secureLoad = (key: string) => {
     if (!encoded) return null;
     const decoded = decodeURIComponent(escape(atob(encoded)));
     let result = "";
-    const secretKey = "leakshield_v0.3.0_quantum_key";
+    const secretKey = "leakshield_v0.5.0_quantum_key";
     for (let i = 0; i < decoded.length; i++) {
       const charCode = decoded.charCodeAt(i) ^ secretKey.charCodeAt(i % secretKey.length);
       result += String.fromCharCode(charCode);
     }
     return JSON.parse(result);
   } catch (e) {
+    console.warn("Session secure loading recovered from corrupt backup:", e);
     return null;
   }
 };
@@ -232,7 +236,7 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
     <div className="page min-h-screen overflow-y-auto bg-gradient-to-br from-bg-0 via-bg-0 to-bg-1 bg-[radial-gradient(1100px_620px_at_78%_-8%,rgba(34,211,238,0.10),transparent_58%),radial-gradient(900px_520px_at_-8%_4%,rgba(45,212,191,0.10),transparent_55%)] relative">
       <ThreatMeshBackground />
       {/* Top Header */}
-      <div className="flex justify-between items-center px-10 py-5.5 max-w-[1240px] mx-auto relative z-10">
+      <div className="flex justify-between items-center px-6 md:px-10 py-5.5 max-w-[1240px] mx-auto relative z-10">
         <div className="flex items-center gap-3">
           <div className="w-[34px] h-[34px] rounded-[10px] bg-gradient-to-br from-teal to-cyan text-[#04110F] flex items-center justify-center shadow-[0_6px_18px_-6px_rgba(45,212,191,0.6)]">
             <Icon name="shield-check" size={19} />
@@ -561,16 +565,39 @@ export const AppInternal: React.FC = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   
   useEffect(() => {
+    let timeoutId: number;
     const updateOnlineStatus = () => {
-      setIsOnline(navigator.onLine);
-      showToast(navigator.onLine ? "Conexión restaurada en vivo" : "Sin conexión a internet (modo offline local)");
+      clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(() => {
+        setIsOnline(navigator.onLine);
+        showToast(navigator.onLine ? "Conexión restaurada en vivo" : "Sin conexión a internet (modo offline local)");
+      }, 400); // 400ms Debounce to prevent micro-flickering spam
     };
     window.addEventListener('online', updateOnlineStatus);
     window.addEventListener('offline', updateOnlineStatus);
     return () => {
       window.removeEventListener('online', updateOnlineStatus);
       window.removeEventListener('offline', updateOnlineStatus);
+      clearTimeout(timeoutId);
     };
+  }, []);
+
+  // PerformanceObserver to log core rendering/loading metrics passively (Telemetry)
+  useEffect(() => {
+    try {
+      if (typeof PerformanceObserver !== 'undefined') {
+        const observer = new PerformanceObserver((list) => {
+          list.getEntries().forEach((entry) => {
+            console.log(`[LeakShield Performance] ${entry.name}: ${entry.startTime.toFixed(1)}ms`);
+          });
+        });
+        observer.observe({ type: 'mark', buffered: true });
+        observer.observe({ type: 'measure', buffered: true });
+        performance.mark('leakshield-boot-start');
+      }
+    } catch (e) {
+      console.warn("PerformanceObserver not fully supported or restricted:", e);
+    }
   }, []);
 
   // Regulatory Deletion Form State
@@ -658,18 +685,32 @@ export const AppInternal: React.FC = () => {
   }, []);
 
   const nav = (v: string) => {
+    const column = document.querySelector(".content-container-column");
     const changeView = () => {
       setView(v as ViewType);
-      document.querySelector(".content-container-column")?.scrollTo(0, 0);
+      column?.scrollTo(0, 0);
     };
     if ((document as any).startViewTransition) {
       (document as any).startViewTransition(changeView);
     } else {
-      changeView();
+      // Elegant CSS Fade fallback for browsers without View Transitions support
+      if (column) {
+        column.classList.add("fade-out-transition");
+        setTimeout(() => {
+          changeView();
+          column.classList.remove("fade-out-transition");
+          column.classList.add("fade-in-transition");
+          setTimeout(() => {
+            column.classList.remove("fade-in-transition");
+          }, 240);
+        }, 120);
+      } else {
+        changeView();
+      }
     }
   };
 
-  // Global keyboard shortcuts (A11y & Productivity: d=dashboard, c=copilot, t=tasks)
+  // Global keyboard shortcuts (A11y & Productivity: d=dashboard, c=copilot, t=tasks, supporting both raw and Alt/Option modifiers)
   useEffect(() => {
     const handleGlobalKeys = (e: KeyboardEvent) => {
       const activeEl = document.activeElement;
@@ -682,15 +723,17 @@ export const AppInternal: React.FC = () => {
       }
       
       const key = e.key.toLowerCase();
-      if (key === 'd') {
+      const isAlt = e.altKey;
+      
+      if (key === 'd' || (isAlt && key === 'd')) {
         e.preventDefault();
         nav('dashboard');
         showToast("Navegación rápida: Dashboard");
-      } else if (key === 'c') {
+      } else if (key === 'c' || (isAlt && key === 'c')) {
         e.preventDefault();
         nav('copilot');
         showToast("Navegación rápida: Copiloto de IA");
-      } else if (key === 't') {
+      } else if (key === 't' || (isAlt && key === 't')) {
         e.preventDefault();
         nav('tasks');
         showToast("Navegación rápida: Tablero de Tareas");
@@ -845,6 +888,7 @@ export const AppInternal: React.FC = () => {
             onToast={showToast}
             onNav={nav}
             currentScoreValue={dynamicScore.value}
+            language={language}
           />
         );
       case "tasks":
@@ -965,7 +1009,7 @@ export const AppInternal: React.FC = () => {
         />
         
         {/* Scrollable Screen Content */}
-        <div className="content-container-column flex-1 overflow-y-auto px-6.5 py-6.5 pb-14">
+        <div className="content-container-column flex-1 overflow-y-auto px-5 md:px-8 py-6.5 pb-14">
           {renderScreen()}
         </div>
       </main>
