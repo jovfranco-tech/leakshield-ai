@@ -11,6 +11,21 @@ const handleMouseMove = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>
   const y = e.clientY - rect.top;
   e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
   e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+
+  // Perspective 3D Tilt Parallax
+  const w = rect.width;
+  const h = rect.height;
+  const mouseX = x - w / 2;
+  const mouseY = y - h / 2;
+  const rX = (mouseY / (h / 2)) * -6; // Max 6deg
+  const rY = (mouseX / (w / 2)) * 6;
+  e.currentTarget.style.setProperty('--tilt-rx', `${rX}deg`);
+  e.currentTarget.style.setProperty('--tilt-ry', `${rY}deg`);
+};
+
+const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
+  e.currentTarget.style.setProperty('--tilt-rx', '0deg');
+  e.currentTarget.style.setProperty('--tilt-ry', '0deg');
 };
 
 interface ScoreCardProps {
@@ -23,7 +38,11 @@ const ScoreCard: React.FC<ScoreCardProps> = ({ score, variant, big }) => {
   return (
     <div 
       onMouseMove={handleMouseMove}
-      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-gradient-to-br from-bg-2 to-bg-1 shadow-premium"
+      onMouseLeave={handleMouseLeave}
+      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-gradient-to-br from-bg-2 to-bg-1 shadow-premium glossy-sweep noise-grain transition-all duration-150"
+      style={{
+        transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+      }}
     >
       {/* Radial Hover Glow & Specular Overlay */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
@@ -54,10 +73,16 @@ interface FactorsCardProps {
 }
 
 const FactorsCard: React.FC<FactorsCardProps> = ({ score }) => {
+  const [showTree, setShowTree] = React.useState(false);
+
   return (
     <div 
       onMouseMove={handleMouseMove}
-      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium"
+      onMouseLeave={handleMouseLeave}
+      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium glossy-sweep noise-grain transition-all duration-150"
+      style={{
+        transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+      }}
     >
       {/* Radial Hover Glow & Specular Overlay */}
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
@@ -68,33 +93,77 @@ const FactorsCard: React.FC<FactorsCardProps> = ({ score }) => {
       <div className="flex items-center gap-2 mb-3.5 relative z-10">
         <Icon name="sparkles" size={16} style={{ color: "var(--teal)" }} />
         <h2 className="text-[15px] font-semibold text-t-0 flex-1">Factores del Score: {score.value}</h2>
-        <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold tracking-wider uppercase text-teal">
-          <Icon name="sparkles" size={13} style={{ marginRight: 4 }} />
-          Análisis de IA
-        </span>
+        <button 
+          className="inline-flex items-center gap-1.5 text-[10.5px] font-semibold px-2 py-0.5 rounded border border-teal-line bg-teal-dim hover:bg-teal-dim/80 text-teal cursor-pointer transition-colors"
+          onClick={() => setShowTree(!showTree)}
+        >
+          <Icon name="sparkles" size={11} />
+          {showTree ? "Ver Factores" : "Árbol IA"}
+        </button>
       </div>
-      <div className="flex flex-col gap-3 relative z-10">
-        {score.factors.map((f, i) => {
-          const neg = f.impact < 0;
-          const w = Math.min(100, Math.abs(f.impact) / 14 * 100);
-          return (
-            <div key={i} className="relative group/factor">
-              <div className="flex justify-between items-center mb-1">
-                <span className="flex items-center gap-2 text-[12.8px] font-medium text-t-1">
+
+      {showTree ? (
+        <div className="flex flex-col gap-3 font-mono text-[12px] text-t-1 bg-bg-inset border border-line rounded-lg p-4 animate-fadeIn relative z-10">
+          <div className="flex justify-between items-center pb-2 border-b border-line/40">
+            <span className="text-[11.5px] font-semibold text-teal uppercase tracking-wider">Algoritmo de Scoring IA</span>
+            <span className="text-t-3 text-[10px] font-mono">v0.3.0 Engine</span>
+          </div>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-ok font-semibold">1. Estado Inicial</span>
+              <span className="text-t-3">➔</span>
+              <span>Puntaje Base: 100 pts</span>
+            </div>
+            <div className="pl-4 border-l border-line-2 flex flex-col gap-2.5">
+              <div className="flex items-center gap-2.5">
+                <span className="text-crit font-semibold">2. Brechas de Seguridad</span>
+                <span className="text-t-3">➔</span>
+                <span>Pondera severidad de datos (-12 pts cada brecha con contraseña)</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="text-high font-semibold">3. Brokers de Datos</span>
+                <span className="text-t-3">➔</span>
+                <span>Castiga exposición residencial (-6 pts c/u)</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="text-med font-semibold">4. Huella Pública</span>
+                <span className="text-t-3">➔</span>
+                <span>Pérdidas de metadatos de red y cuentas viejas (-4 pts c/u)</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <span className="text-ok font-semibold">5. Remediaciones Confirmadas</span>
+                <span className="text-t-3">➔</span>
+                <span>Aumenta puntaje (+8 a +12 pts) c/u</span>
+              </div>
+            </div>
+            <div className="mt-1 pt-2.5 border-t border-line/40 text-[11px] text-t-2 leading-relaxed font-sans normal-case">
+              * El motor de decisión IA correlaciona el nivel de riesgo global basándose en la accesibilidad de tus credenciales por parte de ciberdelincuentes.
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3 relative z-10">
+          {score.factors.map((f, i) => {
+            const neg = f.impact < 0;
+            const w = Math.min(100, Math.abs(f.impact) / 14 * 100);
+            return (
+              <div key={i} className="relative group/factor">
+                <div className="flex justify-between items-center mb-1">
+                  <span className="flex items-center gap-2 text-[12.8px] font-medium text-t-1">
+                    <span 
+                      className="w-1.5 h-1.5 rounded-full" 
+                      style={{ backgroundColor: f.credit ? "var(--ok)" : neg ? "var(--crit)" : "var(--t-3)" }} 
+                    />
+                    {f.label}
+                  </span>
+                  
+                  {/* Score Factor Explanation Tooltip */}
                   <span 
-                    className="w-1.5 h-1.5 rounded-full" 
-                    style={{ backgroundColor: f.credit ? "var(--ok)" : neg ? "var(--crit)" : "var(--t-3)" }} 
-                  />
-                  {f.label}
-                </span>
-                
-                {/* Score Factor Explanation Tooltip */}
-                <span 
-                  className="font-mono text-[12.5px] font-semibold cursor-help"
-                  style={{ color: f.credit ? "var(--ok)" : neg ? "var(--crit)" : "var(--t-2)" }}
-                  title={`${f.detail} (Impacto: ${f.impact} puntos en el score global)`}
-                >
-                  {f.impact > 0 ? "+" : ""}{f.impact}
+                    className="font-mono text-[12.5px] font-semibold cursor-help"
+                    style={{ color: f.credit ? "var(--ok)" : neg ? "var(--crit)" : "var(--t-2)" }}
+                    title={`${f.detail} (Impacto: ${f.impact} puntos en el score global)`}
+                  >
+                    {f.impact > 0 ? "+" : ""}{f.impact}
                 </span>
               </div>
               <div className="h-1.2 rounded-full bg-bg-inset overflow-hidden">
@@ -111,6 +180,80 @@ const FactorsCard: React.FC<FactorsCardProps> = ({ score }) => {
           );
         })}
       </div>
+      )}
+    </div>
+  );
+};
+
+const SemanticStitchingCard: React.FC = () => {
+  const [activeNode, setActiveNode] = React.useState<number | null>(null);
+
+  const relationships = [
+    { source: "Email Público", target: "Broker (PeopleLookup)", type: "Coincidencia de Alias", risk: "Alto", desc: "El correo jovan***@gmail.com vincula directamente tu identidad con registros residenciales expuestos en bases de datos comerciales." },
+    { source: "Dirección IP", target: "Foro de Devs", type: "Geolocalización Cruzada", risk: "Medio", desc: "La IP utilizada expone tu rango de proveedor de red y ubicación de ciudad, vinculando tu cuenta de desarrollo con tu actividad personal." },
+    { source: "Teléfono", target: "Brecha ShopMart", type: "Identidad Cruzada", risk: "Crítico", desc: "El número de teléfono expuesto en ShopMart coincide exactamente con tu alias registrado en el broker de datos corporativos." }
+  ];
+
+  return (
+    <div 
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium glossy-sweep noise-grain transition-all duration-150"
+      style={{
+        transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+      }}
+    >
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
+        background: `radial-gradient(350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.05), transparent 80%)`
+      }} />
+      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.005] to-white/[0.025] pointer-events-none" />
+
+      <div className="flex items-center gap-2 mb-3.5 relative z-10">
+        <Icon name="sparkles" size={16} style={{ color: "var(--cyan)" }} />
+        <h2 className="text-[15px] font-semibold text-t-0 flex-1">Correlación Semántica IA (Stitching)</h2>
+        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold tracking-wider px-2 py-0.5 rounded border border-cyan/25 bg-cyan/10 text-cyan uppercase">
+          Análisis Cruzado
+        </span>
+      </div>
+
+      <p className="text-[12.5px] text-t-1 leading-relaxed mb-4 relative z-10">
+        El motor de IA analiza cómo atacantes pueden cruzar datos fragmentarios e inconexos para perfilarte. Haz clic en las conexiones detectadas para ver detalles:
+      </p>
+
+      <div className="flex flex-col gap-2.5 relative z-10">
+        {relationships.map((rel, idx) => (
+          <div 
+            key={idx} 
+            className={`border rounded-lg p-3 cursor-pointer transition-all duration-150 ${
+              activeNode === idx ? 'border-cyan/50 bg-cyan/5' : 'border-line bg-bg-inset hover:border-line-2'
+            }`}
+            onClick={() => setActiveNode(activeNode === idx ? null : idx)}
+          >
+            <div className="flex justify-between items-center flex-wrap gap-2">
+              <div className="flex items-center gap-2 font-mono text-[11.5px]">
+                <span className="text-t-0 font-semibold">{rel.source}</span>
+                <span className="text-t-2">➔</span>
+                <span className="text-cyan font-semibold">{rel.target}</span>
+              </div>
+              <span className={`text-[10px] font-semibold px-2 py-0.2 rounded-full ${
+                rel.risk === 'Crítico' ? 'bg-crit-dim text-crit' : rel.risk === 'Alto' ? 'bg-high-dim text-high' : 'bg-med-dim text-med'
+              }`}>
+                {rel.risk}
+              </span>
+            </div>
+            
+            <div className="text-[11px] text-t-2 mt-1.5 font-sans">
+              Método: <span className="text-t-1 font-semibold">{rel.type}</span>
+            </div>
+
+            {activeNode === idx && (
+              <div className="mt-2.5 pt-2.5 border-t border-line/40 text-[12px] text-t-1 leading-relaxed animate-fadeIn">
+                {rel.desc}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -124,7 +267,11 @@ const ProgressCard: React.FC<ProgressCardProps> = ({ remediation, onNav }) => {
   return (
     <div 
       onMouseMove={handleMouseMove}
-      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium"
+      onMouseLeave={handleMouseLeave}
+      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium glossy-sweep noise-grain transition-all duration-150"
+      style={{
+        transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+      }}
     >
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
         background: `radial-gradient(350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.05), transparent 80%)`
@@ -176,7 +323,11 @@ const NextActionCard: React.FC<NextActionCardProps> = ({ copilot, onNav, onToast
   return (
     <div 
       onMouseMove={handleMouseMove}
-      className="group relative overflow-hidden border border-teal-line rounded-lg p-5 bg-gradient-to-br from-teal/7 to-bg-2 shadow-premium"
+      onMouseLeave={handleMouseLeave}
+      className="group relative overflow-hidden border border-teal-line rounded-lg p-5 bg-gradient-to-br from-teal/7 to-bg-2 shadow-premium glossy-sweep noise-grain transition-all duration-150"
+      style={{
+        transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+      }}
     >
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
         background: `radial-gradient(400px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.08), transparent 80%)`
@@ -259,7 +410,11 @@ const HighRiskCard: React.FC<HighRiskCardProps> = ({ highRiskData }) => {
   return (
     <div 
       onMouseMove={handleMouseMove}
-      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium"
+      onMouseLeave={handleMouseLeave}
+      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium glossy-sweep noise-grain transition-all duration-150"
+      style={{
+        transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+      }}
     >
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
         background: `radial-gradient(350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.05), transparent 80%)`
@@ -327,7 +482,11 @@ const TopUrgentActions: React.FC<TopUrgentActionsProps> = ({ onNav, onToast }) =
   return (
     <div 
       onMouseMove={handleMouseMove}
-      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium"
+      onMouseLeave={handleMouseLeave}
+      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium glossy-sweep noise-grain transition-all duration-150"
+      style={{
+        transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+      }}
     >
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
         background: `radial-gradient(400px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.05), transparent 80%)`
@@ -400,7 +559,11 @@ const MiniBreaches: React.FC<MiniBreachesProps> = ({ breaches, onNav }) => {
   return (
     <div 
       onMouseMove={handleMouseMove}
-      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium"
+      onMouseLeave={handleMouseLeave}
+      className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium glossy-sweep noise-grain transition-all duration-150"
+      style={{
+        transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+      }}
     >
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
         background: `radial-gradient(350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.05), transparent 80%)`
@@ -455,7 +618,11 @@ const RiskTile: React.FC<RiskTileProps> = ({ icon, data, onClick }) => {
   return (
     <button 
       onMouseMove={handleMouseMove}
-      className="group border border-line rounded-lg p-5 bg-bg-2 hover:bg-bg-3/40 hover:border-line-2 shadow-premium text-left cursor-pointer transition-all duration-130 w-full block relative overflow-hidden"
+      onMouseLeave={handleMouseLeave}
+      className="group border border-line rounded-lg p-5 bg-bg-2 hover:bg-bg-3/40 hover:border-line-2 shadow-premium text-left cursor-pointer transition-all duration-150 w-full block relative overflow-hidden glossy-sweep noise-grain"
+      style={{
+        transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+      }}
       onClick={onClick}
     >
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
@@ -563,8 +730,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Top Urgent Actions Prominent Section */}
           <TopUrgentActions onNav={onNav} onToast={onToast} />
 
-          <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-4">
-            <FactorsCard score={score} />
+          <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_0.9fr] gap-4">
+            <div className="flex flex-col gap-4">
+              <FactorsCard score={score} />
+              <SemanticStitchingCard />
+            </div>
             <div className="flex flex-col gap-4">
               <ProgressCard remediation={remediation} onNav={onNav} />
               <HighRiskCard highRiskData={highRiskData} />

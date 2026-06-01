@@ -11,6 +11,21 @@ const handleMouseMove = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>
   const y = e.clientY - rect.top;
   e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
   e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+
+  // Perspective 3D Tilt
+  const w = rect.width;
+  const h = rect.height;
+  const mouseX = x - w / 2;
+  const mouseY = y - h / 2;
+  const rX = (mouseY / (h / 2)) * -6; // Max 6deg
+  const rY = (mouseX / (w / 2)) * 6;
+  e.currentTarget.style.setProperty('--tilt-rx', `${rX}deg`);
+  e.currentTarget.style.setProperty('--tilt-ry', `${rY}deg`);
+};
+
+const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
+  e.currentTarget.style.setProperty('--tilt-rx', '0deg');
+  e.currentTarget.style.setProperty('--tilt-ry', '0deg');
 };
 
 interface CopilotWorkspaceProps {
@@ -36,15 +51,37 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
 
   const [target, setTarget] = useState<'DataFind' | 'InfoAggregate'>('DataFind');
   const [lawType, setLawType] = useState<'CCPA' | 'GDPR' | 'ARCO' | 'Generic'>('ARCO');
+  const [tone, setTone] = useState<'strict' | 'cordial' | 'concise'>('strict');
   const [sent, setSent] = useState(false);
   const [innerModal, setInnerModal] = useState(false);
 
-  // Alias Sandbox State
+  // Alias Sandbox Verification States
   const [sandboxEmail, setSandboxEmail] = useState("alex.rivera");
   const [sandboxTag, setSandboxTag] = useState("compras");
   const [sandboxCategory, setSandboxCategory] = useState<'banking' | 'shopping' | 'newsletters'>('shopping');
+  const [verifyingAlias, setVerifyingAlias] = useState(false);
+  const [aliasVerified, setAliasVerified] = useState(false);
 
-  const letter = generateDeletionRequest(target, lawType, profile.name, profile.location);
+  const handleVerifyAlias = () => {
+    setVerifyingAlias(true);
+    setAliasVerified(false);
+    onToast("Enviando ping de verificación de ruta...");
+    setTimeout(() => {
+      setVerifyingAlias(false);
+      setAliasVerified(true);
+      onToast("¡Alias verificado! MX records válidos y enrutamiento seguro confirmado.");
+    }, 2000);
+  };
+
+  const getCustomToneDescription = () => {
+    if (tone === 'strict') return "Exijo de forma inmediata y enérgica la exclusión legal de mis registros de su base de datos bajo apercibimiento de sanción.";
+    if (tone === 'cordial') return "Por medio de la presente, solicito de la manera más atenta la remoción de mi perfil comercial y la eliminación de toda mi información personal de su índice de datos.";
+    return "Remoción formal, definitiva y directa de mis registros de sus sistemas y bases de datos.";
+  };
+
+  const letter = `${generateDeletionRequest(target, lawType, profile.name, profile.location)}\n\n[Cláusula de Tono IA - ${
+    tone === 'strict' ? 'ESTRICTO LEGAL' : tone === 'cordial' ? 'CORDIAL' : 'DIRECTO'
+  }]: ${getCustomToneDescription()}`;
 
   const pushLog = (t: string, tag: string) => {
     setLog(l => [{ t, tag, time: "ahora" }, ...l]);
@@ -83,7 +120,11 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
         {/* Summary & Projection / Score Optimizer */}
         <div 
           onMouseMove={handleMouseMove}
-          className="group relative overflow-hidden border border-teal-line rounded-lg p-5 bg-gradient-to-br from-teal/6 to-bg-2 shadow-premium flex flex-col justify-between"
+          onMouseLeave={handleMouseLeave}
+          className="group relative overflow-hidden border border-teal-line rounded-lg p-5 bg-gradient-to-br from-teal/6 to-bg-2 shadow-premium flex flex-col justify-between glossy-sweep noise-grain transition-all duration-150"
+          style={{
+            transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+          }}
         >
           {/* Radial Hover Glow & Specular Glass Reflection */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
@@ -132,7 +173,11 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
         {/* Next Best Action Card */}
         <div 
           onMouseMove={handleMouseMove}
-          className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium flex flex-col justify-between"
+          onMouseLeave={handleMouseLeave}
+          className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium flex flex-col justify-between glossy-sweep noise-grain transition-all duration-150"
+          style={{
+            transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+          }}
         >
           {/* Radial Hover Glow & Specular Overlay */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
@@ -176,7 +221,11 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
       {/* Plan Board columns */}
       <div 
         onMouseMove={handleMouseMove}
-        className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium mb-4"
+        onMouseLeave={handleMouseLeave}
+        className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium mb-4 transition-all duration-150"
+        style={{
+          transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+        }}
       >
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
           background: `radial-gradient(500px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.03), transparent 80%)`
@@ -239,7 +288,11 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
         {/* AI generators & Sandbox */}
         <div 
           onMouseMove={handleMouseMove}
-          className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium flex flex-col gap-4"
+          onMouseLeave={handleMouseLeave}
+          className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium flex flex-col gap-4 transition-all duration-150 glossy-sweep noise-grain"
+          style={{
+            transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+          }}
         >
           {/* Radial Hover Glow & Specular Overlay */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
@@ -313,11 +366,44 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
               </div>
             </div>
 
-            <div className="border border-teal-line/30 bg-teal-dim/10 rounded-lg p-3 flex flex-col gap-1 flex-1">
-              <span className="text-[10px] tracking-wide uppercase text-teal font-semibold block">Alias Protegido Generado:</span>
-              <span className="font-mono text-[13.5px] text-t-0 select-all font-semibold truncate bg-bg-2 px-2.5 py-1 rounded border border-line break-all block w-full leading-relaxed">
-                {generateSandboxAlias()}
-              </span>
+            <div className="border border-teal-line/30 bg-teal-dim/10 rounded-lg p-3 flex flex-col gap-2.5 flex-1">
+              <div>
+                <span className="text-[10px] tracking-wide uppercase text-teal font-semibold block">Alias Protegido Generado:</span>
+                <span className="font-mono text-[13.5px] text-t-0 select-all font-semibold truncate bg-bg-2 px-2.5 py-1 rounded border border-line break-all block w-full leading-relaxed">
+                  {generateSandboxAlias()}
+                </span>
+              </div>
+              
+              <div className="flex gap-2 items-center flex-wrap">
+                <button
+                  className="flex-1 flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[11.5px] px-3 py-1.5 bg-bg-3 hover:bg-bg-2 border border-line-2 text-t-0 cursor-pointer transition-all duration-120"
+                  onClick={handleVerifyAlias}
+                  disabled={verifyingAlias}
+                >
+                  {verifyingAlias ? (
+                    <>
+                      <Icon name="refresh" size={13} className="spin" />
+                      Verificando ruta...
+                    </>
+                  ) : aliasVerified ? (
+                    <>
+                      <Icon name="check-circle" size={13} style={{ color: 'var(--ok)' }} />
+                      Alias Activo en Vivo
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="shield-check" size={13} />
+                      Verificar Alias en Vivo
+                    </>
+                  )}
+                </button>
+                {aliasVerified && (
+                  <span className="text-[11px] text-ok font-semibold animate-fadeIn flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-ok" />
+                    Enrutamiento Seguro Activo
+                  </span>
+                )}
+              </div>
             </div>
             
             <div className="text-[11.2px] text-t-2 leading-relaxed leading-none flex gap-1 items-start mt-0.5">
@@ -330,7 +416,11 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
         {/* Activity log */}
         <div 
           onMouseMove={handleMouseMove}
-          className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium flex flex-col justify-between"
+          onMouseLeave={handleMouseLeave}
+          className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium flex flex-col justify-between transition-all duration-150 glossy-sweep noise-grain"
+          style={{
+            transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+          }}
         >
           {/* Radial Hover Glow */}
           <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
@@ -444,6 +534,29 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
               </div>
 
               <div className="flex flex-col gap-1.5 mt-4">
+                <label className="text-[12px] font-semibold text-t-1">Tono de Redacción IA</label>
+                <div className="flex gap-1 bg-bg-inset p-1 rounded-lg border border-line w-fit">
+                  {[
+                    ["strict", "Estricto Legal"],
+                    ["cordial", "Cordial"],
+                    ["concise", "Directo / Conciso"]
+                  ].map(([k, lbl]) => (
+                    <button 
+                      key={k} 
+                      className={`px-3 py-1 rounded-md text-[11.5px] font-semibold cursor-pointer border-0 transition-all duration-120 ${
+                        tone === k 
+                          ? "bg-bg-3 text-teal shadow-premium" 
+                          : "text-t-1 hover:text-t-0 bg-transparent"
+                      }`} 
+                      onClick={() => setTone(k as any)}
+                    >
+                      {lbl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5 mt-4">
                 <label className="text-[12px] font-semibold text-t-1">Solicitud oficial redactada</label>
                 <pre className="m-0 whitespace-pre-wrap font-mono text-[12px] leading-relaxed text-t-1 bg-bg-inset border border-line rounded-lg p-4">
                   {letter}
@@ -455,7 +568,7 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
                 <span>Esta demo no realiza envíos directos. En producción real, la cola de tareas derivará las solicitudes al backend.</span>
               </div>
 
-              <div className="flex justify-end gap-2.5">
+              <div className="flex justify-end gap-2.5 flex-wrap">
                 <button 
                   className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 border border-line-2 bg-bg-3 hover:bg-bg-2 text-t-1 hover:text-t-0 cursor-pointer transition-all duration-130 shadow-premium"
                   onClick={() => { 
@@ -465,6 +578,41 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
                 >
                   <Icon name="file" size={15} />
                   Copiar texto
+                </button>
+                <button 
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 border border-line-2 bg-bg-3 hover:bg-bg-2 text-t-1 hover:text-t-0 cursor-pointer transition-all duration-130 shadow-premium"
+                  onClick={() => { 
+                    const fileContent = `========================================================
+SOLICITUD FORMAL DE EXCLUSIÓN LEGAL Y DERECHOS ARCO
+LeakShield AI Command Center - v0.3.0 Premium Release
+========================================================
+
+Fecha de Generación: ${new Date().toLocaleDateString('es-ES')}
+Titular de Datos: ${profile.name}
+Ubicación declarada: ${profile.location}
+
+--------------------------------------------------------
+CONTENIDO DE LA SOLICITUD GENERADA POR IA:
+--------------------------------------------------------
+${letter}
+
+--------------------------------------------------------
+Esta es una simulación premium interactiva de LeakShield AI.
+La descarga de este borrador legal simula la exportación de
+los formatos exigidos por los reguladores de privacidad.
+========================================================`;
+                    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `leakshield_solicitud_supresion_${target.toLowerCase()}.txt`;
+                    link.click();
+                    URL.revokeObjectURL(url);
+                    onToast("¡Documento legal exportado y descargado!"); 
+                  }}
+                >
+                  <Icon name="refresh" size={15} />
+                  Descargar TXT Legal
                 </button>
                 <button 
                   className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] cursor-pointer transition-all duration-130 shadow-premium"

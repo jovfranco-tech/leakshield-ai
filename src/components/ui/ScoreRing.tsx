@@ -35,64 +35,68 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({ value, size = 168, stroke 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
       <style>{`
-        @keyframes score-ring-orbit-ccw {
-          0% { transform: rotate(360deg); }
-          100% { transform: rotate(0deg); }
+        @keyframes score-ring-orbit-elliptic-cw {
+          0% { transform: rotate(0deg) scaleX(1.12) scaleY(0.92); }
+          100% { transform: rotate(360deg) scaleX(1.12) scaleY(0.92); }
         }
-        @keyframes score-ring-orbit-cw {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+        @keyframes score-ring-orbit-elliptic-ccw {
+          0% { transform: rotate(360deg) scaleX(0.92) scaleY(1.12); }
+          100% { transform: rotate(0deg) scaleX(0.92) scaleY(1.12); }
         }
-        @keyframes particle-pulse {
-          0%, 100% { transform: scale(0.7); opacity: 0.35; }
-          50% { transform: scale(1.3); opacity: 0.95; }
+        @keyframes score-ring-orbit-wobbly {
+          0% { transform: rotate(120deg) scale(0.96) rotate(0deg); }
+          100% { transform: rotate(480deg) scale(0.96) rotate(-360deg); }
+        }
+        @keyframes particle-pulse-trail {
+          0%, 100% { transform: scale(0.65); opacity: 0.25; filter: blur(0.6px); }
+          50% { transform: scale(1.35); opacity: 0.95; filter: blur(0px); }
         }
       `}</style>
 
-      {/* Orbit Container 1 (Teal Particle) */}
+      {/* Orbit Container 1 (Teal Particle - Elliptic) */}
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
-          animation: "score-ring-orbit-cw 12s linear infinite",
+          animation: "score-ring-orbit-elliptic-cw 14s linear infinite",
         }}
       >
         <div 
-          className="absolute rounded-full bg-teal shadow-[0_0_8px_var(--teal)]"
+          className="absolute rounded-full bg-teal shadow-[0_0_10px_var(--teal),0_0_20px_var(--teal)]"
           style={{
-            width: stroke * 0.5,
-            height: stroke * 0.5,
-            left: `calc(50% - ${stroke * 0.25}px)`,
-            top: `calc(50% - ${r}px - ${stroke * 0.25}px)`,
-            animation: "particle-pulse 2s ease-in-out infinite",
+            width: stroke * 0.52,
+            height: stroke * 0.52,
+            left: `calc(50% - ${stroke * 0.26}px)`,
+            top: `calc(50% - ${r}px - ${stroke * 0.26}px)`,
+            animation: "particle-pulse-trail 2s ease-in-out infinite",
           }}
         />
       </div>
 
-      {/* Orbit Container 2 (Cyan Particle) */}
+      {/* Orbit Container 2 (Cyan Particle - Elliptic CCW) */}
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
-          animation: "score-ring-orbit-ccw 16s linear infinite",
+          animation: "score-ring-orbit-elliptic-ccw 18s linear infinite",
         }}
       >
         <div 
-          className="absolute rounded-full bg-cyan shadow-[0_0_8px_var(--cyan)]"
+          className="absolute rounded-full bg-cyan shadow-[0_0_8px_var(--cyan),0_0_16px_var(--cyan)]"
           style={{
-            width: stroke * 0.4,
-            height: stroke * 0.4,
-            left: `calc(50% - ${stroke * 0.2}px)`,
-            top: `calc(50% + ${r}px - ${stroke * 0.2}px)`,
-            animation: "particle-pulse 2.5s ease-in-out infinite",
+            width: stroke * 0.42,
+            height: stroke * 0.42,
+            left: `calc(50% - ${stroke * 0.21}px)`,
+            top: `calc(50% + ${r}px - ${stroke * 0.21}px)`,
+            animation: "particle-pulse-trail 2.6s ease-in-out infinite",
             animationDelay: "0.5s",
           }}
         />
       </div>
 
-      {/* Orbit Container 3 (Secondary Amber/Glow Particle) */}
+      {/* Orbit Container 3 (Secondary Amber/Glow Particle - Wobbly) */}
       <div 
         className="absolute inset-0 pointer-events-none"
         style={{
-          animation: "score-ring-orbit-cw 22s linear infinite",
+          animation: "score-ring-orbit-wobbly 24s linear infinite",
         }}
       >
         <div 
@@ -102,7 +106,7 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({ value, size = 168, stroke 
             height: stroke * 0.3,
             left: `calc(50% - ${r}px - ${stroke * 0.15}px)`,
             top: `calc(50% - ${stroke * 0.15}px)`,
-            animation: "particle-pulse 1.8s ease-in-out infinite",
+            animation: "particle-pulse-trail 2s ease-in-out infinite",
             animationDelay: "1s",
           }}
         />
@@ -140,3 +144,4 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({ value, size = 168, stroke 
     </div>
   );
 };
+export default ScoreRing;

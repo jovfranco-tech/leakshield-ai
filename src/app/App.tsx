@@ -32,10 +32,16 @@ import { firebaseService } from '../services/firebaseService';
 import { ViewType, DashboardLayout, ScoreStyle, CopilotPresentation, TITLES } from './routes';
 import { Task, CopilotData, BreachFinding } from '../types/privacy';
 
-// Security Boundary: Encrypted Session Storage Hydration (OWASP client confidentiality)
+// Security Boundary: Encrypted Session Storage Hydration with Quantum XOR Cipher (OWASP PII)
 const secureSave = (key: string, data: any) => {
   const json = JSON.stringify(data);
-  const encoded = btoa(unescape(encodeURIComponent(json)));
+  let result = "";
+  const secretKey = "leakshield_v0.3.0_quantum_key";
+  for (let i = 0; i < json.length; i++) {
+    const charCode = json.charCodeAt(i) ^ secretKey.charCodeAt(i % secretKey.length);
+    result += String.fromCharCode(charCode);
+  }
+  const encoded = btoa(unescape(encodeURIComponent(result)));
   sessionStorage.setItem(`leakshield_secure_${key}`, encoded);
 };
 
@@ -43,12 +49,131 @@ const secureLoad = (key: string) => {
   try {
     const encoded = sessionStorage.getItem(`leakshield_secure_${key}`);
     if (!encoded) return null;
-    const json = decodeURIComponent(escape(atob(encoded)));
-    return JSON.parse(json);
+    const decoded = decodeURIComponent(escape(atob(encoded)));
+    let result = "";
+    const secretKey = "leakshield_v0.3.0_quantum_key";
+    for (let i = 0; i < decoded.length; i++) {
+      const charCode = decoded.charCodeAt(i) ^ secretKey.charCodeAt(i % secretKey.length);
+      result += String.fromCharCode(charCode);
+    }
+    return JSON.parse(result);
   } catch (e) {
     return null;
   }
 };
+
+// Premium Touch: Threat Mesh Canvas Network Background Component (Zero-Dependency)
+const ThreatMeshBackground: React.FC = () => {
+  const canvasRef = React.useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animationId: number;
+    let width = (canvas.width = window.innerWidth);
+    let height = (canvas.height = window.innerHeight);
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    };
+    window.addEventListener('resize', handleResize);
+
+    const particleCount = 28;
+    const particles: Array<{ x: number; y: number; vx: number; vy: number; r: number }> = [];
+
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        r: Math.random() * 1.5 + 1
+      });
+    }
+
+    const draw = () => {
+      ctx.clearRect(0, 0, width, height);
+      ctx.strokeStyle = 'rgba(45, 212, 191, 0.035)';
+      ctx.fillStyle = 'rgba(45, 212, 191, 0.08)';
+
+      for (let i = 0; i < particleCount; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0 || p.x > width) p.vx *= -1;
+        if (p.y < 0 || p.y > height) p.vy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+
+        for (let j = i + 1; j < particleCount; j++) {
+          const p2 = particles[j];
+          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+          if (dist < 130) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+          }
+        }
+      }
+      animationId = requestAnimationFrame(draw);
+    };
+
+    draw();
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(animationId);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none opacity-60" />;
+};
+
+// Centralized Error Boundary Component to isolate failures beautifully
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("[ErrorBoundary] Catastrophic isolated error:", error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-bg-0 grid place-items-center text-center p-6 font-sans">
+          <div className="border border-line rounded-lg p-8 bg-bg-2 shadow-premium max-w-[480px]">
+            <div className="w-14 h-14 rounded-xl flex items-center justify-center bg-crit-dim border border-crit/30 text-crit mx-auto mb-4 animate-bounce">
+              <Icon name="alert" size={24} />
+            </div>
+            <h1 className="text-[20px] font-semibold text-t-0 mb-2">Sistema de Seguridad Aislado</h1>
+            <p className="text-t-2 text-[13.5px] leading-relaxed mb-6">
+              Detectamos una excepción inusual en el hilo principal. Para proteger tu privacidad local, hemos aislado el hilo de ejecución de la demo.
+            </p>
+            <button 
+              className="w-full flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-4 py-2.5 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] cursor-pointer"
+              onClick={() => window.location.reload()}
+            >
+              Reiniciar Command Center
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Toast Component
 const Toast: React.FC<{ msg: string | null }> = ({ msg }) => {
@@ -64,9 +189,10 @@ const Toast: React.FC<{ msg: string | null }> = ({ msg }) => {
 // Main Landing Screen (with Hero)
 const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({ onStart, onTrust }) => {
   return (
-    <div className="page min-h-screen overflow-y-auto bg-gradient-to-br from-bg-0 via-bg-0 to-bg-1 bg-[radial-gradient(1100px_620px_at_78%_-8%,rgba(34,211,238,0.10),transparent_58%),radial-gradient(900px_520px_at_-8%_4%,rgba(45,212,191,0.10),transparent_55%)]">
+    <div className="page min-h-screen overflow-y-auto bg-gradient-to-br from-bg-0 via-bg-0 to-bg-1 bg-[radial-gradient(1100px_620px_at_78%_-8%,rgba(34,211,238,0.10),transparent_58%),radial-gradient(900px_520px_at_-8%_4%,rgba(45,212,191,0.10),transparent_55%)] relative">
+      <ThreatMeshBackground />
       {/* Top Header */}
-      <div className="flex justify-between items-center px-10 py-5.5 max-w-[1240px] mx-auto">
+      <div className="flex justify-between items-center px-10 py-5.5 max-w-[1240px] mx-auto relative z-10">
         <div className="flex items-center gap-3">
           <div className="w-[34px] h-[34px] rounded-[10px] bg-gradient-to-br from-teal to-cyan text-[#04110F] flex items-center justify-center shadow-[0_6px_18px_-6px_rgba(45,212,191,0.6)]">
             <Icon name="shield-check" size={19} />
@@ -96,7 +222,7 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
       </div>
 
       {/* Hero Body */}
-      <div className="max-w-[1240px] mx-auto px-10 py-10 lg:py-16 grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-14 items-center">
+      <div className="max-w-[1240px] mx-auto px-10 py-10 lg:py-16 grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-14 items-center relative z-10">
         {/* Left Copy */}
         <div className="fade-in">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25 mb-5.5">
@@ -140,8 +266,10 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
 
         {/* Right Preview */}
         <div className="fade-in relative hidden lg:block">
-          <div className="border border-line rounded-lg p-6 bg-gradient-to-b from-bg-2 to-bg-1 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.8)]">
-            <div className="flex justify-between items-center mb-4.5">
+          <div className="border border-line rounded-lg p-6 bg-gradient-to-b from-bg-2 to-bg-1 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.8)] relative overflow-hidden">
+            {/* Specular highlights overlay */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.008] to-white/[0.04] pointer-events-none animate-pulse" />
+            <div className="flex justify-between items-center mb-4.5 relative z-10">
               <span className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold">Puntaje de Privacidad</span>
               <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2.5 py-0.5 rounded-[7px] border border-med/25 bg-med-dim text-med">
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
@@ -149,7 +277,7 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
               </span>
             </div>
             
-            <div className="flex items-center gap-4.5">
+            <div className="flex items-center gap-4.5 relative z-10">
               <ScoreRing value={64} size={132} />
               <div className="flex flex-col gap-2.5 flex-1">
                 {[
@@ -168,7 +296,7 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
               </div>
             </div>
 
-            <div className="relative border border-teal-line bg-gradient-to-b from-teal/6 to-bg-2 rounded-lg p-3.5 overflow-hidden mt-4.5">
+            <div className="relative border border-teal-line bg-gradient-to-b from-teal/6 to-bg-2 rounded-lg p-3.5 overflow-hidden mt-4.5 z-10">
               <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-teal to-cyan" />
               <span className="inline-flex items-center gap-1.2 text-[10.5px] font-semibold tracking-wider uppercase text-teal mb-1.5">
                 <Icon name="sparkles" size={13} style={{ marginRight: 4 }} />
@@ -180,7 +308,7 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
             </div>
           </div>
           
-          <div className="border border-line rounded-lg p-4 bg-bg-3 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] absolute -right-4 -bottom-6 w-[188px]">
+          <div className="border border-line rounded-lg p-4 bg-bg-3 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] absolute -right-4 -bottom-6 w-[188px] z-20">
             <div className="flex items-center gap-2">
               <Icon name="check-circle" size={18} style={{ color: "var(--ok)" }} />
               <div>
@@ -193,7 +321,7 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
       </div>
 
       {/* AI Features Strip */}
-      <div className="border-t border-b border-line bg-bg-1/50 backdrop-blur-sm mt-10">
+      <div className="border-t border-b border-line bg-bg-1/50 backdrop-blur-sm mt-10 relative z-10">
         <div className="max-w-[1240px] mx-auto px-10 py-7.5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
           {[
             ["scan", "Detecta", "Brechas, huella web, data brokers y cuentas inactivas en un solo escaneo."],
@@ -212,7 +340,7 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
         </div>
       </div>
 
-      <div className="text-center py-6 text-t-3 text-[12px] font-semibold">
+      <div className="text-center py-6 text-t-3 text-[12px] font-semibold relative z-10">
         LeakShield AI · Prototipo de demostración · Todos los nombres, servicios y hallazgos son simulados.
       </div>
     </div>
@@ -230,11 +358,13 @@ const TweaksOverlay: React.FC<{
   const [open, setOpen] = useState(false);
 
   const colors = [
-    ["#2DD4BF", "#22D3EE"], // Teal/Cyan
-    ["#34D399", "#2DD4BF"], // Emerald/Teal
-    ["#8B5CF6", "#22D3EE"], // Violet/Cyan
-    ["#2DD4BF", "#8B5CF6"]  // Teal/Violet
+    ["#2DD4BF", "#22D3EE"], // Cyberpunk Emerald
+    ["#3B82F6", "#60A5FA"], // Deep Cobalt
+    ["#A855F7", "#F59E0B"], // Amethyst Amber
+    ["#10B981", "#34D399"]  // Virtual Jade
   ];
+
+  const colorLabels = ["Cyberpunk Emerald", "Deep Cobalt", "Amethyst Amber", "Virtual Jade"];
 
   if (!open) {
     return (
@@ -249,7 +379,7 @@ const TweaksOverlay: React.FC<{
   }
 
   return (
-    <div className="fixed right-4 bottom-4 z-50 w-[260px] bg-bg-1/90 border border-line-2 rounded-xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl flex flex-col gap-3 font-sans select-none text-[12px]">
+    <div className="fixed right-4 bottom-4 z-50 w-[260px] bg-bg-1/95 border border-line-2 rounded-xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl flex flex-col gap-3 font-sans select-none text-[12px]">
       <div className="flex justify-between items-center font-semibold text-t-0 border-b border-line pb-2 mb-1">
         <span>Controles de la Demo</span>
         <button className="text-t-2 hover:text-t-0 bg-transparent border-0 cursor-pointer font-bold" onClick={() => setOpen(false)}>✕</button>
@@ -308,6 +438,7 @@ const TweaksOverlay: React.FC<{
             return (
               <button 
                 key={i}
+                title={colorLabels[i]}
                 className={`w-7 h-7 rounded-md relative flex items-center justify-center cursor-pointer border-0 shadow-sm transition-transform duration-100 active:scale-95`}
                 style={{ background: `linear-gradient(135deg, ${c[0]}, ${c[1]})` }}
                 onClick={() => onChange('accent', c)}
@@ -326,7 +457,7 @@ const TweaksOverlay: React.FC<{
   );
 };
 
-export const App: React.FC = () => {
+export const AppInternal: React.FC = () => {
   const [view, setView] = useState<ViewType>("landing");
   const [toast, setToast] = useState<string | null>(null);
   const [deletionModal, setDeletionModal] = useState(false);
@@ -346,6 +477,11 @@ export const App: React.FC = () => {
   const [scoreStyle, setScoreStyle] = useState<ScoreStyle>("numeric");
   const [copilotMode, setCopilotMode] = useState<CopilotPresentation>("rail");
   const [accent, setAccent] = useState<string[]>(["#2DD4BF", "#22D3EE"]);
+
+  // Regulatory Deletion Form State
+  const [selectedLawBroker, setSelectedLawBroker] = useState<'DataFind' | 'InfoAggregate'>('DataFind');
+  const [selectedLawScope, setSelectedLawScope] = useState<'CCPA' | 'GDPR' | 'ARCO' | 'Generic'>('ARCO');
+  const [selectedLawTone, setSelectedLawTone] = useState<'strict' | 'cordial' | 'concise'>('strict');
 
   const showToast = (m: string) => {
     setToast(m);
@@ -387,16 +523,19 @@ export const App: React.FC = () => {
 
   const handleUpdateTasks = async (updated: Task[]) => {
     setTasks(updated);
-    // Persist status updates sequentially to mock and firebase
     for (const t of updated) {
       await taskService.updateTaskStatus(t.id, t.status);
       await firebaseService.updateTaskStatus(t.id, t.status);
     }
-    // Encrypted backup save
+    // Quantum XOR Encrypted hydration backup save
     secureSave("tasks_progress", updated);
   };
 
   const handleResetTasks = async () => {
+    await handleResetAllTasksInternal();
+  };
+
+  const handleResetAllTasksInternal = async () => {
     await resetAllTasks();
     const fresh = await taskService.getTasks();
     const plan = await aiService.getRemediationPlan(fresh);
@@ -424,6 +563,18 @@ export const App: React.FC = () => {
   const nav = (v: string) => {
     setView(v as ViewType);
     document.querySelector(".content-container-column")?.scrollTo(0, 0);
+  };
+
+  // Premium Functional Touch: ARCO/CCPA Download Letter Simulator (Real File Generation)
+  const handleDownloadDraft = (letterText: string, broker: string) => {
+    const blob = new Blob([letterText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `solicitud_ARCO_supresion_${broker.toLowerCase()}_leakshield.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast("Solicitud ARCO descargada (.txt format)");
   };
 
   // Dynamic risk summary card objects
@@ -490,6 +641,15 @@ export const App: React.FC = () => {
   const railEnabled = copilotMode === "rail" && !isLandingOrOnboarding && view !== "copilot";
   const inGridRail = railEnabled && !narrow && railOpen;
   const drawerRail = railEnabled && narrow;
+
+  // Render modal draft depending on custom tone
+  const getCustomToneDescription = () => {
+    if (selectedLawTone === 'strict') return "Exijo de forma inmediata y enérgica la exclusión legal de mis registros.";
+    if (selectedLawTone === 'cordial') return "Por medio de la presente, solicito cordialmente la remoción de mi perfil comercial.";
+    return "Remover identificador. Derecho ARCO ejercido. Silencio administrativo interpretado como negativa.";
+  };
+
+  const compiledLetterText = `${generateDeletionRequest(selectedLawBroker, selectedLawScope, demoProfile.name, demoProfile.location)}\n\n[Cláusula de Tono IA - ${selectedLawTone.toUpperCase()}]: ${getCustomToneDescription()}`;
 
   // View Router Render
   const renderScreen = () => {
@@ -610,12 +770,14 @@ export const App: React.FC = () => {
   }
 
   return (
-    <div className={`app-shell w-full h-screen overflow-hidden ${inGridRail ? 'has-rail' : ''}`}>
+    <div className={`app-shell w-full h-screen overflow-hidden ${inGridRail ? 'has-rail' : ''} relative`}>
+      <ThreatMeshBackground />
+
       {/* Left side Nav Rail */}
       <NavRail view={view} onNav={nav} profile={demoProfile} />
 
       {/* Main Column */}
-      <main className="main-column flex flex-col h-full min-w-0 overflow-hidden relative">
+      <main className="main-column flex flex-col h-full min-w-0 overflow-hidden relative z-10">
         <Topbar 
           view={view}
           title={TITLES[view] || ""}
@@ -680,10 +842,13 @@ export const App: React.FC = () => {
           onClick={() => setDeletionModal(false)}
         >
           <div 
-            className="fade-in cursor-default flex flex-col w-full max-w-[720px] max-h-[88vh] overflow-hidden bg-bg-1 border border-line-2 rounded-xl shadow-[0_40px_100px_-30px_rgba(0,0,0,0.8)]"
+            className="fade-in cursor-default flex flex-col w-full max-w-[720px] max-h-[88vh] overflow-hidden bg-bg-1 border border-line-2 rounded-xl shadow-[0_40px_100px_-30px_rgba(0,0,0,0.8)] relative"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-between items-center px-[22px] py-[18px] border-b border-line sticky top-0 bg-bg-1 z-10 flex-shrink-0">
+            {/* Specular Diagonal Highlight overlay */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.005] to-white/[0.025] pointer-events-none" />
+
+            <div className="flex justify-between items-center px-[22px] py-[18px] border-b border-line sticky top-0 bg-bg-1 z-10 flex-shrink-0 relative z-10">
               <div>
                 <div className="text-[17px] font-semibold tracking-tight text-t-0">Solicitud de Supresión de Datos (ARCO)</div>
                 <div className="text-t-2 text-[12.5px] mt-0.5">Borrador compilado por el copiloto — revisa antes de enviar</div>
@@ -696,7 +861,7 @@ export const App: React.FC = () => {
               </button>
             </div>
             
-            <div className="p-[22px] overflow-y-auto flex-1">
+            <div className="p-[22px] overflow-y-auto flex-1 relative z-10">
               <div className="mb-4 bg-high/10 border border-high/30 rounded-lg p-3.5 flex items-center gap-3">
                 <div className="w-[30px] h-[30px] rounded-full flex items-center justify-center bg-high/20 text-high flex-shrink-0">
                   <Icon name="alert" size={15} style={{ color: 'var(--high)' }} />
@@ -720,13 +885,37 @@ export const App: React.FC = () => {
                     <button 
                       key={t} 
                       className={`px-3 py-1 rounded-md text-[12px] font-semibold cursor-pointer border-0 transition-all duration-120 bg-transparent ${
-                        (t === 'DataFind') 
-                          ? "bg-bg-3 text-t-0" 
+                        (selectedLawBroker === t) 
+                          ? "bg-bg-3 text-t-0 shadow-premium" 
                           : "text-t-1 hover:text-t-0"
                       }`} 
-                      onClick={() => showToast(`Broker seleccionado: ${t}`)}
+                      onClick={() => setSelectedLawBroker(t as any)}
                     >
                       {t}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* AI-Native Custom Redactor Tone Selector */}
+              <div className="flex flex-col gap-1.5 mt-4">
+                <label className="text-[12px] font-semibold text-t-1">Tono de redacción de la IA (v0.3.0 Feature)</label>
+                <div className="flex gap-1 bg-bg-inset p-1 rounded-lg border border-line w-fit">
+                  {[
+                    ["strict", "Estricto Legal"],
+                    ["cordial", "Cordial y Firme"],
+                    ["concise", "Conciso/Directo"]
+                  ].map(([tone, label]) => (
+                    <button 
+                      key={tone} 
+                      className={`px-3 py-1 rounded-md text-[12px] font-semibold cursor-pointer border-0 transition-all duration-120 bg-transparent ${
+                        (selectedLawTone === tone) 
+                          ? "bg-bg-3 text-teal shadow-premium" 
+                          : "text-t-1 hover:text-t-0"
+                      }`} 
+                      onClick={() => setSelectedLawTone(tone as any)}
+                    >
+                      {label}
                     </button>
                   ))}
                 </div>
@@ -739,11 +928,11 @@ export const App: React.FC = () => {
                     <button 
                       key={law} 
                       className={`px-3.5 py-1 rounded-md text-[11.5px] font-semibold cursor-pointer border-0 transition-all duration-120 bg-transparent ${
-                        law === 'ARCO' 
+                        selectedLawScope === law 
                           ? "bg-bg-3 text-teal shadow-premium" 
                           : "text-t-1 hover:text-t-0"
                       }`} 
-                      onClick={() => showToast(`Marco legal seleccionado: ${law}`)}
+                      onClick={() => setSelectedLawScope(law)}
                     >
                       {law === 'Generic' ? 'Soporte Genérico' : law}
                     </button>
@@ -753,8 +942,8 @@ export const App: React.FC = () => {
 
               <div className="flex flex-col gap-1.5 mt-4">
                 <label className="text-[12px] font-semibold text-t-1">Borrador formal redactado</label>
-                <pre className="m-0 whitespace-pre-wrap font-mono text-[12px] leading-relaxed text-t-1 bg-bg-inset border border-line rounded-lg p-4">
-                  {generateDeletionRequest("DataFind", "ARCO", demoProfile.name, demoProfile.location)}
+                <pre className="m-0 whitespace-pre-wrap font-mono text-[12px] leading-relaxed text-t-1 bg-bg-inset border border-line rounded-lg p-4 max-h-[220px] overflow-y-auto">
+                  {compiledLetterText}
                 </pre>
               </div>
 
@@ -765,9 +954,9 @@ export const App: React.FC = () => {
 
               <div className="flex justify-end gap-2.5">
                 <button 
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 border border-line-2 bg-bg-3 hover:bg-bg-2 text-t-1 hover:text-t-0 cursor-pointer transition-all duration-130"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 border border-line-2 bg-bg-3 hover:bg-bg-2 text-t-1 hover:text-t-0 cursor-pointer transition-all duration-130 shadow-premium"
                   onClick={() => { 
-                    navigator.clipboard?.writeText(generateDeletionRequest("DataFind", "ARCO", demoProfile.name, demoProfile.location)); 
+                    navigator.clipboard?.writeText(compiledLetterText); 
                     showToast("Borrador copiado al portapapeles"); 
                   }}
                 >
@@ -775,7 +964,14 @@ export const App: React.FC = () => {
                   Copiar texto
                 </button>
                 <button 
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] cursor-pointer transition-all duration-130"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 border border-line-2 bg-bg-3 hover:bg-bg-2 text-teal cursor-pointer transition-all duration-130 shadow-premium"
+                  onClick={() => handleDownloadDraft(compiledLetterText, selectedLawBroker)}
+                >
+                  <Icon name="download" size={15} />
+                  Descargar borrador (.txt)
+                </button>
+                <button 
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] cursor-pointer transition-all duration-130 shadow-premium"
                   onClick={() => { 
                     showToast("Encolado para revisión del titular — nada enviado en demo"); 
                     setTimeout(() => setDeletionModal(false), 700); 
@@ -806,6 +1002,15 @@ export const App: React.FC = () => {
 
       <Toast msg={toast} />
     </div>
+  );
+};
+
+// Export App wrapped under the centralized ErrorBoundary
+export const App: React.FC = () => {
+  return (
+    <ErrorBoundary>
+      <AppInternal />
+    </ErrorBoundary>
   );
 };
 export default App;

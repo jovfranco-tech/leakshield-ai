@@ -10,6 +10,21 @@ const handleMouseMove = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>
   const y = e.clientY - rect.top;
   e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
   e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+
+  // 3D Perspective Tilt Parallax
+  const w = rect.width;
+  const h = rect.height;
+  const mouseX = x - w / 2;
+  const mouseY = y - h / 2;
+  const rX = (mouseY / (h / 2)) * -6; // Max 6deg
+  const rY = (mouseX / (w / 2)) * 6;
+  e.currentTarget.style.setProperty('--tilt-rx', `${rX}deg`);
+  e.currentTarget.style.setProperty('--tilt-ry', `${rY}deg`);
+};
+
+const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
+  e.currentTarget.style.setProperty('--tilt-rx', '0deg');
+  e.currentTarget.style.setProperty('--tilt-ry', '0deg');
 };
 
 interface TaskBoardProps {
@@ -21,6 +36,23 @@ interface TaskBoardProps {
 export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onToast }) => {
   const FLOW: Task['status'][] = ["Pending", "In Progress", "Sent", "Resolved"];
   const [group, setGroup] = useState<'priority' | 'status'>('priority');
+  const [draggedOverCol, setDraggedOverCol] = useState<string | null>(null);
+
+  const handleMoveTask = (id: string, targetKey: string) => {
+    const updated = tasks.map(t => {
+      if (t.id !== id) return t;
+      if (group === 'status') {
+        const nextStatus = targetKey as Task['status'];
+        onToast(`"${t.title.slice(0, 30)}..." → ${statusLabelMap[nextStatus] || nextStatus}`);
+        return { ...t, status: nextStatus };
+      } else {
+        const nextPriority = targetKey as Task['priority'];
+        onToast(`"${t.title.slice(0, 30)}..." → Prioridad ${nextPriority}`);
+        return { ...t, priority: nextPriority };
+      }
+    });
+    onUpdateTasks(updated);
+  };
 
   const statusLabelMap: Record<string, string> = {
     Pending: "Pendiente",
@@ -102,7 +134,28 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 animate-fadeIn">
         {cols.map(col => (
-          <div key={col.k} className="border border-line rounded-lg p-3 bg-bg-1 min-h-[120px]">
+          <div 
+            key={col.k} 
+            className={`border rounded-lg p-3 bg-bg-1 min-h-[120px] transition-all duration-150 ${
+              draggedOverCol === col.k ? 'border-teal/60 bg-teal-dim/10 shadow-premium scale-[1.01]' : 'border-line'
+            }`}
+            onDragOver={(e) => {
+              e.preventDefault();
+            }}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              setDraggedOverCol(col.k);
+            }}
+            onDragLeave={() => {
+              setDraggedOverCol(null);
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              const taskId = e.dataTransfer.getData('text/plain');
+              handleMoveTask(taskId, col.k);
+              setDraggedOverCol(null);
+            }}
+          >
             <div className="flex items-center gap-2 pb-3 px-1.5">
               {group === "priority" 
                 ? <Badge level={col.k as 'Critical' | 'High' | 'Medium' | 'Low'} /> 
@@ -117,8 +170,18 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
               {col.items.map(t => (
                 <div 
                   key={t.id} 
+                  draggable={true}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('text/plain', t.id);
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
                   onMouseMove={handleMouseMove}
-                  className="group relative overflow-hidden border border-line rounded-md p-3.5 bg-bg-2 shadow-sm hover:border-line-2 active:translate-y-[0.5px] cursor-grab transition-all duration-120"
+                  onMouseLeave={handleMouseLeave}
+                  className="group relative overflow-hidden border border-line rounded-md p-3.5 bg-bg-2 shadow-sm hover:border-line-2 cursor-grab active:cursor-grabbing transition-all duration-120 glossy-sweep noise-grain"
+                  style={{
+                    transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
+                    transition: 'transform 0.15s ease-out, border-color 0.2s, box-shadow 0.2s'
+                  }}
                   onClick={() => handleAdvanceTask(t.id)}
                 >
                   {/* Radial Hover Glow & Specular Overlay */}
@@ -164,7 +227,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
       
       <div className="flex items-center gap-1.5 mt-5.5 text-t-3 text-[11.5px] justify-center">
         <Icon name="arrow-right" size={13} style={{ color: "var(--t-3)", flexShrink: 0 }} />
-        <span>Consejo: haz clic en cualquier tarea para avanzar su estado (Pendiente → En Progreso → Enviado → Resuelto).</span>
+        <span>Consejo: arrastra las tareas entre columnas o haz clic en ellas para avanzar su estado de forma interactiva.</span>
       </div>
     </div>
   );
