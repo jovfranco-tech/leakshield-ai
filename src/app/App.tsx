@@ -746,6 +746,9 @@ export const AppInternal: React.FC = () => {
 
   // Hook up Firebase Auth State Listener to sync profiles on session load
   useEffect(() => {
+    const isFirebaseConfigured = auth.app.options.apiKey && !auth.app.options.apiKey.includes("FakeKeyPlaceholder");
+    if (!isFirebaseConfigured) return;
+
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         const sessionActive = localStorage.getItem('leakshield_session_active') === 'true';
