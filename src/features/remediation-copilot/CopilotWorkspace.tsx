@@ -277,7 +277,7 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Persistent prompt history loaded/saved securely via XOR
+  // Persistent prompt history loaded/saved securely via local obfuscation
   const [promptHistory, setPromptHistory] = useState<string[]>([
     language === 'en' 
       ? "I demand the immediate deletion of my inactive accounts on InfoAggregate." 
@@ -287,17 +287,17 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
       : "Excluye mi número celular histórico de tu base de datos de marketing."
   ]);
 
-  // Quantum XOR session cipher methods
+  // Local session obfuscation methods (not cryptographic encryption)
   const secureSaveHistory = (data: string[]) => {
     try {
       const json = JSON.stringify(data);
       let result = "";
-      const secretKey = "leakshield_v0.5.0_quantum_key";
+      const secretKey = "leakshield_v0.5.0_obfuscation_key";
       for (let i = 0; i < json.length; i++) {
         const charCode = json.charCodeAt(i) ^ secretKey.charCodeAt(i % secretKey.length);
         result += String.fromCharCode(charCode);
       }
-      const encoded = btoa(unescape(encodeURIComponent(result))); // base64 encoding (Recommendation 18)
+      const encoded = btoa(unescape(encodeURIComponent(result))); // base64 encoding
       localStorage.setItem("leakshield_secure_prompt_history", encoded);
     } catch (e) {
       console.error("Failed to save prompt history:", e);
@@ -310,7 +310,7 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
       if (!encoded) return null;
       const decoded = decodeURIComponent(escape(atob(encoded)));
       let result = "";
-      const secretKey = "leakshield_v0.5.0_quantum_key";
+      const secretKey = "leakshield_v0.5.0_obfuscation_key";
       for (let i = 0; i < decoded.length; i++) {
         const charCode = decoded.charCodeAt(i) ^ secretKey.charCodeAt(i % secretKey.length);
         result += String.fromCharCode(charCode);

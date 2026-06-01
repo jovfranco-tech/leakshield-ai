@@ -1,5 +1,6 @@
 import { CopilotPlan, Task } from '../types/privacy';
 import { generateDeletionRequest, getAliasStrategy } from '../lib/aiOrchestration';
+import { auth } from '../lib/firebase';
 
 export const aiService = {
   /**
@@ -7,6 +8,17 @@ export const aiService = {
    */
   async queryCopilot(message: string, contextView: string, userName: string = 'Jovan Franco', location: string = 'Ciudad de México, MX'): Promise<string> {
     console.log(`[aiService] Copilot prompt received for view [${contextView}] from ${userName}: "${message}"`);
+
+    // Fetch active Firebase Auth Session ID Token securely (v0.2.0)
+    const user = auth.currentUser;
+    let token = "";
+    if (user) {
+      try {
+        token = await user.getIdToken();
+      } catch (err) {
+        console.error("[aiService] Failed to obtain Firebase ID Token:", err);
+      }
+    }
 
     const localApiKey = (import.meta as any).env.VITE_GEMINI_API_KEY;
     const isDev = (import.meta as any).env.DEV;
@@ -54,11 +66,16 @@ Responde siempre en Español con un formato markdown impecable.`;
     } else {
       console.log("[aiService] Production Mode: Querying secure serverless AI proxy...");
       try {
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        };
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+
         const res = await fetch('/api/ai', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
+          headers,
           body: JSON.stringify({
             message,
             userName,

@@ -37,12 +37,13 @@ import { Task, CopilotData, BreachFinding, Profile } from '../types/privacy';
 import { auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
 
-// Security Boundary: Encrypted Session Storage Hydration with Quantum XOR Cipher (OWASP PII)
+// Security Boundary: Local Obfuscation for Session Storage Hydration (OWASP PII)
 const secureSave = (key: string, data: any, persistent = false) => {
   try {
     const json = JSON.stringify(data);
     let result = "";
-    const secretKey = "leakshield_v0.5.0_quantum_key";
+    // Note: This is an obfuscation key for dynamic session masking, not cryptographic encryption.
+    const secretKey = "leakshield_v0.5.0_obfuscation_key";
     for (let i = 0; i < json.length; i++) {
       const charCode = json.charCodeAt(i) ^ secretKey.charCodeAt(i % secretKey.length);
       result += String.fromCharCode(charCode);
@@ -66,7 +67,7 @@ const secureLoad = (key: string) => {
     if (!encoded) return null;
     const decoded = decodeURIComponent(escape(atob(encoded)));
     let result = "";
-    const secretKey = "leakshield_v0.5.0_quantum_key";
+    const secretKey = "leakshield_v0.5.0_obfuscation_key";
     for (let i = 0; i < decoded.length; i++) {
       const charCode = decoded.charCodeAt(i) ^ secretKey.charCodeAt(i % secretKey.length);
       result += String.fromCharCode(charCode);
@@ -518,8 +519,8 @@ const TweaksOverlay: React.FC<{
     number: "Number", ring: "Ring", bar: "Bar",
     copilotPanel: "Copilot Sidebar",
     rail: "Sidebar", inline: "Integrated",
-    xorPersist: "XOR Persistent Storage",
-    session: "Session", local: "Local (XOR)",
+    xorPersist: "Local Obfuscation (Not Cryptographic)",
+    session: "Session Storage", local: "Persistent (Obfuscated)",
     lang: "Language",
     theme: "Interface Theme",
     dark: "Dark", light: "Light (Exec)", luxury: "Luxury Gold", tactical: "Tactical Red",
@@ -534,8 +535,8 @@ const TweaksOverlay: React.FC<{
     number: "Número", ring: "Anillo", bar: "Barra",
     copilotPanel: "Panel Lateral Copiloto",
     rail: "Lateral", inline: "Integrado",
-    xorPersist: "Cifrado XOR Persistente",
-    session: "Sesión", local: "Local (XOR)",
+    xorPersist: "Ofuscación Local (No Criptográfica)",
+    session: "Sesión (sessionStorage)", local: "Persistente (ofuscado)",
     lang: "Idioma / Localization",
     theme: "Tema de Interfaz",
     dark: "Oscuro", light: "Claro (Ejec.)", luxury: "Lujo Oro", tactical: "Táctico Rojo",
@@ -1930,10 +1931,10 @@ export const AppInternal: React.FC = () => {
               {[
                 { c: "Dashboard", desc: language === 'en' ? "Go to Main Dashboard" : "Ir al Dashboard Ejecutivo" },
                 { c: "Copiloto IA", desc: language === 'en' ? "Open AI Remediation Workspace" : "Ir al Copiloto de IA" },
-                { c: "Trust Center", desc: language === 'en' ? "Configure 3D XOR Cryptography" : "Configurar Cubo XOR 3D" },
+                { c: "Trust Center", desc: language === 'en' ? "Configure 3D Trust Sandbox" : "Configurar Cubo de Confianza 3D" },
                 { c: "Tema Luxury", desc: language === 'en' ? "Toggle Luxury Gold Palette" : "Activar Paleta de Oro Ejecutivo" },
                 { c: "Densidad Compacta", desc: language === 'en' ? "Minimize visual padding layout" : "Reducir espaciado de pantalla" },
-                { c: "Telemetría XOR", desc: language === 'en' ? "Inspect encrypted JSON telemetries" : "Auditar logs XOR-JSON" }
+                { c: "Telemetría Ofuscada", desc: language === 'en' ? "Inspect obfuscated JSON telemetries" : "Auditar logs de telemetría ofuscados" }
               ].map((item, idx) => (
                 <div 
                   key={idx} 
@@ -1992,7 +1993,7 @@ export const AppInternal: React.FC = () => {
         </div>
       )}
 
-      {/* Phase V Telemetry XOR Auditor (Recommendation 19) */}
+      {/* Phase V Telemetry Obfuscation Auditor (Recommendation 19) */}
       {telemetryXorModal && (
         <div 
           className="fixed inset-0 z-[100] bg-black/68 backdrop-blur-[5px] grid place-items-center p-6 cursor-pointer no-print"
@@ -2005,7 +2006,7 @@ export const AppInternal: React.FC = () => {
             <div className="flex justify-between items-center border-b border-line pb-3 mb-4">
               <span className="text-[14.5px] font-bold text-t-0 flex items-center gap-2">
                 <Icon name="database" size={16} style={{ color: "var(--teal)" }} />
-                {language === 'en' ? "Encrypted Live Telemetries Log" : "Auditor de Telemetrías XOR-JSON"}
+                {language === 'en' ? "Obfuscated Live Telemetries Log" : "Auditor de Telemetrías Ofuscadas JSON"}
               </span>
               <button className="text-t-2 hover:text-t-0 bg-transparent border-0 cursor-pointer font-bold" onClick={() => setTelemetryXorModal(false)}>✕</button>
             </div>
@@ -2014,8 +2015,8 @@ export const AppInternal: React.FC = () => {
               <Icon name="shield-check" size={16} style={{ color: "var(--teal)" }} />
               <div className="text-[11.5px] text-t-1">
                 {language === 'en' 
-                  ? "Audit raw telemetries below. Toggle base64+XOR formatting to witness PII local hashing in real-time."
-                  : "Audite logs de telemetría. Active la codificación base64+XOR para visualizar la ofuscación en tiempo real."}
+                  ? "Audit raw telemetries below. Toggle base64+obfuscation formatting to witness PII local hashing in real-time."
+                  : "Audite logs de telemetría. Active la codificación base64+ofuscación para visualizar la ofuscación local en tiempo real."}
               </div>
             </div>
 
@@ -2058,14 +2059,14 @@ export const AppInternal: React.FC = () => {
             >
               {JSON.stringify({
                 app: "leakshield-ai",
-                version: "0.7.0-FaseV",
+                version: "0.2.0-private-beta-security-hardening",
                 profile: activeProfile,
                 theme: theme,
                 density: density,
                 score: dynamicScore.value,
                 activeAliasPool: tasks.filter(t => t.status === 'Resolved').length,
                 performance: { FPS: 60, INP_ms: 12 },
-                encryptionKey: "leakshield_v0.7.0_quantum_xor"
+                obfuscationKey: "leakshield_v0.7.0_obfuscation"
               }, null, 2)}
             </pre>
 
@@ -2074,10 +2075,10 @@ export const AppInternal: React.FC = () => {
                 className="px-3.5 py-1.5 rounded-lg border border-line-2 bg-bg-3 text-t-1 hover:text-t-0 text-[12px] font-semibold cursor-pointer shadow-premium"
                 onClick={() => {
                   const encoded = btoa(JSON.stringify({ score: dynamicScore.value, density, activeProfile }));
-                  showToast(`Cifrado de sesión XOR: ${encoded.substring(0, 16)}...`);
+                  showToast(`Ofuscación de sesión: ${encoded.substring(0, 16)}...`);
                 }}
               >
-                {language === 'en' ? "Simulate XOR Cipher" : "Simular Cifrado XOR"}
+                {language === 'en' ? "Simulate Obfuscation" : "Simular Ofuscación"}
               </button>
               <button 
                 className="px-3.5 py-1.5 rounded-lg bg-gradient-to-b from-teal to-cyan text-[#04110F] text-[12px] font-bold cursor-pointer shadow-premium"

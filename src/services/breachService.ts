@@ -1,4 +1,5 @@
 import { BreachFinding, HighRiskDataClass } from '../types/privacy';
+import { auth } from '../lib/firebase';
 
 export const breachService = {
   /**
@@ -9,6 +10,17 @@ export const breachService = {
 
     const cleanEmail = email.trim();
     let rawBreaches: any[] = [];
+
+    // Fetch active Firebase Auth Session ID Token securely (v0.2.0)
+    const user = auth.currentUser;
+    let token = "";
+    if (user) {
+      try {
+        token = await user.getIdToken();
+      } catch (err) {
+        console.error("[breachService] Failed to obtain Firebase ID Token:", err);
+      }
+    }
 
     // Hybrid flow: Check if we are running in local DEV environment and VITE_HIBP_API_KEY is available
     const localApiKey = (import.meta as any).env.VITE_HIBP_API_KEY;
@@ -39,7 +51,14 @@ export const breachService = {
     } else {
       console.log("[breachService] Production Mode: Querying secure serverless proxy endpoint...");
       try {
-        const res = await fetch(`/api/breach?email=${encodeURIComponent(cleanEmail)}`);
+        const headers: Record<string, string> = {};
+        if (token) {
+          headers['Authorization'] = `Bearer ${token}`;
+        }
+        
+        const res = await fetch(`/api/breach?email=${encodeURIComponent(cleanEmail)}`, {
+          headers
+        });
         if (res.status === 404) {
           rawBreaches = [];
         } else if (res.ok) {

@@ -4,6 +4,24 @@ All notable changes to the **LeakShield AI** project will be documented in this 
 
 ---
 
+## [v0.2.0-private-beta-security-hardening] - 2026-06-01
+
+This release delivers comprehensive cybersecurity hardening, dynamic CORS controls, token-based session gateway authentication, IP/UID rate limiting, and robust PII isolation to prepare the application for a commercial private beta / pilot release.
+
+### 🛡️ Security Hardening & API Gateway Auth
+* **Firebase Token Gateway Verification:** Overwrote serverless `/api/breach` and `/api/ai` endpoints to require cryptographically signed active Firebase ID session Bearer tokens, rejecting unauthorized attempts.
+* **CORS Dynamic Whitelisting:** Enforced strict dynamic gating based on allowed domains loaded via Vercel `ALLOWED_ORIGINS` environment variables.
+* **DoS Rate Limiting Engine:** Integrated a serverless-ready, custom IP/UID rate limiting engine (15 requests/min for breaches, 10 requests/min for AI queries) returning clean JSON-formatted `429 Too Many Requests` headers.
+* **PII Telemetry Obfuscation:** Enforced strict enmascaramiento logic to censor email addresses inside server logs (e.g., `jo***co@techflow.io`) to prevent logs leakage.
+* **Strict Firestore Rules:** Implemented type-safe and resource-exhaustion resistant `firestore.rules` under `/users/{userId}` to prevent Broken Object Level Authorization (BOLA).
+
+### 🔒 Privacy Narrative & Storage Honesty
+* **Local Obfuscation Realignment:** Replaced misleading "Quantum XOR Cipher" marketing claims in all overlays, screens, and settings with honest "Local Obfuscation" descriptions.
+* **Session Storage Priority:** Altered storage policies to use `sessionStorage` by default for dynamic profiles and caches, writing to persistent `localStorage` only if user enables explicit persistent storage settings.
+* **Trust Center Operational Indicators:** Implemented a clean reactive banner at the top of the Trust Center explicitly showing **"Modo Real Protegido"** (with active Firebase session verification) or **"Modo Demo Local"** (offline safe fallback).
+
+---
+
 ## [v0.1.0-ai-native-demo] - 2026-06-01
 
 This represents the initial stable release of the **LeakShield AI** personal digital footprint command center as a premium, AI-native demonstration prototype.

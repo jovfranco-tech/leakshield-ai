@@ -38,7 +38,7 @@ export const OnboardingTutorialOverlay: React.FC<OnboardingTutorialOverlayProps>
     },
     {
       title: "Digital Identity Ingestion",
-      desc: "Process and ingest CSV files containing your accounts at 60 FPS. An asynchronous local worker thread sanitizes columns and runs secure XOR mapping completely offline.",
+      desc: "Process and ingest CSV files containing your accounts at 60 FPS. An asynchronous local worker thread sanitizes columns and maps fields completely offline.",
       icon: "fingerprint",
       targetView: "identity"
     },
@@ -75,7 +75,7 @@ export const OnboardingTutorialOverlay: React.FC<OnboardingTutorialOverlayProps>
     },
     {
       title: "Ingesta de Identidad Digital",
-      desc: "Ingesta y procesa archivos CSV con tus cuentas en lote a 60 FPS. Hilos Web Workers locales sanitizan las columnas e inyectan credenciales cifradas con enmascaramiento XOR.",
+      desc: "Ingesta y procesa archivos CSV con tus cuentas en lote a 60 FPS. Hilos Web Workers locales sanitizan las columnas e inyectan credenciales con ofuscación de seguridad local.",
       icon: "fingerprint",
       targetView: "identity"
     },

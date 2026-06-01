@@ -3,6 +3,7 @@ import { Icon } from '../../components/ui/Icon';
 import { Switch } from '../../components/ui/Switch';
 import { Profile } from '../../types/privacy';
 import { useSoundEngine } from '../../hooks/useSoundEngine';
+import { auth } from '../../lib/firebase';
 
 const handleMouseMove = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
   const rect = e.currentTarget.getBoundingClientRect();
@@ -149,7 +150,17 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
     { ic: "shield", t: "Expectativas honestas", d: "Ofrecemos reducción de riesgos y herramientas de higiene digital. No garantizamos una remoción absoluta del 100% en todo internet, estableciendo expectativas reales y éticas." },
   ];
 
-  // 1. 3D XOR Cube visualizer states
+  // Real active session verification state
+  const [isAuthenticated, setIsAuthenticated] = useState(!!auth.currentUser);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setIsAuthenticated(!!user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // 1. 3D Trust Cube visualizer states
   const [cubeAnimating, setCubeAnimating] = useState(false);
   const [cubeLogs, setCubeLogs] = useState<string[]>([]);
 
@@ -222,18 +233,18 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
     { key: "Alt + S", action: "Mostrar el panel de ajustes de la consola" }
   ]);
 
-  // XOR 3D Cube animation trigger
-  const handleTriggerXORCube = () => {
+  // Trust Sandbox 3D Cube animation trigger
+  const handleTriggerTrustCube = () => {
     if (cubeAnimating) return;
     setCubeAnimating(true);
     setCubeLogs([]);
-    onToast("Inicializando bóveda local encriptada...");
+    onToast("Inicializando espacio de ofuscación local...");
 
     const steps = [
-      "[IndexedDB] Creando base de datos segura 'leakshield_vault_db'...",
-      "[XOR Crypt] Generando llave dinámica a partir de la firma de sesión...",
-      "[XOR Crypt] Cifrando 14 registros de perfil y bitácoras activas...",
-      "[IndexedDB Commit] Bóveda escrita con éxito en bloque persistente aislado."
+      "[IndexedDB] Cargando base de datos local 'leakshield_vault_db'...",
+      "[Ofuscación] Aplicando enmascaramiento local de campos sensibles...",
+      "[Aislamiento] Comprobando segregación de datos en memoria local...",
+      "[IndexedDB Commit] Bóveda local sincronizada con sessionStorage."
     ];
 
     steps.forEach((step, idx) => {
@@ -241,7 +252,7 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
         setCubeLogs(prev => [...prev, `[${new Date().toLocaleTimeString('es-ES', { hour12: false })}] ${step}`]);
         if (idx === steps.length - 1) {
           setCubeAnimating(false);
-          onToast("¡Bóveda local indexada protegida al 100%!");
+          onToast("¡Espacio de ofuscación local verificado!");
         }
       }, (idx + 1) * 350);
     });
@@ -800,10 +811,22 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
           <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1">Centro de Confianza · Límites de Seguridad</div>
           <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">Cómo te protege LeakShield</h1>
         </div>
-        <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25">
-          <span className="demo-blip" />
-          Prototipo v0.7.0
-        </span>
+        <div className="flex gap-2">
+          {isAuthenticated ? (
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-ok-dim text-ok border border-ok/25">
+              <Icon name="shield-check" size={11} />
+              Modo Real Protegido
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25">
+              <span className="demo-blip" />
+              Modo Demo Local
+            </span>
+          )}
+          <span className="inline-flex items-center text-[11px] font-mono text-t-2 bg-bg-3 border border-line px-2.5 py-1 rounded-full">
+            v0.2.0-beta
+          </span>
+        </div>
       </div>
 
       <div className="border border-teal-line rounded-lg p-5 bg-gradient-to-br from-teal/6 to-bg-2 shadow-premium mb-4 flex gap-3.5 items-center flex-wrap sm:flex-nowrap relative overflow-hidden">
@@ -930,7 +953,7 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
                 
                 {/* 3D Cube and text side-by-side */}
                 <div className="grid grid-cols-[auto_1fr] gap-4.5 items-center mb-4 bg-bg-inset border border-line p-4 rounded-xl">
-                  {/* CSS 3D XOR Cube Container with Reactive Ambient Glow */}
+                  {/* CSS 3D Trust Cube Container with Reactive Ambient Glow */}
                   <div className="relative">
                     <div className={`absolute inset-0 -m-3 rounded-full blur-xl transition-all duration-700 pointer-events-none opacity-40 ${
                       cubeAnimating 
@@ -940,16 +963,16 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
                     <div className="absolute top-[80px] left-1/2 -translate-x-1/2 w-[80px] h-[30px] conal-shadow pointer-events-none opacity-20" />
                     <div 
                       className="cube-wrap cursor-pointer group-hover:scale-105 transition-transform relative z-10 mx-auto" 
-                      onClick={handleTriggerXORCube}
-                      title="Hacer clic para forzar rotación de cifrado XOR"
+                      onClick={handleTriggerTrustCube}
+                      title="Hacer clic para verificar el estado de los compartimentos locales"
                     >
                       <div className={`cube ${cubeAnimating ? "cube-animating" : ""}`} style={{
                         transform: cubeAnimating ? "" : "rotateX(-25deg) rotateY(45deg)"
                       }}>
-                        <div className="cube-face face-front">XOR</div>
-                        <div className="cube-face face-back">0x4F</div>
-                        <div className="cube-face face-right">KEY</div>
-                        <div className="cube-face face-left">v0.6</div>
+                        <div className="cube-face face-front">OBFC</div>
+                        <div className="cube-face face-back">SESS</div>
+                        <div className="cube-face face-right">DATA</div>
+                        <div className="cube-face face-left">v0.2</div>
                         <div className="cube-face face-top">VAULT</div>
                         <div className="cube-face face-bottom">SEC</div>
                       </div>
@@ -957,9 +980,9 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
                   </div>
 
                   <div>
-                    <h3 className="text-[13.5px] font-semibold text-t-0 leading-tight mb-1">Cifrado XOR e IndexedDB Local</h3>
+                    <h3 className="text-[13.5px] font-semibold text-t-0 leading-tight mb-1">Ofuscación Local e IndexedDB</h3>
                     <p className="text-t-2 text-[12.2px] leading-relaxed m-0">
-                      Almacenamiento local fuertemente enmascarado en IndexedDB. Haz clic en el cubo XOR para disparar un chequeo de encriptación persistente en vivo.
+                      Almacenamiento local aislado en IndexedDB con enmascaramiento dinámico (no criptográfico). Haz clic en el cubo de confianza para verificar el estado de los compartimentos locales.
                     </p>
                   </div>
                 </div>
@@ -968,7 +991,7 @@ export const TrustCenter: React.FC<TrustCenterProps> = ({ onToast, onResetTasks,
                   <div className="mb-4 bg-bg-inset border border-line rounded-lg p-3 font-mono text-[10.5px] leading-relaxed text-teal shadow-inner animate-fadeIn flex flex-col gap-1 max-h-[110px] overflow-y-auto">
                     <div className="flex items-center gap-1.5 border-b border-line/45 pb-1 text-t-2 font-sans font-semibold">
                       <span className="w-2 h-2 rounded-full bg-teal animate-pulse" />
-                      Auditoría de Encriptación Local (Vault Logs)
+                      Auditoría de Ofuscación y Sandbox Local
                     </div>
                     {cubeLogs.map((lg, i) => (
                       <div key={i} className="whitespace-pre-wrap">{lg}</div>

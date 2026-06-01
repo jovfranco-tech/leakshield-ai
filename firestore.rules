@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if the user is authenticated and owns the resource
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // Secure user compartment (OWASP OW-02 broken object level authorization defense)
+    match /users/{userId} {
+      // Users can only read their own profiles
+      allow read: if isOwner(userId);
+      
+      // Users can only write their own profiles under strict type safety constraints
+      allow write: if isOwner(userId) 
+        && (request.resource == null || (
+          // Type checks and size limits to prevent Resource Exhaustion / Denial of Service (DoS)
+          (!('name' in request.resource.data) || (request.resource.data.name is string && request.resource.data.name.size() < 100))
+          && (!('location' in request.resource.data) || (request.resource.data.location is string && request.resource.data.location.size() < 100))
+          && (!('emails' in request.resource.data) || request.resource.data.emails is list)
+          && (!('usernames' in request.resource.data) || request.resource.data.usernames is list)
+        ));
+      
+      // Subcollections (like tasks) inherit ownership constraints
+      match /{document=**} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // Strict default deny policy for all other paths
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

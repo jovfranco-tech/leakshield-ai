@@ -105,10 +105,10 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
   };
 
   const scanSteps = [
-    "Inicializando agente de inteligencia autónomo...",
-    "Buscando coincidencias en 14,820 bases de datos de brechas...",
-    "Escaneando huella digital pública en redes y directorios...",
-    "Cruzando registros comerciales en 80+ data brokers activos...",
+    "Inicializando agente de inteligencia...",
+    "Consultando proveedores de inteligencia y logs de seguridad autorizados...",
+    "Escaneando huella digital pública (simulando peticiones a directorios)...",
+    "Analizando potenciales vectores de exposición en data brokers comerciales...",
     "Calculando ponderaciones matemáticas del Score de Exposición...",
     "¡Análisis finalizado con éxito! Redirigiendo..."
   ];
@@ -362,7 +362,7 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
                         {csvProgress >= 10 && <div>[Worker] Reading CSV binary buffer ({csvFile ? (csvFile.size / 1024).toFixed(1) : 0} KB)...</div>}
                         {csvProgress >= 30 && <div>[Worker] Sanitizing data streams &amp; stripping script injections...</div>}
                         {csvProgress >= 50 && <div>[Worker] Deduplicating user records (identities cached)...</div>}
-                        {csvProgress >= 70 && <div>[Worker] Running secure local XOR encryption mapping...</div>}
+                        {csvProgress >= 70 && <div>[Worker] Applying local field obfuscation routines...</div>}
                         {csvProgress >= 90 && <div>[Worker] Injecting parsed credential keys to state center...</div>}
                         {csvProgress === 100 && <div className="text-ok font-semibold">[Worker] Completed! Closing thread safe.</div>}
                       </div>

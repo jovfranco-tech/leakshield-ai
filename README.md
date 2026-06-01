@@ -1,4 +1,4 @@
-# LeakShield AI — Modern Privacy Command Center
+# LeakShield AI — Modern Privacy Command Center (v0.2.0-beta)
 
 **Detect leaks. Prioritize risk. Clean your digital footprint.**
 
@@ -16,11 +16,11 @@ The goal of LeakShield AI is to empower individuals to take full control of thei
 
 1. **Intake & Consent Checklist:** Mandatory consent panels enforcing authorized personal scans and explicit simulated demo warnings.
 2. **Executive Privacy Dashboard:** Consolidated dashboard rendering the dynamic Privacy Exposure Score, explanatory factors, trend deltas, active progress dials, and a prominent *Top 3 Urgent Actions* panel.
-3. **Breach Intelligence Master-Detail:** Visual breach registry highlighting compromised databases (e.g., ConnectHub, DevForum), severity categories, exposed classes, and recommended action steps.
+3. **Breach Intelligence Monitor:** Authenticated breach registry cross-referencing compromised databases (e.g., Have I Been Pwned API) with secure local state.
 4. **Public Footprint Scanner:** Interactive grid tracking social media exposures, corporate biographies, and exposed contacts in public code repository commits.
-5. **AI Remediation Copilot:** Right-hand workspace sequencing a Today / This Week / Later roadmap and an automated **CCPA/GDPR/ARCO Deletion Letter Drafter**.
-6. **Privacy Task Board:** Click-to-advance Kanban board (`Pending` ➔ `In Progress` ➔ `Sent` ➔ `Resolved`) that reactively updates the application score.
-7. **Trust Center:** Security toggles and complete technical boundary declarations.
+5. **AI Remediation Copilot:** Right-hand workspace sequencing a Today / This Week / Later roadmap and an automated **CCPA/GDPR/ARCO Deletion Letter Drafter** backed by Gemini.
+6. **Privacy Task Board:** Click-to-advance Kanban board (`Pending` ➔ `In Progress` ➔ `Sent` ➔ `Resolved`) that reactively updates the application score and stores tasks in Firestore.
+7. **Trust Center:** Dynamic operational status indicator (**"Modo Real Protegido"** vs **"Modo Demo Local"**), security toggles, local obfuscation sandbox, and technical boundary declarations.
 
 ---
 
@@ -33,9 +33,21 @@ Unlike generic security dashboards, LeakShield AI features deep AI integration a
 
 ---
 
+## 🛡️ Security Hardening (v0.2.0)
+
+In the **v0.2.0-private-beta-security-hardening** release, the system has undergone strict cibersecurity hardening aligned with OWASP Top 10 API Security guidelines:
+* **Serverless Token Verification:** Direct serverless endpoint calls to `/api/breach` and `/api/ai` are rejected unless authorized by a cryptographically signed active Firebase ID token sent via `Authorization: Bearer <token>`.
+* **Dynamic CORS Whitelisting:** Strict CORS controls restrict serverless endpoint access exclusively to domains specified in the `ALLOWED_ORIGINS` whitelist.
+* **IP/UID Rate Limiting:** A custom, ephemeral rate limiting engine protects server endpoints from brute-force queries and budget-abuse (15 queries/min for breaches, 10 queries/min for AI).
+* **PII Log Masking:** All telemetry and server logs sanitize user emails (e.g., `jo***co@techflow.io`) to prevent logs leakage.
+* **Strict Firestore Isolation:** Access controls via `firestore.rules` isolate client transactions so authenticated users can strictly read/write their own profiles and tasks.
+* **Sovereign Local Obfuscation:** Exaggerated encryption claims (like "Quantum XOR") have been replaced with transparent local obfuscation processes that prevent local data leakage.
+
+---
+
 ## 🏗️ Architecture & Layout
 
-The project follows clean, modular React TypeScript architecture:
+The project follows a clean, modular React TypeScript architecture:
 
 ```text
 src/
@@ -44,90 +56,47 @@ src/
   ├── data/                 # Separated mock data layers (demo persona, breaches, tasks)
   ├── features/             # Context-isolated domain feature components
   ├── lib/                  # Localized engines, risk scoring rules, and generators
-  ├── services/             # Simulated data fetching layer (API-ready wrappers)
-  └── styles/               # CSS and tailwind variable layers
+  ├── services/             # Dynamic backend services with token extraction
+  └── styles/               # CSS and custom glassmorphism styles
+api/                        # Vercel Serverless Endpoints
+  ├── _lib/                 # Server-side auth, rate limiting, and log masking helpers
+  ├── breach.ts             # Hardened breach proxy endpoint
+  └── ai.ts                 # Hardened Gemini AI proxy endpoint
 ```
 
 ---
 
 ## ⚙️ Tech Stack & Packages
 
-* **Frontend Framework:** React 18.3 (Component-driven UI hooks)
-* **Build System:** Vite 5.2 (Fast compilation & HMR)
-* **Programming Language:** TypeScript 5.2 (Strict compiler typings)
-* **Styling Engine:** Tailwind CSS 3.4 & PostCSS (Harmonious custom charcoal/teal themes)
-* **Scalable Icons:** Lucide-React SVG path wrappers
+* **Frontend Framework:** React 18.3
+* **Build System:** Vite 5.2
+* **Programming Language:** TypeScript 5.2
+* **Styling Engine:** Tailwind CSS 3.4 & PostCSS
+* **Backend Platform:** Vercel Serverless Functions
+* **Backend Verification:** Firebase Admin SDK (`firebase-admin`)
+* **Database & Auth:** Firebase Auth & Cloud Firestore
 
 ---
 
-## 🚀 Installation Guide
+## 🚀 Installation & Local Running
 
-Setting up LeakShield AI locally takes under a minute:
-
-1. Clone the repository to your local directory.
-2. Open your terminal inside the project root directory.
-3. Execute the installation command:
+1. Clone the repository locally.
+2. Install dependencies:
    ```bash
    npm install
+   ```
+3. Copy `.env.example` to `.env` and fill in your Firebase configuration keys, HIBP API Key, and Gemini API Key.
+4. Run the local development server:
+   ```bash
+   npm run dev
    ```
 
 ---
 
-## 🛠️ Available Scripts
+## 🛑 Private Beta Constraints
 
-Once dependencies are installed, you can execute these commands:
-
-* **Run Local Development Server:**
-  ```bash
-  npm run dev
-  ```
-  Launches the Vite dev server locally.
-* **Verify TypeScript Typings:**
-  ```bash
-  npx tsc --noEmit
-  ```
-  Runs strict, compile-level type checking.
-* **Compile Production Bundle:**
-  ```bash
-  npm run build
-  ```
-  Compiles and bundles optimized assets into `/dist` in under a second.
-* **Preview Production Build:**
-  ```bash
-  npm run preview
-  ```
-  Runs a local preview of the production-compiled dist folder.
-
----
-
-## 📊 Version Status (`v0.1.0-ai-native-demo`)
-
-This release represents a stable, audited frontend demonstration prototype. It is fully responsive, contains zero hardcoded keys, passes all type-safety standards, and operates with a fully dynamic local state scoring engine.
-
----
-
-## 🛑 Demo Limits
-
-* **Simulated Data Only:** Every data compromise, broker listing, and profile in this version is completely fictional (featuring demo persona Alex Rivera from Mexico City).
-* **Zero Persistent Cookies:** Monitored identifiers and Kanban progress live ephemerally in React state memory. A manual browser refresh resets all states.
-* **No Real-World Submissions:** Opt-out deletion request letters are drafted as Blueprints. The "Queue for review" action is a simulated callback.
-
----
-
-## 🔒 Privacy & Security Policies
-
-* **Zero Plaintext Passwords:** LeakShield AI never asks for, captures, stores, or transmits user passwords.
-* **Scrubbed Form Inputs:** Intake fields are defensively protected against XSS injection attempts by stripping out HTML tag symbols (`<`, `>`) and clamping inputs to `80` characters maximum.
-* **Server-Side API Key Safety:** Google Search Custom Search, Vertex AI Gemini, and Have I Been Pwned API keys reside strictly server-side, never exposed to client-side bundles.
-
----
-
-## 🔮 Future Serverless Integrations
-
-When connecting LeakShield AI to live backend databases (Firebase/Supabase) and real-world security APIs:
-
-1. **k-Anonymity password checks:** To check password exposure securely, implement SHA-1 password hashing locally, send *ONLY* the first 5 characters to the backend `/api/pass-check` serverless function, and perform suffix matching locally.
-2. **Server-Side AI SDK Invocations:** Secure the Deletion letter drafting by executing Vertex AI prompt assemblies inside rate-limited backend endpoints, streaming responses via Server-Sent Events (SSE).
+* **Demonstration Scope:** No real data broker APIs are contacted (as data brokers do not provide public APIs for automated purges). Opt-out request letters are generated locally for human dispatch.
+* **Modo Demo Local vs Modo Real Protegido:** If a user is not signed in via Firebase, the system automatically degrades to a safe offline local-first fallback mode utilizing pre-compiled demo assets.
 
 ---
 
