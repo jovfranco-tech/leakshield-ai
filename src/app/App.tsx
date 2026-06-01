@@ -15,12 +15,14 @@ import { demoFootprint, demoOldAccounts, demoDataBrokers } from '../data/demoFoo
 import { Dashboard } from '../features/dashboard/Dashboard';
 import { ConsentScreen } from '../features/identity-intake/ConsentScreen';
 import { IntakeScreen } from '../features/identity-intake/IntakeScreen';
+import { LoginScreen } from '../features/identity-intake/LoginScreen';
 import { BreachIntelligence } from '../features/breach-intelligence/BreachIntelligence';
 import { FootprintScanner } from '../features/public-footprint/FootprintScanner';
 import { DataBrokers } from '../features/public-footprint/DataBrokers';
 import { CopilotWorkspace } from '../features/remediation-copilot/CopilotWorkspace';
 import { TaskBoard } from '../features/task-board/TaskBoard';
 import { TrustCenter } from '../features/trust-center/TrustCenter';
+import { OnboardingTutorialOverlay } from '../components/ui/OnboardingTutorialOverlay';
 
 // Libs & Hooks & Services
 import { useScoring } from '../hooks/useScoring';
@@ -31,7 +33,7 @@ import { taskService } from '../services/taskService';
 import { aiService } from '../services/aiService';
 import { firebaseService } from '../services/firebaseService';
 import { ViewType, DashboardLayout, ScoreStyle, CopilotPresentation, getTitles } from './routes';
-import { Task, CopilotData, BreachFinding } from '../types/privacy';
+import { Task, CopilotData, BreachFinding, Profile } from '../types/privacy';
 
 // Security Boundary: Encrypted Session Storage Hydration with Quantum XOR Cipher (OWASP PII)
 const secureSave = (key: string, data: any, persistent = false) => {
@@ -732,6 +734,16 @@ export const AppInternal: React.FC = () => {
   const { playSound } = useSoundEngine();
   const [view, setView] = useState<ViewType>("landing");
   const [toast, setToast] = useState<string | null>(null);
+
+  // Dynamic authenticated user profile state (v1.1.0)
+  const [profile, setProfile] = useState<Profile | null>(() => {
+    const saved = localStorage.getItem('leakshield_user_profile');
+    const sessionActive = localStorage.getItem('leakshield_session_active') === 'true';
+    return sessionActive && saved ? JSON.parse(saved) : null;
+  });
+
+  // Interactive Onboarding Tutorial Step State (v1.1.0)
+  const [tutorialStep, setTutorialStep] = useState<number | null>(null);
   const [deletionModal, setDeletionModal] = useState(false);
   const [narrow, setNarrow] = useState(false);
   const [railOpen, setRailOpen] = useState(true);
@@ -914,7 +926,55 @@ export const AppInternal: React.FC = () => {
     return () => mq.removeEventListener("change", on);
   }, []);
 
+  const handleLogout = () => {
+    localStorage.removeItem('leakshield_session_active');
+    setProfile(null);
+    setView("landing");
+    showToast(language === 'en' ? "Sovereign console encrypted and logged out." : "Consola cifrada y sesión cerrada.");
+  };
+
+  const handleNextTutorialStep = () => {
+    setTutorialStep(prev => {
+      if (prev === null) return null;
+      const nextStep = prev + 1;
+      const stepViews = ["dashboard", "dashboard", "identity", "breaches", "footprint", "trust"];
+      const nextView = stepViews[nextStep];
+      if (nextView) {
+        setView(nextView as ViewType);
+      }
+      if (nextStep >= 6) {
+        localStorage.setItem('leakshield_tutorial_completed', 'true');
+        showToast(language === 'en' ? "Onboarding tutorial completed!" : "¡Tutorial de onboarding completado!");
+        return null;
+      }
+      return nextStep;
+    });
+  };
+
+  const handlePrevTutorialStep = () => {
+    setTutorialStep(prev => {
+      if (prev === null || prev === 0) return prev;
+      const prevStep = prev - 1;
+      const stepViews = ["dashboard", "dashboard", "identity", "breaches", "footprint", "trust"];
+      const prevView = stepViews[prevStep];
+      if (prevView) {
+        setView(prevView as ViewType);
+      }
+      return prevStep;
+    });
+  };
+
+  const handleSkipTutorial = () => {
+    localStorage.setItem('leakshield_tutorial_completed', 'true');
+    setTutorialStep(null);
+    showToast(language === 'en' ? "Onboarding tutorial closed." : "Tutorial de onboarding cerrado.");
+  };
+
   const nav = (v: string) => {
+    if (v === "logout") {
+      handleLogout();
+      return;
+    }
     setLensTransitioning(true);
     const column = document.querySelector(".content-container-column");
     const changeView = () => {
@@ -1016,16 +1076,65 @@ export const AppInternal: React.FC = () => {
   };
 
   // computed profile according to active profile state (Recommendation 13)
+  const activeUser = profile || demoProfile;
   const computedProfile = {
-    ...demoProfile,
-    name: activeProfile === 'personal' ? demoProfile.name : activeProfile === 'trabajo' ? "Jovan Franco (Corp)" : "Jovan Franco (Private Wealth)",
-    emails: activeProfile === 'personal' ? demoProfile.emails : activeProfile === 'trabajo' ? ["jovan.franco@enterprise-corp.com"] : ["jovan.franco@private-vault.net"],
+    ...activeUser,
+    name: activeProfile === 'personal' ? activeUser.name : activeProfile === 'trabajo' ? `${activeUser.name.split(' ')[0] || 'Usuario'} (Corp)` : `${activeUser.name.split(' ')[0] || 'Usuario'} (Privado)`,
+    emails: activeProfile === 'personal' ? activeUser.emails : activeProfile === 'trabajo' ? [`work.alias@${activeUser.emails[0]?.split('@')[1] || 'enterprise.com'}`] : [`secure.vault@${activeUser.emails[0]?.split('@')[1] || 'private.net'}`],
   };
 
+  // Dinamización de Datos de Exposición en base a la identidad del usuario logueado (v1.1.0)
+  const userBreaches = demoBreaches.map(b => ({
+    ...b,
+    affectedEmail: b.affectedEmail.includes('work') ? (computedProfile.emails[1] || computedProfile.emails[0]) : computedProfile.emails[0]
+  }));
+
+  const userFootprint = demoFootprint.map(f => {
+    let title = f.title;
+    if (title.includes('@alexrivera')) {
+      title = title.replace('@alexrivera', `@${computedProfile.usernames[0] || 'usuario'}`);
+    } else if (title.includes('@arivera_tech')) {
+      title = title.replace('@arivera_tech', `@${computedProfile.usernames[1] || 'usuario_sec'}`);
+    }
+    
+    const exposes = f.exposes.map(e => {
+      if (e.includes('work.alias@example.com')) {
+        return computedProfile.emails[1] || computedProfile.emails[0];
+      }
+      return e;
+    });
+
+    return {
+      ...f,
+      title,
+      exposes
+    };
+  });
+
+  const userOldAccounts = demoOldAccounts.map(o => ({
+    ...o,
+    service: o.service.includes('@arivera_tech') 
+      ? o.service.replace('@arivera_tech', `@${computedProfile.usernames[1] || 'usuario_sec'}`)
+      : o.service
+  }));
+
+  const userTasks = tasks.map(t => {
+    let title = t.title;
+    if (title.includes('@alexrivera')) {
+      title = title.replace('@alexrivera', `@${computedProfile.usernames[0] || 'usuario'}`);
+    } else if (title.includes('work.alias')) {
+      title = title.replace('work.alias', computedProfile.emails[1] || computedProfile.emails[0]);
+    }
+    return {
+      ...t,
+      title
+    };
+  });
+
   // Dynamic risk summary card objects
-  const breachesCount = demoBreaches.length;
-  const criticalCount = demoBreaches.filter((b: BreachFinding) => b.severity === 'Critical' && tasks.find(t => t.id === 't1')?.status !== 'Resolved').length;
-  const highCount = demoBreaches.filter((b: BreachFinding) => b.severity === 'High' && tasks.find(t => t.id === 't2')?.status !== 'Resolved').length;
+  const breachesCount = userBreaches.length;
+  const criticalCount = userBreaches.filter((b: BreachFinding) => b.severity === 'Critical' && tasks.find(t => t.id === 't1')?.status !== 'Resolved').length;
+  const highCount = userBreaches.filter((b: BreachFinding) => b.severity === 'High' && tasks.find(t => t.id === 't2')?.status !== 'Resolved').length;
   
   const brokerCount = demoDataBrokers.filter(b => tasks.find(t => t.id === (b.id === 'db1' ? 't4' : 't7'))?.status !== 'Resolved').length;
 
@@ -1105,7 +1214,7 @@ export const AppInternal: React.FC = () => {
             profile={computedProfile}
             score={dynamicScore}
             remediation={dynamicProgress}
-            breaches={demoBreaches}
+            breaches={userBreaches}
             highRiskData={highRiskDataClasses}
             risk={dynamicRisk}
             copilot={copilotData}
@@ -1121,7 +1230,7 @@ export const AppInternal: React.FC = () => {
       case "breaches":
         return (
           <BreachIntelligence 
-            breaches={demoBreaches}
+            breaches={userBreaches}
             inlineAI={copilotMode === "inline"}
             onToast={showToast}
             onResolveTask={handleResolveTaskFromBreach}
@@ -1130,7 +1239,7 @@ export const AppInternal: React.FC = () => {
       case "footprint":
         return (
           <FootprintScanner 
-            findings={demoFootprint}
+            findings={userFootprint}
             inlineAI={copilotMode === "inline"}
             onToast={showToast}
             onOpenDeletion={() => setDeletionModal(true)}
@@ -1140,7 +1249,7 @@ export const AppInternal: React.FC = () => {
         return (
           <DataBrokers 
             brokers={demoDataBrokers}
-            oldAccounts={demoOldAccounts}
+            oldAccounts={userOldAccounts}
             inlineAI={copilotMode === "inline"}
             onToast={showToast}
             onOpenDeletion={() => setDeletionModal(true)}
@@ -1161,7 +1270,7 @@ export const AppInternal: React.FC = () => {
       case "tasks":
         return (
           <TaskBoard 
-            tasks={tasks}
+            tasks={userTasks}
             onUpdateTasks={handleUpdateTasks}
             onToast={showToast}
             language={language}
@@ -1178,7 +1287,7 @@ export const AppInternal: React.FC = () => {
   if (view === "landing") {
     return (
       <>
-        <LandingScreen onStart={() => nav("consent")} onTrust={() => nav("trust")} language={language} />
+        <LandingScreen onStart={() => nav(profile ? "consent" : "login")} onTrust={() => nav(profile ? "trust" : "login")} language={language} />
         <TweaksOverlay 
           layout={dashboardLayout} 
           scoreStyle={scoreStyle} 
@@ -1203,6 +1312,49 @@ export const AppInternal: React.FC = () => {
             if (k === 'noiseOpacity') setNoiseOpacity(v);
           }} 
         />
+      </>
+    );
+  }
+
+  if (view === "login") {
+    return (
+      <>
+        <LoginScreen 
+          language={language}
+          onToast={showToast}
+          onLogin={(userProfile) => {
+            setProfile(userProfile);
+            setView("consent");
+            if (localStorage.getItem('leakshield_tutorial_completed') !== 'true') {
+              setTutorialStep(0);
+            }
+          }}
+        />
+        <TweaksOverlay 
+          layout={dashboardLayout} 
+          scoreStyle={scoreStyle} 
+          copilotMode={copilotMode} 
+          accent={accent} 
+          persistentStorage={persistentStorage}
+          language={language}
+          theme={theme}
+          particleSpeed={particleSpeed}
+          density={density}
+          noiseOpacity={noiseOpacity}
+          onChange={(k, v) => {
+            if (k === 'dashboardLayout') setDashboardLayout(v);
+            if (k === 'scoreStyle') setScoreStyle(v);
+            if (k === 'copilotMode') setCopilotMode(v);
+            if (k === 'accent') setAccent(v);
+            if (k === 'persistentStorage') setPersistentStorage(v);
+            if (k === 'language') setLanguage(v);
+            if (k === 'theme') setTheme(v);
+            if (k === 'particleSpeed') setParticleSpeed(v);
+            if (k === 'density') setDensity(v);
+            if (k === 'noiseOpacity') setNoiseOpacity(v);
+          }} 
+        />
+        <Toast msg={toast} />
       </>
     );
   }
@@ -1242,7 +1394,7 @@ export const AppInternal: React.FC = () => {
   if (view === "intake") {
     return (
       <div className="page min-h-screen bg-bg-0">
-        <IntakeScreen profile={demoProfile} onComplete={() => nav("dashboard")} onToast={showToast} />
+        <IntakeScreen profile={computedProfile} onComplete={() => nav("dashboard")} onToast={showToast} />
         <TweaksOverlay 
           layout={dashboardLayout} 
           scoreStyle={scoreStyle} 
@@ -1283,7 +1435,7 @@ export const AppInternal: React.FC = () => {
       <ThreatMeshBackground scoreValue={dynamicScore.value} speed={particleSpeed} theme={theme} />
 
       {/* Left side Nav Rail */}
-      <NavRail view={view} onNav={nav} profile={demoProfile} language={language} />
+      <NavRail view={view} onNav={nav} profile={computedProfile} language={language} />
 
       {/* Main Column */}
       <main className="main-column flex flex-col h-full min-w-0 overflow-hidden relative z-10">
@@ -1920,6 +2072,16 @@ export const AppInternal: React.FC = () => {
             )}
           </div>
         </div>
+      )}
+
+      {tutorialStep !== null && (
+        <OnboardingTutorialOverlay 
+          currentStep={tutorialStep}
+          language={language}
+          onNext={handleNextTutorialStep}
+          onPrev={handlePrevTutorialStep}
+          onSkip={handleSkipTutorial}
+        />
       )}
 
       <Toast msg={toast} />

@@ -88,7 +88,7 @@ export const NavRail: React.FC<NavRailProps> = ({ view, onNav, profile, language
         </div>
         <button 
           className="w-8 h-8 rounded-lg border border-line bg-bg-2 hover:bg-bg-3 text-t-1 hover:text-t-0 flex items-center justify-center cursor-pointer transition-all duration-130" 
-          onClick={() => onNav("landing")} 
+          onClick={() => onNav("logout")} 
           title="Cerrar sesión"
         >
           <Icon name="logout" size={15} />

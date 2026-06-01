@@ -46,14 +46,16 @@ export interface AliasRecommendation {
   rationale: string;
 }
 
-export function getAliasStrategy(category: string): AliasRecommendation {
+export function getAliasStrategy(category: string, userEmail: string = 'jovan@example.com'): AliasRecommendation {
+  const emailPrefix = userEmail.split('@')[0] || 'jovan';
+  const emailDomain = userEmail.split('@')[1] || 'example.com';
   switch (category.toLowerCase()) {
     case 'banking':
     case 'government':
     case 'finance':
       return {
         type: "Correo real con 2FA",
-        recommendation: "alex.rivera@example.com (alta confianza)",
+        recommendation: `${userEmail} (alta confianza)`,
         rationale: "Utiliza tu correo electrónico principal y seguro equipado con token 2FA físico para bancos, trámites gubernamentales y cuentas que requieran estricta verificación de identidad."
       };
     case 'shopping':
@@ -61,7 +63,7 @@ export function getAliasStrategy(category: string): AliasRecommendation {
     case 'apps':
       return {
         type: "Alias permanente por servicio",
-        recommendation: "work.alias+shopping@example.com",
+        recommendation: `${emailPrefix}+shopping@${emailDomain}`,
         rationale: "Utiliza alias personalizados para portales comerciales propensos a fugas. Esto aísla cualquier brecha a un solo buzón y te ayuda a rastrear si vendieron tus datos."
       };
     case 'newsletters':
@@ -74,7 +76,7 @@ export function getAliasStrategy(category: string): AliasRecommendation {
     default:
       return {
         type: "Buzón sandbox dedicado",
-        recommendation: "arivera.tech@external-vault.net",
+        recommendation: `${emailPrefix}.tech@external-vault.net`,
         rationale: "Establece un buzón completamente separado para foros de desarrolladores, tableros de discusión antiguos o registros de prueba."
       };
   }

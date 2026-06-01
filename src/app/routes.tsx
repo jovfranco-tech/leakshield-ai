@@ -41,8 +41,8 @@ export const TITLES: Record<string, string> = {
   trust: "Centro de Confianza y Seguridad",
 };
 
-export const ONBOARDING_VIEWS = ["landing", "consent", "intake"];
-export type ViewType = 'landing' | 'consent' | 'intake' | 'dashboard' | 'identity' | 'breaches' | 'footprint' | 'brokers' | 'copilot' | 'tasks' | 'trust';
+export const ONBOARDING_VIEWS = ["landing", "login", "consent", "intake"];
+export type ViewType = 'landing' | 'login' | 'consent' | 'intake' | 'dashboard' | 'identity' | 'breaches' | 'footprint' | 'brokers' | 'copilot' | 'tasks' | 'trust';
 export type DashboardLayout = 'executive' | 'grid' | 'focus';
 export type ScoreStyle = 'numeric' | 'ring' | 'bar';
 export type CopilotPresentation = 'rail' | 'inline';

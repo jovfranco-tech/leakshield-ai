@@ -13,12 +13,12 @@ export const aiService = {
   /**
    * Mock copilot chat query
    */
-  async queryCopilot(message: string, contextView: string): Promise<string> {
-    console.log(`[aiService] Copilot prompt received for view [${contextView}]: "${message}"`);
+  async queryCopilot(message: string, contextView: string, userName: string = 'Jovan Franco', location: string = 'Ciudad de México, MX'): Promise<string> {
+    console.log(`[aiService] Copilot prompt received for view [${contextView}] from ${userName}: "${message}"`);
     return new Promise((resolve) => {
       setTimeout(() => {
         resolve(
-          `I've analyzed your query regarding *${contextView}*. Based on your current exposure profile (Alex Rivera, Mexico City), my recommendation is to prioritize fixing your reused credentials first, as they represent 84% of your immediate vulnerability. If you've already done that, we should draft a CCPA/ARCO suppression request for DataFind.`
+          `Analicé tu consulta sobre *${contextView}*. Basado en tu perfil de exposición soberano (${userName}, ${location}), mi recomendación es priorizar la rotación de tus credenciales reutilizadas, ya que representan el 84% de tu vulnerabilidad inmediata. Si ya realizaste esto, deberíamos redactar y enviar una solicitud de remoción ARCO/CCPA dirigida al broker DataFind.`
         );
       }, 800);
     });
@@ -27,10 +27,10 @@ export const aiService = {
   /**
    * Generates a suppression request draft using local orchestration rules
    */
-  async getDeletionDraft(target: string, type: 'ARCO' | 'GDPR' | 'CCPA' | 'Generic'): Promise<string> {
+  async getDeletionDraft(target: string, type: 'ARCO' | 'GDPR' | 'CCPA' | 'Generic', userName: string = 'Usuario', location: string = 'Local'): Promise<string> {
     return new Promise((resolve) => {
       setTimeout(() => {
-        resolve(generateDeletionRequest(target, type));
+        resolve(generateDeletionRequest(target, type, userName, location));
       }, 300);
     });
   },
@@ -75,7 +75,7 @@ export const aiService = {
     };
   },
 
-  async getAliasPlan(category: string) {
-    return getAliasStrategy(category);
+  async getAliasPlan(category: string, userEmail?: string) {
+    return getAliasStrategy(category, userEmail);
   }
 };
