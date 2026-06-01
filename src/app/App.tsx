@@ -34,6 +34,8 @@ import { aiService } from '../services/aiService';
 import { firebaseService } from '../services/firebaseService';
 import { ViewType, DashboardLayout, ScoreStyle, CopilotPresentation, getTitles } from './routes';
 import { Task, CopilotData, BreachFinding, Profile } from '../types/privacy';
+import { auth } from '../lib/firebase';
+import { signOut } from 'firebase/auth';
 
 // Security Boundary: Encrypted Session Storage Hydration with Quantum XOR Cipher (OWASP PII)
 const secureSave = (key: string, data: any, persistent = false) => {
@@ -742,6 +744,37 @@ export const AppInternal: React.FC = () => {
     return sessionActive && saved ? JSON.parse(saved) : null;
   });
 
+  // Hook up Firebase Auth State Listener to sync profiles on session load
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const sessionActive = localStorage.getItem('leakshield_session_active') === 'true';
+        if (!sessionActive || !profile) {
+          try {
+            const { getDoc, doc } = await import('firebase/firestore');
+            const { db } = await import('../lib/firebase');
+            const docSnap = await getDoc(doc(db, 'users', user.uid));
+            if (docSnap.exists()) {
+              const profileData = docSnap.data() as Profile;
+              setProfile(profileData);
+              localStorage.setItem('leakshield_user_profile', JSON.stringify(profileData));
+              localStorage.setItem('leakshield_session_active', 'true');
+            }
+          } catch (e) {
+            console.error("[App] Failed to load user profile on mount", e);
+          }
+        }
+      } else {
+        if (localStorage.getItem('leakshield_session_active') === 'true') {
+          localStorage.removeItem('leakshield_session_active');
+          localStorage.removeItem('leakshield_user_profile');
+          setProfile(null);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, [profile]);
+
   // Interactive Onboarding Tutorial Step State (v1.1.0)
   const [tutorialStep, setTutorialStep] = useState<number | null>(null);
   const [deletionModal, setDeletionModal] = useState(false);
@@ -856,7 +889,7 @@ export const AppInternal: React.FC = () => {
   };
 
   // Integration of useTaskBoard & useScoring custom hooks
-  const { tasks, resetAllTasks, setTasks } = useTaskBoard(showToast);
+  const { tasks, resetAllTasks, setTasks } = useTaskBoard(profile, showToast);
   const dynamicScore = useScoring(tasks);
 
   // Set accents dynamically
@@ -926,7 +959,12 @@ export const AppInternal: React.FC = () => {
     return () => mq.removeEventListener("change", on);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.error("[App] Firebase signOut failed", e);
+    }
     localStorage.removeItem('leakshield_session_active');
     setProfile(null);
     setView("landing");

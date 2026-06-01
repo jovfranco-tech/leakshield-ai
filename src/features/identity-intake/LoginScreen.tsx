@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { Icon } from '../../components/ui/Icon';
 import { Profile } from '../../types/privacy';
+import { auth, db } from '../../lib/firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 interface LoginScreenProps {
   onLogin: (profile: Profile) => void;
@@ -31,7 +34,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (isRegister) {
@@ -48,42 +51,83 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
     setLoading(true);
 
-    // Simulate cryptographic processing / local hashing
-    setTimeout(() => {
-      setLoading(false);
-      
-      const resolvedName = isRegister ? name : "Jovan Franco";
-      const resolvedLocation = isRegister ? location : "Ciudad de México, MX";
-      const resolvedEmail = email.trim();
-      
-      const initials = resolvedName
-        .split(' ')
-        .map(n => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2);
+    if (isRegister) {
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+        const user = userCredential.user;
+        
+        const initials = name
+          .trim()
+          .split(' ')
+          .map(n => n[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 2);
 
-      const generatedProfile: Profile = {
-        name: resolvedName,
-        initials: initials || "US",
-        location: resolvedLocation,
-        emails: [resolvedEmail, `work.alias@${resolvedEmail.split('@')[1] || 'privacy-vault.net'}`],
-        usernames: [resolvedEmail.split('@')[0] || "user", `${resolvedEmail.split('@')[0] || "user"}_secure`],
-        phone: "+52 ••• ••• ••" + Math.floor(Math.random() * 90 + 10),
-        memberSince: "Junio 2026",
-      };
+        const generatedProfile: Profile = {
+          name: name.trim(),
+          initials: initials || "US",
+          location: location.trim(),
+          emails: [email.trim(), `work.alias@${email.trim().split('@')[1] || 'privacy-vault.net'}`],
+          usernames: [email.trim().split('@')[0] || "user", `${email.trim().split('@')[0] || "user"}_secure`],
+          phone: "+52 ••• ••• ••" + Math.floor(Math.random() * 90 + 10),
+          memberSince: "Junio 2026",
+        };
 
-      // Persist locally
-      localStorage.setItem('leakshield_user_profile', JSON.stringify(generatedProfile));
-      localStorage.setItem('leakshield_session_active', 'true');
-      
-      onToast(isRegister 
-        ? (language === 'en' ? "Sovereign Identity registered successfully!" : "¡Identidad Soberana registrada con éxito!")
-        : (language === 'en' ? "Welcome back! Secure console decrypted." : "¡Bienvenido de vuelta! Consola de seguridad descifrada.")
-      );
-
-      onLogin(generatedProfile);
-    }, 1200);
+        // Write profile document to Firestore under users/{uid}
+        await setDoc(doc(db, 'users', user.uid), generatedProfile);
+        
+        // Write default profile to local storage as active session cache
+        localStorage.setItem('leakshield_user_profile', JSON.stringify(generatedProfile));
+        localStorage.setItem('leakshield_session_active', 'true');
+        
+        setLoading(false);
+        onToast(language === 'en' ? "Sovereign Identity registered successfully!" : "¡Identidad Soberana registrada con éxito!");
+        onLogin(generatedProfile);
+      } catch (err: any) {
+        setLoading(false);
+        console.error(err);
+        onToast(err.message || "Error al registrar identidad");
+      }
+    } else {
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
+        const user = userCredential.user;
+        
+        // Fetch profile document from Firestore
+        const docRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(docRef);
+        
+        let profileData: Profile;
+        if (docSnap.exists()) {
+          profileData = docSnap.data() as Profile;
+        } else {
+          // Fallback if firestore document doesn't exist
+          const initials = "JF";
+          profileData = {
+            name: "Jovan Franco",
+            initials: initials,
+            location: "Ciudad de México, MX",
+            emails: [email.trim(), `work.alias@${email.trim().split('@')[1] || 'privacy-vault.net'}`],
+            usernames: [email.trim().split('@')[0] || "user", `${email.trim().split('@')[0] || "user"}_secure`],
+            phone: "+52 ••• ••• ••99",
+            memberSince: "Junio 2026",
+          };
+          await setDoc(doc(db, 'users', user.uid), profileData);
+        }
+        
+        localStorage.setItem('leakshield_user_profile', JSON.stringify(profileData));
+        localStorage.setItem('leakshield_session_active', 'true');
+        
+        setLoading(false);
+        onToast(language === 'en' ? "Welcome back! Secure console decrypted." : "¡Bienvenido de vuelta! Consola de seguridad descifrada.");
+        onLogin(profileData);
+      } catch (err: any) {
+        setLoading(false);
+        console.error(err);
+        onToast(err.message || "Error de credenciales o de descifrado");
+      }
+    }
   };
 
   const handleQuickDemoFill = () => {

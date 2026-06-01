@@ -3,7 +3,7 @@ import { Task } from '../types/privacy';
 import { taskService } from '../services/taskService';
 import { firebaseService } from '../services/firebaseService';
 
-export const useTaskBoard = (onToast?: (msg: string) => void) => {
+export const useTaskBoard = (profile: any, onToast?: (msg: string) => void) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +25,7 @@ export const useTaskBoard = (onToast?: (msg: string) => void) => {
       }
     };
     loadTasks();
-  }, []);
+  }, [profile]);
 
   const updateTaskStatus = useCallback(async (taskId: string, status: Task['status']) => {
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status } : t));

@@ -1,81 +1,84 @@
 import { Task } from '../types/privacy';
+import { auth, db } from '../lib/firebase';
+import { collection, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
+import { demoTasks } from '../data/demoTasks';
 
 /**
  * Firebase Firestore Client Proxy Service
  * 
  * SECURITY BOUNDARY (Privacy-by-Design):
- * - To protect the database credentials,
- *   do NOT query Firestore directly from client bundle scripts.
- * - This service routes all database sync operations to secure, rate-limited serverless backend
- *   functions (e.g. `/api/tasks`) which securely inject the Project ID and API token on the server side.
- * - Fallback: Ephemeral session caching ensures the UI remains 100% active and stable even when offline.
+ * - Isolated Client-side writes: All data is saved under 'users/{uid}/tasks' so that users
+ *   only read and write their own data, verified by Firestore Security Rules.
+ * - Decoupled integration: Fits cleanly into existing hooks.
  */
-
-// Ephemeral memory storage in case serverless routes are offline
-let ephemeralTasksCache: Task[] = [];
-
 export const firebaseService = {
   /**
-   * Fetch tasks synchronized with Cloud Firestore via backend proxy
+   * Fetch tasks synchronized with Cloud Firestore for the active authenticated user
    */
   async getTasks(): Promise<Task[]> {
-    console.log("[firebaseService] Checking Firebase Firestore sync via secure proxy...");
+    const user = auth.currentUser;
+    if (!user) {
+      console.warn("[firebaseService] No logged-in user to fetch tasks from Firestore.");
+      return [];
+    }
     
-    // In production, this resolves:
-    // const res = await fetch('/api/tasks');
-    // return res.json();
-    
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(ephemeralTasksCache);
-      }, 150);
-    });
+    console.log(`[firebaseService] Fetching tasks from Cloud Firestore for user: ${user.uid}`);
+    try {
+      const colRef = collection(db, 'users', user.uid, 'tasks');
+      const snap = await getDocs(colRef);
+      const list: Task[] = [];
+      snap.forEach(doc => {
+        list.push(doc.data() as Task);
+      });
+      
+      // Seed Firestore with default remediation tasks if it's the first time
+      if (list.length === 0) {
+        await this.resetTasks(demoTasks);
+        return demoTasks;
+      }
+      return list;
+    } catch (e) {
+      console.error("[firebaseService] Failed to load tasks from Firestore", e);
+      return [];
+    }
   },
 
   /**
-   * Update task status in Cloud Firestore via secure proxy
+   * Update task status in Cloud Firestore
    */
   async updateTaskStatus(taskId: string, status: Task['status']): Promise<boolean> {
-    console.log(`[firebaseService] Syncing task ${taskId} status update [${status}] to Cloud Firestore via proxy...`);
+    const user = auth.currentUser;
+    if (!user) return false;
     
-    ephemeralTasksCache = ephemeralTasksCache.map(t => t.id === taskId ? { ...t, status } : t);
-    
-    // In production, this resolves:
-    // const res = await fetch(`/api/tasks/${taskId}`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ status })
-    // });
-    // return res.ok;
-
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(true);
-      }, 100);
-    });
+    console.log(`[firebaseService] Syncing task ${taskId} status update [${status}] to Cloud Firestore for user ${user.uid}...`);
+    try {
+      const docRef = doc(db, 'users', user.uid, 'tasks', taskId);
+      await updateDoc(docRef, { status });
+      return true;
+    } catch (e) {
+      console.error("[firebaseService] Failed to update task status in Firestore", e);
+      return false;
+    }
   },
 
   /**
-   * Reset all database tasks in Firestore via secure proxy
+   * Reset all database tasks in Firestore
    */
   async resetTasks(freshTasks: Task[]): Promise<boolean> {
-    console.log("[firebaseService] Resetting and re-seeding Cloud Firestore default metrics via proxy...");
+    const user = auth.currentUser;
+    if (!user) return false;
     
-    ephemeralTasksCache = [...freshTasks];
-
-    // In production, this resolves:
-    // const res = await fetch('/api/tasks/reset', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ tasks: freshTasks })
-    // });
-    // return res.ok;
-
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(true);
-      }, 200);
-    });
+    console.log(`[firebaseService] Resetting and re-seeding Cloud Firestore tasks for user ${user.uid}...`);
+    try {
+      for (const t of freshTasks) {
+        const docRef = doc(db, 'users', user.uid, 'tasks', t.id);
+        await setDoc(docRef, t);
+      }
+      return true;
+    } catch (e) {
+      console.error("[firebaseService] Failed to reset tasks in Firestore", e);
+      return false;
+    }
   }
 };
 export default firebaseService;
