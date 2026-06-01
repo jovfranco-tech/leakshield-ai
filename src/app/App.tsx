@@ -135,6 +135,13 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'me
     };
     window.addEventListener('mousemove', handleMouseMove);
 
+    // Scroll listener for Depth Parallax coordinates (v1.0.0 - Recommendation 1)
+    let scrollY = 0;
+    const handleScroll = () => {
+      scrollY = window.scrollY;
+    };
+    window.addEventListener('scroll', handleScroll);
+
     const particleCount = 28;
     const particles: Array<{ x: number; y: number; vx: number; vy: number; r: number }> = [];
     const baseMult = speed === 'slow' ? 0.3 : speed === 'fast' ? 1.6 : 0.95;
@@ -205,18 +212,25 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'me
         if (p.x < 0 || p.x > width) p.vx *= -1;
         if (p.y < 0 || p.y > height) p.vy *= -1;
 
+        // Scroll-driven vertical parallax displacement based on particle radius depth (z-index)
+        const parallaxY = p.y - scrollY * (p.r * 0.16);
+        const drawY = ((parallaxY % height) + height) % height;
+
         ctx.beginPath();
         // Multiply by pulseScale to breathe bio-reactively
-        ctx.arc(p.x, p.y, p.r * pulseScale, 0, Math.PI * 2);
+        ctx.arc(p.x, drawY, p.r * pulseScale, 0, Math.PI * 2);
         ctx.fill();
 
         for (let j = i + 1; j < particleCount; j++) {
           const p2 = particles[j];
-          const dist = Math.hypot(p.x - p2.x, p.y - p2.y);
+          const parallaxY2 = p2.y - scrollY * (p2.r * 0.16);
+          const drawY2 = ((parallaxY2 % height) + height) % height;
+
+          const dist = Math.hypot(p.x - p2.x, drawY - drawY2);
           if (dist < 130) {
             ctx.beginPath();
-            ctx.moveTo(p.x, p.y);
-            ctx.lineTo(p2.x, p2.y);
+            ctx.moveTo(p.x, drawY);
+            ctx.lineTo(p2.x, drawY2);
             ctx.stroke();
           }
         }
@@ -246,6 +260,7 @@ const ThreatMeshBackground: React.FC<{ scoreValue?: number; speed?: 'slow' | 'me
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('click', handleClick);
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('scroll', handleScroll);
       document.removeEventListener('visibilitychange', handleVisibility);
       cancelAnimationFrame(animationId);
     };

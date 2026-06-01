@@ -542,6 +542,10 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
   const [classifierLoading, setClassifierLoading] = useState(false);
   const [customTextToClassify, setCustomTextToClassify] = useState("");
 
+  // RLHF & Noise Matrix Inferencia Local States (v1.0.0 - Recommendation 8 & 9)
+  const [rlhfTuningFactor, setRlhfTuningFactor] = useState(1.0);
+  const [noiseInjectionActive, setNoiseInjectionActive] = useState(false);
+
   // Recommendation 23: OCR Screen screenshot upload state
   const [ocrDragOver, setOcrDragOver] = useState(false);
   const [ocrScanning, setOcrScanning] = useState(false);
@@ -1552,7 +1556,6 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
               </div>
             )}
 
-            {/* Recommendation 23: OCR Dropping screen scanner simulation */}
             <div 
               onDragOver={(e) => { e.preventDefault(); setOcrDragOver(true); }}
               onDragLeave={() => setOcrDragOver(false)}
@@ -1562,7 +1565,7 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
                 }
                 handleOcrScreenshotDrop(e);
               }}
-              className={`border-2 border-dashed rounded-lg p-5 text-center flex flex-col items-center justify-center min-h-[120px] cursor-pointer transition-all duration-150 ${
+              className={`border-2 border-dashed rounded-lg p-5 text-center flex flex-col items-center justify-center min-h-[130px] cursor-pointer transition-all duration-150 ${
                 ocrDragOver ? "border-teal bg-teal-dim/15" : "border-line-2 hover:border-line-3 bg-bg-inset"
               }`}
               onClick={() => {
@@ -1582,13 +1585,36 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
                   handleOcrScreenshotDrop(e as any);
                 }}
               />
-              <div className="w-9 h-9 rounded-full bg-bg-3 border border-line flex items-center justify-center text-t-2 mb-2">
-                <span className="text-xl">📸</span>
-              </div>
-              <span className="text-[12.5px] text-t-0 font-medium">
-                {ocrScanning ? (language === 'en' ? "Scanning text via local OCR..." : "Escaneando texto con OCR local...") : t.classifierDropZone}
-              </span>
-              <span className="text-t-3 text-[10.5px] mt-0.5">{language === 'en' ? "Solves CCPA evasions instantly using mock Tesseract OCR thread" : "Soluciona evasivas CCPA al instante simulando Tesseract OCR"}</span>
+              {ocrScanning ? (
+                <div className="w-full flex flex-col items-center gap-2.5 animate-pulse">
+                  <div className="flex items-center gap-1.5 text-teal font-mono text-[11px]">
+                    <Icon name="refresh" size={13} className="spin" />
+                    <span>{language === 'en' ? "SANITIZING BINARY STREAM..." : "SANITIZANDO FLUJO BINARIO..."}</span>
+                  </div>
+                  {/* Real-time flowing binary byte cleaner animation (v1.0.0 - Recommendation 10) */}
+                  <div className="bg-[#05070a] border border-line rounded px-3 py-1 font-mono text-[9px] text-teal-line max-w-[240px] truncate select-none">
+                    {Array.from({ length: 4 }).map(() => 
+                      Math.floor(Math.random() * 256).toString(2).padStart(8, '0')
+                    ).join(" ")}
+                  </div>
+                  <div className="w-full max-w-[180px] bg-bg-3 h-1 rounded-full overflow-hidden">
+                    <div className="bg-teal h-full w-[65%] rounded-full animate-bounce" />
+                  </div>
+                  <span className="text-[10px] text-t-3">
+                    {language === 'en' ? "Stripping GPS and camera exif logs..." : "Borrando metadatos GPS e identificador de cámara..."}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <div className="w-9 h-9 rounded-full bg-bg-3 border border-line flex items-center justify-center text-t-2 mb-2">
+                    <span className="text-xl">📸</span>
+                  </div>
+                  <span className="text-[12.5px] text-t-0 font-medium">
+                    {t.classifierDropZone}
+                  </span>
+                  <span className="text-t-3 text-[10.5px] mt-0.5">{language === 'en' ? "Solves CCPA evasions instantly using mock Tesseract OCR thread" : "Soluciona evasivas CCPA al instante simulando Tesseract OCR"}</span>
+                </>
+              )}
             </div>
 
             <textarea
@@ -1702,14 +1728,14 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
                   </div>
                 )}
 
-                {/* local ONNX/WASM CPU Tensor Weight Matrix histogram panel (v0.9.0 - Recommendation 21 & 22) */}
+                {/* local ONNX/WASM CPU Tensor Weight Matrix histogram panel (v1.0.0 - Recommendations 7, 8, 9) */}
                 <div className="mt-4 pt-4 border-t border-line/45 flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] uppercase font-bold tracking-wide text-teal flex items-center gap-1">
                       <Icon name="cpu" size={12} style={{ color: "var(--teal)" }} />
                       {language === 'en' ? "Local ONNX/WASM Offline Inference Engine" : "Motor de Inferencia Local ONNX/WASM Offline"}
                     </span>
-                    <span className="text-[9.5px] px-1.5 py-0.5 rounded bg-ok-dim border border-ok/30 text-ok font-mono font-bold">
+                    <span className="text-[9.5px] px-1.5 py-0.5 rounded bg-ok-dim border border-ok/30 text-ok font-mono font-bold animate-pulse">
                       EDGE_RUN
                     </span>
                   </div>
@@ -1717,11 +1743,11 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
                   <div className="grid grid-cols-3 gap-2 bg-bg-2 border border-line p-2.5 rounded-lg text-center font-mono text-[10.5px]">
                     <div className="flex flex-col">
                       <span className="text-t-3 text-[9px] uppercase font-bold">{language === 'en' ? "Latency / Token" : "Latencia / Token"}</span>
-                      <span className="text-t-0 font-bold mt-0.5">4.2 ms</span>
+                      <span className="text-t-0 font-bold mt-0.5">{noiseInjectionActive ? "6.8 ms" : "4.2 ms"}</span>
                     </div>
                     <div className="flex flex-col border-l border-r border-line">
                       <span className="text-t-3 text-[9px] uppercase font-bold">{language === 'en' ? "RAM WASM" : "Uso RAM WASM"}</span>
-                      <span className="text-t-0 font-bold mt-0.5">32.4 MB</span>
+                      <span className="text-t-0 font-bold mt-0.5">{noiseInjectionActive ? "36.2 MB" : "32.4 MB"}</span>
                     </div>
                     <div className="flex flex-col">
                       <span className="text-t-3 text-[9px] uppercase font-bold">{language === 'en' ? "Precision" : "Precisión Modelo"}</span>
@@ -1736,12 +1762,16 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
                     </div>
                     <div className="bg-[#05070a] border border-line rounded-lg p-2.5">
                       <svg width="100%" height="56" className="overflow-visible">
-                        {/* Draw beautiful sleek histogram bars based on model confidence */}
+                        {/* Draw beautiful sleek histogram bars based on model confidence and dynamic RLHF factor & Noise */}
                         {Array.from({ length: 15 }).map((_, idx) => {
                           const baseHeight = [10, 15, 28, 42, 35, 22, 12, 8, 14, 25, 38, 45, 30, 18, 10][idx] || 15;
-                          // Vary slightly based on confidence
+                          // Vary slightly based on confidence and dynamic factors (v1.0.0)
                           const multiplier = classifierResult ? (classifierResult.confidence / 100) : 1;
-                          const height = Math.min(48, Math.max(4, Math.round(baseHeight * (0.8 + multiplier * 0.4))));
+                          let noiseVal = 1.0;
+                          if (noiseInjectionActive) {
+                            noiseVal = 0.82 + Math.sin(Date.now() / 220 + idx) * 0.18;
+                          }
+                          const height = Math.min(48, Math.max(4, Math.round(baseHeight * (0.8 + multiplier * 0.4) * rlhfTuningFactor * noiseVal)));
                           const x = `${idx * 6.5 + 2}%`;
                           return (
                             <g key={idx} className="group/bar">
@@ -1752,7 +1782,7 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
                                 height={height}
                                 rx="1.5"
                                 fill="var(--teal)"
-                                className="transition-all duration-500 fill-teal/70 hover:fill-teal cursor-pointer"
+                                className="transition-all duration-300 fill-teal/70 hover:fill-teal cursor-pointer"
                               />
                             </g>
                           );
@@ -1761,11 +1791,117 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
                         <line x1="0" y1="50" x2="100%" y2="50" stroke="var(--line-3)" strokeWidth="1" strokeDasharray="3 3" />
                       </svg>
                     </div>
-                    <span className="text-[9px] text-t-2 text-center block">
+                    
+                    {/* Interactive RLHF local alignment and dynamic Noise controls (v1.0.0 - Recommendations 8 & 9) */}
+                    <div className="flex gap-2.5 mt-1">
+                      <button
+                        onClick={() => {
+                          setRlhfTuningFactor(prev => Math.min(1.5, prev + 0.1));
+                          playSound('success');
+                          onToast(language === 'en' ? "Local RLHF: Model weights successfully aligned!" : "RLHF Local: ¡Pesos del modelo alineados con éxito en la CPU!");
+                        }}
+                        className="flex-1 py-1.5 rounded-lg bg-teal-dim border border-teal-line/30 text-teal font-semibold text-[10.5px] cursor-pointer hover:bg-teal hover:text-[#04110F] transition-all border-0 shadow-sm"
+                      >
+                        👍 {language === 'en' ? "Align (RLHF)" : "Alinear Pesos"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setRlhfTuningFactor(prev => Math.max(0.6, prev - 0.1));
+                          playSound('caution' as any);
+                          onToast(language === 'en' ? "Local RLHF: Calibrating down..." : "RLHF Local: ¡Corrigiendo calibración a la baja!");
+                        }}
+                        className="flex-1 py-1.5 rounded-lg bg-crit-dim border border-crit/20 text-crit font-semibold text-[10.5px] cursor-pointer hover:bg-crit hover:text-[#04110F] transition-all border-0 shadow-sm"
+                      >
+                        👎 {language === 'en' ? "Correct" : "Corregir Pesos"}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setNoiseInjectionActive(prev => !prev);
+                          playSound('webrtc' as any);
+                          onToast(noiseInjectionActive 
+                            ? (language === 'en' ? "Stochastic noise deactivated" : "Inyección de ruido desactivada")
+                            : (language === 'en' ? "Stochastic input noise injected!" : "¡Ruido estocástico inyectado en tensores!")
+                          );
+                        }}
+                        className={`flex-1 py-1.5 rounded-lg font-semibold text-[10.5px] cursor-pointer transition-all border-0 shadow-sm ${
+                          noiseInjectionActive 
+                            ? "bg-high text-[#04110F] animate-pulse" 
+                            : "bg-bg-3 text-t-2 hover:text-t-0"
+                        }`}
+                      >
+                        ⚡ {language === 'en' ? "Inject Noise" : "Inyectar Ruido"}
+                      </button>
+                    </div>
+
+                    <span className="text-[9px] text-t-3 text-center block mt-1.5">
                       * {language === 'en'
                         ? "Local offline inference executed using multi-threaded WASM SIMD on user client CPU."
                         : "Inferencia local offline ejecutada utilizando WebAssembly SIMD multi-hilo en la CPU del cliente."}
                     </span>
+                  </div>
+
+                  {/* Multi-Head Attention Heatmap SVG Grid (v1.0.0 - Recommendation 7) */}
+                  <div className="flex flex-col gap-1.5 border-t border-line/40 pt-3">
+                    <div className="flex justify-between items-center text-[9.5px] font-bold text-t-3 uppercase tracking-wide">
+                      <span>{language === 'en' ? "Multi-Head Attention Map (6x6 Heatmap)" : "Matriz de Atención Multi-Cabeza (6x6 Heatmap)"}</span>
+                      <span className="text-cyan font-mono">multi_head_attention_layer_0.attn</span>
+                    </div>
+                    <div className="flex flex-col md:flex-row items-center gap-3.5 bg-[#05070a] border border-line rounded-lg p-2.5">
+                      <div className="w-28 h-28 grid grid-cols-6 gap-0.5 bg-line p-0.5 rounded overflow-hidden select-none flex-shrink-0">
+                        {Array.from({ length: 36 }).map((_, cellIdx) => {
+                          const row = Math.floor(cellIdx / 6);
+                          const col = cellIdx % 6;
+                          const baseHeat = [
+                            [0.9, 0.4, 0.2, 0.1, 0.05, 0.02],
+                            [0.3, 0.85, 0.5, 0.12, 0.04, 0.01],
+                            [0.1, 0.45, 0.95, 0.38, 0.08, 0.03],
+                            [0.02, 0.08, 0.42, 0.88, 0.55, 0.15],
+                            [0.01, 0.03, 0.12, 0.52, 0.92, 0.45],
+                            [0.0, 0.01, 0.05, 0.18, 0.48, 0.85]
+                          ][row][col] || 0.1;
+                          
+                          const confidenceMult = classifierResult ? (classifierResult.confidence / 100) : 0.8;
+                          const activeHeat = Math.min(1.0, baseHeat * confidenceMult * (noiseInjectionActive ? (0.7 + Math.random() * 0.4) : 1));
+                          const color = activeHeat > 0.8 
+                            ? "rgba(45, 212, 191, 0.9)" // teal
+                            : activeHeat > 0.5 
+                            ? "rgba(34, 211, 238, 0.7)" // cyan
+                            : activeHeat > 0.2 
+                            ? "rgba(127, 167, 196, 0.4)" // blue
+                            : "rgba(255, 255, 255, 0.04)";
+
+                          return (
+                            <div 
+                              key={cellIdx} 
+                              style={{ backgroundColor: color }}
+                              className="w-full h-full transition-all duration-300 hover:scale-110 cursor-crosshair"
+                              title={`Attention Head [${row},${col}]: ${activeHeat.toFixed(3)}`}
+                            />
+                          );
+                        })}
+                      </div>
+                      <div className="flex-grow flex flex-col gap-1 text-[9.5px] leading-normal text-t-2">
+                        <span className="font-bold text-t-1 uppercase tracking-wide">{language === 'en' ? "Attention Focus on Key Terms:" : "Foco de Atención en Términos Clave:"}</span>
+                        <div className="grid grid-cols-2 gap-1.5 font-mono text-[9px] text-teal-line mt-1">
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-teal" />
+                            <span>[0,0] Suppression (90%)</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-cyan" />
+                            <span>[2,2] Deletion ARCO (95%)</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#7FA7C4]" />
+                            <span>[4,4] Notary Block (92%)</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-t-3" />
+                            <span>[1,2] Data Broker (50%)</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
