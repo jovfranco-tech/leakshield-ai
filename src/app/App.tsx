@@ -354,31 +354,31 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
       </div>
 
       {/* Hero Body */}
-      <div className="max-w-[1240px] mx-auto px-10 py-10 lg:py-16 grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-14 items-center relative z-10">
+      <div className="max-w-[1240px] mx-auto px-10 py-12 lg:py-20 grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-16 items-center relative z-10">
         {/* Left Copy */}
-        <div className="fade-in">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25 mb-5.5">
+        <div className="fade-in flex flex-col justify-center">
+          <span className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-wider px-3 py-1 rounded-full bg-med-dim text-med border border-med/25 mb-6 self-start">
             <span className="demo-blip" />
             Demostración simulada · sin datos reales
           </span>
-          <h1 className="text-[44px] md:text-[54px] leading-[1.04] tracking-tight font-semibold text-t-0 m-0">
+          <h1 className="text-[44px] md:text-[54px] leading-[1.1] tracking-tight font-semibold text-t-0 m-0">
             Tu privacidad,<br />
             <span className="bg-gradient-to-r from-teal to-cyan bg-clip-text text-transparent">gestionada como un centro de control.</span>
           </h1>
-          <p className="text-[17px] md:text-[18px] text-t-1 leading-[1.55] max-w-[480px] mt-5">
+          <p className="text-[17px] md:text-[18px] text-t-1 leading-[1.6] max-w-[480px] mt-6 mb-0">
             Detecta filtraciones. Prioriza riesgos. Limpia tu huella digital. LeakShield AI es tu copiloto de privacidad que encuentra tu exposición y la convierte en un plan real y accionable.
           </p>
           
-          <div className="flex items-center gap-3 mt-7.5">
+          <div className="flex items-center gap-4 mt-8 flex-wrap">
             <button 
-              className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold text-[14px] px-5 py-3 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] active:translate-y-[0.5px] cursor-pointer transition-all duration-100 shadow-premium"
+              className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold text-[14px] px-6 py-3.5 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] active:translate-y-[0.5px] cursor-pointer transition-all duration-100 shadow-premium border-0 spring-elastic"
               onClick={onStart}
             >
               <Icon name="scan" size={17} />
               Iniciar escaneo de privacidad
             </button>
             <button 
-              className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold text-[14px] px-5 py-3 border border-line-2 bg-bg-3 hover:bg-bg-2 hover:border-line-3 text-t-0 cursor-pointer transition-all duration-130"
+              className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold text-[14px] px-6 py-3.5 border border-line-2 bg-bg-3 hover:bg-bg-2 hover:border-line-3 text-t-0 cursor-pointer transition-all duration-130 spring-elastic"
               onClick={onTrust}
             >
               <Icon name="lock" size={16} />
@@ -386,9 +386,9 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
             </button>
           </div>
 
-          <div className="flex gap-5.5 mt-8.5 text-t-2 text-[12.5px] flex-wrap">
+          <div className="flex gap-6 mt-10 text-t-2 text-[12.5px] flex-wrap">
             {["Sin contraseñas guardadas", "Tus datos, tu control", "IA revisada por humanos"].map(t => (
-              <span key={t} className="flex items-center gap-1.5 font-medium">
+              <span key={t} className="flex items-center gap-2 font-medium">
                 <Icon name="check-circle" size={15} style={{ color: "var(--teal)" }} />
                 {t}
               </span>
@@ -401,17 +401,17 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
           <div className="border border-line rounded-lg p-6 bg-gradient-to-b from-bg-2 to-bg-1 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.8)] relative overflow-hidden">
             {/* Specular highlights overlay */}
             <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.008] to-white/[0.04] pointer-events-none animate-pulse" />
-            <div className="flex justify-between items-center mb-4.5 relative z-10">
+            <div className="flex justify-between items-center mb-6 relative z-10">
               <span className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold">Puntaje de Privacidad</span>
-              <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2.5 py-0.5 rounded-[7px] border border-med/25 bg-med-dim text-med">
+              <span className="inline-flex items-center gap-2 text-[11.5px] font-semibold px-2.5 py-0.5 rounded-[7px] border border-med/25 bg-med-dim text-med">
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
                 Regular
               </span>
             </div>
             
-            <div className="flex items-center gap-4.5 relative z-10">
+            <div className="flex items-center gap-8 relative z-10">
               <ScoreRing value={64} size={132} />
-              <div className="flex flex-col gap-2.5 flex-1">
+              <div className="flex flex-col gap-3 flex-1">
                 {[
                   ["Riesgo de brechas", "Crítico", "crit"],
                   ["Huella pública", "Medio", "med"],
@@ -419,7 +419,7 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
                 ].map(([k, v, c]) => (
                   <div key={k} className="flex justify-between items-center text-[12.5px]">
                     <span className="text-t-1">{k}</span>
-                    <span className="flex items-center gap-1.5 font-semibold text-t-0">
+                    <span className="flex items-center gap-2 font-semibold text-t-0">
                       <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: `var(--${c})` }} />
                       {v}
                     </span>
@@ -428,20 +428,20 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
               </div>
             </div>
 
-            <div className="relative border border-teal-line bg-gradient-to-b from-teal/6 to-bg-2 rounded-lg p-3.5 overflow-hidden mt-4.5 z-10">
+            <div className="relative border border-teal-line bg-gradient-to-b from-teal/6 to-bg-2 rounded-lg p-4 overflow-hidden mt-6 z-10">
               <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-teal to-cyan" />
-              <span className="inline-flex items-center gap-1.2 text-[10.5px] font-semibold tracking-wider uppercase text-teal mb-1.5">
+              <span className="inline-flex items-center gap-2 text-[10.5px] font-semibold tracking-wider uppercase text-teal mb-2">
                 <Icon name="sparkles" size={13} style={{ marginRight: 4 }} />
                 Copiloto IA
               </span>
               <div className="text-[12.5px] leading-[1.5] text-t-0">
-                Una clave reutilizada une tus 2 brechas críticas. Resuélvela primero — <span className="text-teal font-semibold">+12 puntos</span>.
+                Una clave reutilizada une tus <span className="font-semibold">2 brechas críticas</span>. Resuélvela primero — <span className="text-teal font-semibold">+12 puntos</span>.
               </div>
             </div>
           </div>
           
           <div className="border border-line rounded-lg p-4 bg-bg-3 shadow-[0_24px_60px_-24px_rgba(0,0,0,0.8)] absolute -right-4 -bottom-6 w-[188px] z-20">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <Icon name="check-circle" size={18} style={{ color: "var(--ok)" }} />
               <div>
                 <div className="font-semibold text-[12.5px] text-t-0 leading-tight">2 de 9 resueltas</div>
