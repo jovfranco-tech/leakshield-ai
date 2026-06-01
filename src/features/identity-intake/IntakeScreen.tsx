@@ -15,10 +15,19 @@ interface IntakeScreenProps {
 export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = false, onComplete, onToast }) => {
   const [emails, setEmails] = useState<string[]>(profile.emails);
   const [usernames, setUsernames] = useState<string[]>(profile.usernames);
+  const [nameInput, setNameInput] = useState(profile.name);
+  const [locationInput, setLocationInput] = useState(profile.location || "México");
   const [draft, setDraft] = useState("");
   const [phone, setPhone] = useState("");
   const [scanning, setScanning] = useState(false);
   const [scanStep, setScanStep] = useState(0);
+
+  useEffect(() => {
+    setEmails(profile.emails);
+    setUsernames(profile.usernames);
+    setNameInput(profile.name);
+    setLocationInput(profile.location || "México");
+  }, [profile]);
 
   // Enterprise CSV drag-and-drop states
   const [dragOver, setDragOver] = useState(false);
@@ -174,7 +183,8 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
               <label className="text-[12px] font-semibold text-t-1">Nombre completo del titular</label>
               <input 
                 className="bg-bg-inset border border-line-2 rounded-lg px-3 py-2 text-t-0 font-sans text-[13.5px] outline-none focus:border-teal-line focus:shadow-[0_0_0_3px_var(--teal-dim)] transition-all duration-130 w-full" 
-                defaultValue={profile.name} 
+                value={nameInput} 
+                onChange={e => setNameInput(e.target.value)}
               />
             </div>
             
@@ -183,7 +193,8 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
                 <label className="text-[12px] font-semibold text-t-1">País / región</label>
                 <input 
                   className="bg-bg-inset border border-line-2 rounded-lg px-3 py-2 text-t-0 font-sans text-[13.5px] outline-none focus:border-teal-line focus:shadow-[0_0_0_3px_var(--teal-dim)] transition-all duration-130 w-full" 
-                  defaultValue="México" 
+                  value={locationInput} 
+                  onChange={e => setLocationInput(e.target.value)}
                 />
               </div>
               <div className="flex flex-col gap-1.5">
