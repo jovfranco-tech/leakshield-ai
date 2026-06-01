@@ -633,5 +633,28 @@
   }
 }
 
+/* ── Phase VII v0.9.0 Premium Additions ── */
 
+/* 1. Spring Elastic Physics Transition */
+.spring-elastic {
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), filter 0.3s ease;
+}
+.spring-elastic:hover {
+  transform: scale(1.03);
+}
+.spring-elastic:active {
+  transform: scale(0.97);
+}
 
+/* 2. Liquid Chrome Gradient */
+.liquid-chrome-gradient {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #0f172a 50%, #334155 75%, #0f172a 100%);
+  background-size: 400% 400%;
+  animation: liquidChromeAnim 15s ease infinite;
+}
+
+@keyframes liquidChromeAnim {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}

@@ -631,7 +631,7 @@ const TweaksOverlay: React.FC<{
           step="0.002"
           value={noiseOpacity}
           onChange={(e) => onChange('noiseOpacity', parseFloat(e.target.value))}
-          className="w-full accent-teal cursor-pointer h-1 bg-bg-inset rounded-lg appearance-none"
+          className="w-full accent-teal cursor-pointer h-1 bg-bg-inset rounded-lg appearance-none spring-elastic"
         />
       </div>
 
@@ -1896,7 +1896,7 @@ export const AppInternal: React.FC = () => {
                       setSimulatedFaceX(0); // Reset
                     }
                   }}
-                  className="w-full accent-teal cursor-pointer h-1 bg-bg-2 rounded"
+                  className="w-full accent-teal cursor-pointer h-1 bg-bg-2 rounded spring-elastic"
                 />
                 <span className="text-[9.5px] text-t-3 leading-normal block">
                   * {language === 'en' ? "Tilt <-30° for previous view, >30° for next" : "Gira <-30° para sección anterior, >30° para siguiente"}
