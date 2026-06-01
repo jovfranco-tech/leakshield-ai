@@ -974,6 +974,22 @@ export const AppInternal: React.FC = () => {
     showToast(language === 'en' ? "Sovereign console encrypted and logged out." : "Consola cifrada y sesión cerrada.");
   };
 
+  const handleUpdateProfile = async (newProfile: Profile) => {
+    setProfile(newProfile);
+    localStorage.setItem('leakshield_user_profile', JSON.stringify(newProfile));
+    
+    const isFirebaseConfigured = auth.app.options.apiKey && !auth.app.options.apiKey.includes("FakeKeyPlaceholder");
+    if (isFirebaseConfigured && auth.currentUser) {
+      try {
+        const { setDoc, doc } = await import('firebase/firestore');
+        const { db } = await import('../lib/firebase');
+        await setDoc(doc(db, 'users', auth.currentUser.uid), newProfile, { merge: true });
+      } catch (e) {
+        console.error("[App] Failed to sync updated profile to Firestore", e);
+      }
+    }
+  };
+
   const handleNextTutorialStep = () => {
     setTutorialStep(prev => {
       if (prev === null) return null;
@@ -1267,7 +1283,7 @@ export const AppInternal: React.FC = () => {
           />
         );
       case "identity":
-        return <IntakeScreen profile={computedProfile} inApp onToast={showToast} />;
+        return <IntakeScreen profile={computedProfile} inApp onToast={showToast} onUpdateProfile={handleUpdateProfile} />;
       case "breaches":
         return (
           <BreachIntelligence 
@@ -1435,7 +1451,7 @@ export const AppInternal: React.FC = () => {
   if (view === "intake") {
     return (
       <div className="page min-h-screen bg-bg-0">
-        <IntakeScreen profile={computedProfile} onComplete={() => nav("dashboard")} onToast={showToast} />
+        <IntakeScreen profile={computedProfile} onComplete={() => nav("dashboard")} onToast={showToast} onUpdateProfile={handleUpdateProfile} />
         <TweaksOverlay 
           layout={dashboardLayout} 
           scoreStyle={scoreStyle} 

@@ -10,15 +10,16 @@ interface IntakeScreenProps {
   inApp?: boolean;
   onComplete?: () => void;
   onToast?: (msg: string) => void;
+  onUpdateProfile?: (profile: Profile) => void;
 }
 
-export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = false, onComplete, onToast }) => {
+export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = false, onComplete, onToast, onUpdateProfile }) => {
   const [emails, setEmails] = useState<string[]>(profile.emails);
   const [usernames, setUsernames] = useState<string[]>(profile.usernames);
   const [nameInput, setNameInput] = useState(profile.name);
   const [locationInput, setLocationInput] = useState(profile.location || "México");
   const [draft, setDraft] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phone, setPhone] = useState(profile.phone || "");
   const [scanning, setScanning] = useState(false);
   const [scanStep, setScanStep] = useState(0);
 
@@ -27,6 +28,7 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
     setUsernames(profile.usernames);
     setNameInput(profile.name);
     setLocationInput(profile.location || "México");
+    setPhone(profile.phone || "");
   }, [profile]);
 
   // Enterprise CSV drag-and-drop states
@@ -84,8 +86,19 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
         setCsvImporting(false);
         setCsvFile(null);
         // Inject parsed mock identities safely
-        setEmails(prev => [...new Set([...prev, "backup.admin@secure-corp.com", "privacidad.corp@audit.net"])]);
-        setUsernames(prev => [...new Set([...prev, "audit_shield", "sec_ops"])]);
+        const nextEmails = [...new Set([...emails, "backup.admin@secure-corp.com", "privacidad.corp@audit.net"])];
+        const nextUsernames = [...new Set([...usernames, "audit_shield", "sec_ops"])];
+        setEmails(nextEmails);
+        setUsernames(nextUsernames);
+        
+        if (onUpdateProfile) {
+          onUpdateProfile({
+            ...profile,
+            emails: nextEmails,
+            usernames: nextUsernames
+          });
+        }
+        
         if (onToast) onToast("¡Lote de CSV procesado con éxito e incorporado al monitoreo!");
       }
     }, chunkTime);
@@ -124,12 +137,25 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
     // Robust defensive input sanitization: clamp length & strip HTML/script injection tags
     const trimmed = val.trim().slice(0, 80).replace(/[<>]/g, "");
     if (!trimmed) return;
+    let nextEmails = emails;
+    let nextUsernames = usernames;
     if (trimmed.includes("@")) {
-      setEmails(e => [...new Set([...e, trimmed])]);
+      nextEmails = [...new Set([...emails, trimmed])];
+      setEmails(nextEmails);
     } else {
-      setUsernames(u => [...new Set([...u, trimmed])]);
+      nextUsernames = [...new Set([...usernames, trimmed])];
+      setUsernames(nextUsernames);
     }
     setDraft("");
+    
+    if (onUpdateProfile) {
+      onUpdateProfile({
+        ...profile,
+        emails: nextEmails,
+        usernames: nextUsernames
+      });
+    }
+
     if (onToast) {
       onToast(`Monitoreando activamente: ${trimmed}`);
     }
@@ -184,7 +210,12 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
               <input 
                 className="bg-bg-inset border border-line-2 rounded-lg px-3 py-2 text-t-0 font-sans text-[13.5px] outline-none focus:border-teal-line focus:shadow-[0_0_0_3px_var(--teal-dim)] transition-all duration-130 w-full" 
                 value={nameInput} 
-                onChange={e => setNameInput(e.target.value)}
+                onChange={e => {
+                  setNameInput(e.target.value);
+                  if (onUpdateProfile) {
+                    onUpdateProfile({ ...profile, name: e.target.value });
+                  }
+                }}
               />
             </div>
             
@@ -194,7 +225,12 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
                 <input 
                   className="bg-bg-inset border border-line-2 rounded-lg px-3 py-2 text-t-0 font-sans text-[13.5px] outline-none focus:border-teal-line focus:shadow-[0_0_0_3px_var(--teal-dim)] transition-all duration-130 w-full" 
                   value={locationInput} 
-                  onChange={e => setLocationInput(e.target.value)}
+                  onChange={e => {
+                    setLocationInput(e.target.value);
+                    if (onUpdateProfile) {
+                      onUpdateProfile({ ...profile, location: e.target.value });
+                    }
+                  }}
                 />
               </div>
               <div className="flex flex-col gap-1.5">
@@ -204,7 +240,13 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
                   placeholder="+52 55 •••• ••••" 
                   maxLength={20}
                   value={phone} 
-                  onChange={e => setPhone(e.target.value.replace(/[^0-9+\s-]/g, ""))} 
+                  onChange={e => {
+                    const cleaned = e.target.value.replace(/[^0-9+\s-]/g, "");
+                    setPhone(cleaned);
+                    if (onUpdateProfile) {
+                      onUpdateProfile({ ...profile, phone: cleaned });
+                    }
+                  }} 
                 />
               </div>
             </div>

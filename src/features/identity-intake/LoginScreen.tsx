@@ -59,7 +59,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         setLoading(false);
         const resolvedName = isRegister ? name.trim() : "Jovan Franco";
         const resolvedLocation = isRegister ? location.trim() : "Monterrey, NL";
-        const resolvedEmail = email.trim();
         
         const initials = resolvedName
           .split(' ')
@@ -72,9 +71,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           name: resolvedName,
           initials: initials || "US",
           location: resolvedLocation,
-          emails: [resolvedEmail, `work.alias@${resolvedEmail.split('@')[1] || 'privacy-vault.net'}`],
-          usernames: [resolvedEmail.split('@')[0] || "user", `${resolvedEmail.split('@')[0] || "user"}_secure`],
-          phone: "+52 ••• ••• ••" + Math.floor(Math.random() * 90 + 10),
+          emails: [], // Start completely clean
+          usernames: [], // Start completely clean
+          phone: "",
           memberSince: "Junio 2026",
         };
 
@@ -107,9 +106,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           name: name.trim(),
           initials: initials || "US",
           location: location.trim(),
-          emails: [email.trim(), `work.alias@${email.trim().split('@')[1] || 'privacy-vault.net'}`],
-          usernames: [email.trim().split('@')[0] || "user", `${email.trim().split('@')[0] || "user"}_secure`],
-          phone: "+52 ••• ••• ••" + Math.floor(Math.random() * 90 + 10),
+          emails: [], // Start completely clean
+          usernames: [], // Start completely clean
+          phone: "",
           memberSince: "Junio 2026",
         };
 
@@ -141,15 +140,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         if (docSnap.exists()) {
           profileData = docSnap.data() as Profile;
         } else {
-          // Fallback if firestore document doesn't exist
-          const initials = "JF";
+          // Fallback if firestore document doesn't exist - start with clean empty monitored arrays
+          const defaultName = email.trim().split('@')[0].split(/[._-]/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || "Usuario";
+          const initials = defaultName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || "US";
           profileData = {
-            name: "Jovan Franco",
+            name: defaultName,
             initials: initials,
-            location: "Ciudad de México, MX",
-            emails: [email.trim(), `work.alias@${email.trim().split('@')[1] || 'privacy-vault.net'}`],
-            usernames: [email.trim().split('@')[0] || "user", `${email.trim().split('@')[0] || "user"}_secure`],
-            phone: "+52 ••• ••• ••99",
+            location: "", // Start completely clean
+            emails: [], // Start completely clean without pre-populating monitored emails
+            usernames: [], // Start completely clean without pre-populating monitored usernames
+            phone: "", // Start completely clean
             memberSince: "Junio 2026",
           };
           await setDoc(doc(db, 'users', user.uid), profileData);

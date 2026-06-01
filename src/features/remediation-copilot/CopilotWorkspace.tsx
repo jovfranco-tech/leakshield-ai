@@ -2269,7 +2269,7 @@ Con la presente chiedo la rimozione definitiva e immediata di tutti i miei dati 
                       <div className="w-5 h-5 rounded-full bg-bg-3 border border-teal flex items-center justify-center text-teal text-[10px] font-bold">1</div>
                       <div className="flex-1">
                         <div className="text-t-0 font-bold leading-none">{language === 'en' ? "Identity Context Extraction" : "Extracción del Contexto de Identidad"}</div>
-                        <div className="text-t-2 text-[10px] mt-1">{language === 'en' ? "Hydrating profile: Jovan Franco | Location: Mexico" : "Cargando perfil: Jovan Franco | Región: México"}</div>
+                        <div className="text-t-2 text-[10px] mt-1">{language === 'en' ? `Hydrating profile: ${profile.name} | Location: ${profile.location || 'Mexico'}` : `Cargando perfil: ${profile.name} | Región: ${profile.location || 'México'}`}</div>
                       </div>
                     </div>
 
