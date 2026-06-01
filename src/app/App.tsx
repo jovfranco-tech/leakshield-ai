@@ -25,15 +25,16 @@ import { TrustCenter } from '../features/trust-center/TrustCenter';
 // Libs & Hooks & Services
 import { useScoring } from '../hooks/useScoring';
 import { useTaskBoard } from '../hooks/useTaskBoard';
+import { useSoundEngine } from '../hooks/useSoundEngine';
 import { generateDeletionRequest } from '../lib/aiOrchestration';
 import { taskService } from '../services/taskService';
 import { aiService } from '../services/aiService';
 import { firebaseService } from '../services/firebaseService';
-import { ViewType, DashboardLayout, ScoreStyle, CopilotPresentation, TITLES } from './routes';
+import { ViewType, DashboardLayout, ScoreStyle, CopilotPresentation, getTitles } from './routes';
 import { Task, CopilotData, BreachFinding } from '../types/privacy';
 
 // Security Boundary: Encrypted Session Storage Hydration with Quantum XOR Cipher (OWASP PII)
-const secureSave = (key: string, data: any) => {
+const secureSave = (key: string, data: any, persistent = false) => {
   const json = JSON.stringify(data);
   let result = "";
   const secretKey = "leakshield_v0.3.0_quantum_key";
@@ -42,12 +43,19 @@ const secureSave = (key: string, data: any) => {
     result += String.fromCharCode(charCode);
   }
   const encoded = btoa(unescape(encodeURIComponent(result)));
-  sessionStorage.setItem(`leakshield_secure_${key}`, encoded);
+  const storage = persistent ? localStorage : sessionStorage;
+  storage.setItem(`leakshield_secure_${key}`, encoded);
+  // Remove from the other storage to prevent conflicts
+  const otherStorage = persistent ? sessionStorage : localStorage;
+  otherStorage.removeItem(`leakshield_secure_${key}`);
 };
 
 const secureLoad = (key: string) => {
   try {
-    const encoded = sessionStorage.getItem(`leakshield_secure_${key}`);
+    let encoded = localStorage.getItem(`leakshield_secure_${key}`);
+    if (!encoded) {
+      encoded = sessionStorage.getItem(`leakshield_secure_${key}`);
+    }
     if (!encoded) return null;
     const decoded = decodeURIComponent(escape(atob(encoded)));
     let result = "";
@@ -82,6 +90,19 @@ const ThreatMeshBackground: React.FC = () => {
       height = canvas.height = window.innerHeight;
     };
     window.addEventListener('resize', handleResize);
+
+    const ripples: Array<{ x: number; y: number; r: number; maxR: number; opacity: number }> = [];
+
+    const handleClick = (e: MouseEvent) => {
+      ripples.push({
+        x: e.clientX,
+        y: e.clientY,
+        r: 2,
+        maxR: 90,
+        opacity: 0.28
+      });
+    };
+    window.addEventListener('click', handleClick);
 
     const particleCount = 28;
     const particles: Array<{ x: number; y: number; vx: number; vy: number; r: number }> = [];
@@ -124,12 +145,30 @@ const ThreatMeshBackground: React.FC = () => {
           }
         }
       }
+
+      // Draw expanding click ripples/radar waves
+      for (let k = ripples.length - 1; k >= 0; k--) {
+        const rp = ripples[k];
+        rp.r += 2.2;
+        rp.opacity -= 0.007;
+        if (rp.opacity <= 0 || rp.r >= rp.maxR) {
+          ripples.splice(k, 1);
+          continue;
+        }
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(34, 211, 238, ${rp.opacity})`;
+        ctx.lineWidth = 1.4;
+        ctx.arc(rp.x, rp.y, rp.r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
       animationId = requestAnimationFrame(draw);
     };
 
     draw();
     return () => {
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('click', handleClick);
       cancelAnimationFrame(animationId);
     };
   }, []);
@@ -353,8 +392,10 @@ const TweaksOverlay: React.FC<{
   scoreStyle: ScoreStyle;
   copilotMode: CopilotPresentation;
   accent: string[];
+  persistentStorage: boolean;
+  language: 'es' | 'en';
   onChange: (key: string, val: any) => void;
-}> = ({ layout, scoreStyle, copilotMode, accent, onChange }) => {
+}> = ({ layout, scoreStyle, copilotMode, accent, persistentStorage, language, onChange }) => {
   const [open, setOpen] = useState(false);
 
   const colors = [
@@ -430,6 +471,42 @@ const TweaksOverlay: React.FC<{
         </div>
       </div>
 
+      <div className="flex flex-col gap-1">
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Cifrado XOR Persistente</span>
+        <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
+          {[
+            [false, "Sesión"],
+            [true, "Local (XOR)"]
+          ].map(([val, label]) => (
+            <button 
+              key={val ? 1 : 0}
+              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${persistentStorage === val ? 'bg-bg-3 text-t-0 shadow-premium' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
+              onClick={() => onChange('persistentStorage', val)}
+            >
+              {label as string}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Idioma / Localization</span>
+        <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
+          {[
+            ['es', "Español"],
+            ['en', "English"]
+          ].map(([val, label]) => (
+            <button 
+              key={val}
+              className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${language === val ? 'bg-bg-3 text-t-0 shadow-premium' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
+              onClick={() => onChange('language', val)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="flex flex-col gap-1.5">
         <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Paleta de Colores de Acento</span>
         <div className="flex gap-2">
@@ -458,6 +535,7 @@ const TweaksOverlay: React.FC<{
 };
 
 export const AppInternal: React.FC = () => {
+  const { playSound } = useSoundEngine();
   const [view, setView] = useState<ViewType>("landing");
   const [toast, setToast] = useState<string | null>(null);
   const [deletionModal, setDeletionModal] = useState(false);
@@ -477,6 +555,8 @@ export const AppInternal: React.FC = () => {
   const [scoreStyle, setScoreStyle] = useState<ScoreStyle>("numeric");
   const [copilotMode, setCopilotMode] = useState<CopilotPresentation>("rail");
   const [accent, setAccent] = useState<string[]>(["#2DD4BF", "#22D3EE"]);
+  const [persistentStorage, setPersistentStorage] = useState(false);
+  const [language, setLanguage] = useState<'es' | 'en'>('es');
 
   // Regulatory Deletion Form State
   const [selectedLawBroker, setSelectedLawBroker] = useState<'DataFind' | 'InfoAggregate'>('DataFind');
@@ -485,6 +565,7 @@ export const AppInternal: React.FC = () => {
 
   const showToast = (m: string) => {
     setToast(m);
+    playSound('scan');
     const windowToken = (window as any);
     clearTimeout(windowToken.__t);
     windowToken.__t = setTimeout(() => setToast(null), 2400);
@@ -523,12 +604,13 @@ export const AppInternal: React.FC = () => {
 
   const handleUpdateTasks = async (updated: Task[]) => {
     setTasks(updated);
+    playSound('click');
     for (const t of updated) {
       await taskService.updateTaskStatus(t.id, t.status);
       await firebaseService.updateTaskStatus(t.id, t.status);
     }
     // Quantum XOR Encrypted hydration backup save
-    secureSave("tasks_progress", updated);
+    secureSave("tasks_progress", updated, persistentStorage);
   };
 
   const handleResetTasks = async () => {
@@ -540,7 +622,7 @@ export const AppInternal: React.FC = () => {
     const fresh = await taskService.getTasks();
     const plan = await aiService.getRemediationPlan(fresh);
     setCopilotData((prev: CopilotData) => ({ ...prev, plan }));
-    secureSave("tasks_progress", fresh);
+    secureSave("tasks_progress", fresh, persistentStorage);
   };
 
   // Load encrypted state session if it exists on mount
@@ -716,6 +798,7 @@ export const AppInternal: React.FC = () => {
             tasks={tasks}
             onUpdateTasks={handleUpdateTasks}
             onToast={showToast}
+            language={language}
           />
         );
       case "trust":
@@ -730,12 +813,22 @@ export const AppInternal: React.FC = () => {
     return (
       <>
         <LandingScreen onStart={() => nav("consent")} onTrust={() => nav("trust")} />
-        <TweaksOverlay layout={dashboardLayout} scoreStyle={scoreStyle} copilotMode={copilotMode} accent={accent} onChange={(k, v) => {
-          if (k === 'dashboardLayout') setDashboardLayout(v);
-          if (k === 'scoreStyle') setScoreStyle(v);
-          if (k === 'copilotMode') setCopilotMode(v);
-          if (k === 'accent') setAccent(v);
-        }} />
+        <TweaksOverlay 
+          layout={dashboardLayout} 
+          scoreStyle={scoreStyle} 
+          copilotMode={copilotMode} 
+          accent={accent} 
+          persistentStorage={persistentStorage}
+          language={language}
+          onChange={(k, v) => {
+            if (k === 'dashboardLayout') setDashboardLayout(v);
+            if (k === 'scoreStyle') setScoreStyle(v);
+            if (k === 'copilotMode') setCopilotMode(v);
+            if (k === 'accent') setAccent(v);
+            if (k === 'persistentStorage') setPersistentStorage(v);
+            if (k === 'language') setLanguage(v);
+          }} 
+        />
       </>
     );
   }
@@ -744,12 +837,22 @@ export const AppInternal: React.FC = () => {
     return (
       <>
         <ConsentScreen onBack={() => nav("landing")} onContinue={() => nav("intake")} />
-        <TweaksOverlay layout={dashboardLayout} scoreStyle={scoreStyle} copilotMode={copilotMode} accent={accent} onChange={(k, v) => {
-          if (k === 'dashboardLayout') setDashboardLayout(v);
-          if (k === 'scoreStyle') setScoreStyle(v);
-          if (k === 'copilotMode') setCopilotMode(v);
-          if (k === 'accent') setAccent(v);
-        }} />
+        <TweaksOverlay 
+          layout={dashboardLayout} 
+          scoreStyle={scoreStyle} 
+          copilotMode={copilotMode} 
+          accent={accent} 
+          persistentStorage={persistentStorage}
+          language={language}
+          onChange={(k, v) => {
+            if (k === 'dashboardLayout') setDashboardLayout(v);
+            if (k === 'scoreStyle') setScoreStyle(v);
+            if (k === 'copilotMode') setCopilotMode(v);
+            if (k === 'accent') setAccent(v);
+            if (k === 'persistentStorage') setPersistentStorage(v);
+            if (k === 'language') setLanguage(v);
+          }} 
+        />
       </>
     );
   }
@@ -758,12 +861,22 @@ export const AppInternal: React.FC = () => {
     return (
       <div className="page min-h-screen bg-bg-0">
         <IntakeScreen profile={demoProfile} onComplete={() => nav("dashboard")} onToast={showToast} />
-        <TweaksOverlay layout={dashboardLayout} scoreStyle={scoreStyle} copilotMode={copilotMode} accent={accent} onChange={(k, v) => {
-          if (k === 'dashboardLayout') setDashboardLayout(v);
-          if (k === 'scoreStyle') setScoreStyle(v);
-          if (k === 'copilotMode') setCopilotMode(v);
-          if (k === 'accent') setAccent(v);
-        }} />
+        <TweaksOverlay 
+          layout={dashboardLayout} 
+          scoreStyle={scoreStyle} 
+          copilotMode={copilotMode} 
+          accent={accent} 
+          persistentStorage={persistentStorage}
+          language={language}
+          onChange={(k, v) => {
+            if (k === 'dashboardLayout') setDashboardLayout(v);
+            if (k === 'scoreStyle') setScoreStyle(v);
+            if (k === 'copilotMode') setCopilotMode(v);
+            if (k === 'accent') setAccent(v);
+            if (k === 'persistentStorage') setPersistentStorage(v);
+            if (k === 'language') setLanguage(v);
+          }} 
+        />
         <Toast msg={toast} />
       </div>
     );
@@ -774,13 +887,13 @@ export const AppInternal: React.FC = () => {
       <ThreatMeshBackground />
 
       {/* Left side Nav Rail */}
-      <NavRail view={view} onNav={nav} profile={demoProfile} />
+      <NavRail view={view} onNav={nav} profile={demoProfile} language={language} />
 
       {/* Main Column */}
       <main className="main-column flex flex-col h-full min-w-0 overflow-hidden relative z-10">
         <Topbar 
           view={view}
-          title={TITLES[view] || ""}
+          title={getTitles(language)[view] || ""}
           onToast={showToast}
           copilotMode={copilotMode}
           onNav={nav}
@@ -992,11 +1105,15 @@ export const AppInternal: React.FC = () => {
         scoreStyle={scoreStyle} 
         copilotMode={copilotMode} 
         accent={accent}
+        persistentStorage={persistentStorage}
+        language={language}
         onChange={(k, v) => {
           if (k === 'dashboardLayout') setDashboardLayout(v);
           if (k === 'scoreStyle') setScoreStyle(v);
           if (k === 'copilotMode') setCopilotMode(v);
           if (k === 'accent') setAccent(v);
+          if (k === 'persistentStorage') setPersistentStorage(v);
+          if (k === 'language') setLanguage(v);
         }} 
       />
 

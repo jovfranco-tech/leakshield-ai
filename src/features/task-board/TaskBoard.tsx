@@ -31,14 +31,29 @@ interface TaskBoardProps {
   tasks: Task[];
   onUpdateTasks: (updated: Task[]) => void;
   onToast: (msg: string) => void;
+  language?: 'es' | 'en';
 }
 
-export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onToast }) => {
+export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onToast, language = 'es' }) => {
   const FLOW: Task['status'][] = ["Pending", "In Progress", "Sent", "Resolved"];
   const [group, setGroup] = useState<'priority' | 'status'>('priority');
   const [draggedOverCol, setDraggedOverCol] = useState<string | null>(null);
+  const [historyStack, setHistoryStack] = useState<Task[][]>([]);
+
+  const pushHistory = (current: Task[]) => {
+    setHistoryStack(prev => [...prev, [...current]]);
+  };
+
+  const handleUndo = () => {
+    if (historyStack.length === 0) return;
+    const previous = historyStack[historyStack.length - 1];
+    setHistoryStack(prev => prev.slice(0, -1));
+    onUpdateTasks(previous);
+    onToast("Acción revertida con éxito");
+  };
 
   const handleMoveTask = (id: string, targetKey: string) => {
+    pushHistory(tasks);
     const updated = tasks.map(t => {
       if (t.id !== id) return t;
       if (group === 'status') {
@@ -63,6 +78,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
   };
 
   const handleAdvanceTask = (id: string) => {
+    pushHistory(tasks);
     const updated = tasks.map(t => {
       if (t.id !== id) return t;
       if (t.status === "Monitor" || t.status === "Resolved") return t;
@@ -73,6 +89,38 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
       return { ...t, status: nextStatus };
     });
     onUpdateTasks(updated);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, taskId: string) => {
+    if (e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      handleAdvanceTask(taskId);
+    } else if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      e.preventDefault();
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+      
+      pushHistory(tasks);
+      const isStatus = group === 'status';
+      if (isStatus) {
+        const idx = FLOW.indexOf(task.status);
+        let nextIdx = e.key === 'ArrowRight' ? idx + 1 : idx - 1;
+        if (nextIdx >= 0 && nextIdx < FLOW.length) {
+          const nextStatus = FLOW[nextIdx];
+          onToast(`"${task.title.slice(0, 20)}..." → ${statusLabelMap[nextStatus]}`);
+          onUpdateTasks(tasks.map(t => t.id === taskId ? { ...t, status: nextStatus } : t));
+        }
+      } else {
+        const priorities: Task['priority'][] = ["Critical", "High", "Medium", "Low"];
+        const idx = priorities.indexOf(task.priority);
+        let nextIdx = e.key === 'ArrowRight' ? idx - 1 : idx + 1; // Critical is left
+        if (nextIdx >= 0 && nextIdx < priorities.length) {
+          const nextPriority = priorities[nextIdx];
+          onToast(`"${task.title.slice(0, 20)}..." → Prioridad ${nextPriority}`);
+          onUpdateTasks(tasks.map(t => t.id === taskId ? { ...t, priority: nextPriority } : t));
+        }
+      }
+    }
   };
 
   const cols = group === 'priority'
@@ -98,13 +146,28 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
     <div className="max-w-[1180px] mx-auto fade-in">
       <div className="flex justify-between items-end mb-4 flex-wrap gap-3">
         <div>
-          <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1">Tablero de Tareas de Privacidad</div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">Tareas de remediación</h1>
+          <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1">
+            {language === 'es' ? "Tablero de Tareas de Privacidad" : "Privacy Task Board"}
+          </div>
+          <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">
+            {language === 'es' ? "Tareas de remediación" : "Remediation Tasks"}
+          </h1>
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
+          {historyStack.length > 0 && (
+            <button 
+              onClick={handleUndo}
+              className="inline-flex items-center gap-1.5 text-[12.5px] font-semibold px-3 py-1 rounded-[7px] bg-bg-2 hover:bg-bg-3 border border-line hover:border-line-2 text-t-1 hover:text-t-0 cursor-pointer transition-all duration-120 shadow-sm"
+              title={language === 'es' ? "Deshacer último movimiento" : "Undo last move"}
+            >
+              <Icon name="undo" size={12.5} style={{ marginRight: 3 }} />
+              {language === 'es' ? "Deshacer" : "Undo"}
+            </button>
+          )}
+
           <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-3 py-1 rounded-[7px] bg-bg-2 border border-line text-t-1">
             <Icon name="check-circle" size={13} style={{ color: "var(--ok)", marginRight: 3 }} />
-            {resolved}/{tasks.length} resueltas
+            {resolved}/{tasks.length} {language === 'es' ? "resueltas" : "resolved"}
           </span>
           
           <div className="flex bg-bg-inset p-1 rounded-lg border border-line">
@@ -116,7 +179,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
               }`} 
               onClick={() => setGroup("priority")}
             >
-              Por prioridad
+              {language === 'es' ? "Por prioridad" : "By priority"}
             </button>
             <button 
               className={`px-3 py-1 rounded-md text-[12.5px] font-semibold cursor-pointer border-0 transition-all duration-120 ${
@@ -126,7 +189,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
               }`} 
               onClick={() => setGroup("status")}
             >
-              Por estado
+              {language === 'es' ? "Por estado" : "By status"}
             </button>
           </div>
         </div>
@@ -159,7 +222,16 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
             <div className="flex items-center gap-2 pb-3 px-1.5">
               {group === "priority" 
                 ? <Badge level={col.k as 'Critical' | 'High' | 'Medium' | 'Low'} /> 
-                : <span className="text-[13.5px] font-semibold text-t-0">{col.k === "Pending" ? "Pendientes" : col.k === "In Progress" ? "En Progreso" : col.k === "Sent" ? "Enviadas" : "Resueltas"}</span>
+                : <span className="text-[13.5px] font-semibold text-t-0">
+                    {col.k === "Pending" 
+                      ? (language === 'es' ? "Pendientes" : "Pending") 
+                      : col.k === "In Progress" 
+                      ? (language === 'es' ? "En Progreso" : "In Progress") 
+                      : col.k === "Sent" 
+                      ? (language === 'es' ? "Enviadas" : "Sent") 
+                      : (language === 'es' ? "Resueltas" : "Resolved")
+                    }
+                  </span>
               }
               <span className="ml-auto text-[11px] font-semibold px-2 py-0.2 rounded-full bg-bg-3 text-t-1">
                 {col.items.length}
@@ -177,12 +249,14 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
                   }}
                   onMouseMove={handleMouseMove}
                   onMouseLeave={handleMouseLeave}
-                  className="group relative overflow-hidden border border-line rounded-md p-3.5 bg-bg-2 shadow-sm hover:border-line-2 cursor-grab active:cursor-grabbing transition-all duration-120 glossy-sweep noise-grain"
+                  className="group relative overflow-hidden border border-line rounded-md p-3.5 bg-bg-2 shadow-sm hover:border-line-2 cursor-grab active:cursor-grabbing transition-all duration-120 glossy-sweep noise-grain outline-none focus-visible:ring-2 focus-visible:ring-teal/50"
                   style={{
                     transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
                     transition: 'transform 0.15s ease-out, border-color 0.2s, box-shadow 0.2s'
                   }}
                   onClick={() => handleAdvanceTask(t.id)}
+                  tabIndex={0}
+                  onKeyDown={(e) => handleKeyDown(e, t.id)}
                 >
                   {/* Radial Hover Glow & Specular Overlay */}
                   <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
@@ -217,7 +291,7 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
               
               {col.items.length === 0 && (
                 <div className="text-t-2 text-[12px] text-center py-6 border border-dashed border-line rounded-lg">
-                  Columna vacía
+                  {language === 'es' ? "Columna vacía" : "Empty column"}
                 </div>
               )}
             </div>
@@ -227,7 +301,12 @@ export const TaskBoard: React.FC<TaskBoardProps> = ({ tasks, onUpdateTasks, onTo
       
       <div className="flex items-center gap-1.5 mt-5.5 text-t-3 text-[11.5px] justify-center">
         <Icon name="arrow-right" size={13} style={{ color: "var(--t-3)", flexShrink: 0 }} />
-        <span>Consejo: arrastra las tareas entre columnas o haz clic en ellas para avanzar su estado de forma interactiva.</span>
+        <span>
+          {language === 'es' 
+            ? "Consejo: arrastra las tareas entre columnas o haz clic en ellas para avanzar su estado de forma interactiva." 
+            : "Tip: drag tasks between columns or click them to advance their status interactively."
+          }
+        </span>
       </div>
     </div>
   );

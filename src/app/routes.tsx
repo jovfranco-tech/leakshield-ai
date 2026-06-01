@@ -46,3 +46,43 @@ export type ViewType = 'landing' | 'consent' | 'intake' | 'dashboard' | 'identit
 export type DashboardLayout = 'executive' | 'grid' | 'focus';
 export type ScoreStyle = 'numeric' | 'ring' | 'bar';
 export type CopilotPresentation = 'rail' | 'inline';
+
+export const getNavGroups = (lang: 'es' | 'en'): NavGroup[] => {
+  if (lang === 'en') {
+    return [
+      { group: "Monitoring", items: [
+        { id: "dashboard", label: "Dashboard", icon: "dashboard" },
+        { id: "identity", label: "Digital Identity", icon: "fingerprint" },
+      ]},
+      { group: "Findings", items: [
+        { id: "breaches", label: "Security Breaches", icon: "breach", badge: "4", crit: true },
+        { id: "footprint", label: "Public Footprint", icon: "globe", badge: "6" },
+        { id: "brokers", label: "Data Brokers", icon: "building", badge: "2" },
+      ]},
+      { group: "Actions", items: [
+        { id: "copilot", label: "AI Copilot", icon: "sparkles" },
+        { id: "tasks", label: "Task Board", icon: "kanban", badge: "9" },
+      ]},
+      { group: "Settings", items: [
+        { id: "trust", label: "Trust Center", icon: "shield-check" },
+      ]},
+    ];
+  }
+  return NAV_GROUPS;
+};
+
+export const getTitles = (lang: 'es' | 'en'): Record<string, string> => {
+  if (lang === 'en') {
+    return {
+      dashboard: "Privacy Dashboard",
+      identity: "Digital Identity Ledger",
+      breaches: "Breach Intelligence",
+      footprint: "Public Digital Footprint",
+      brokers: "Data Brokers Exposure",
+      copilot: "Remediation Copilot",
+      tasks: "Privacy Task Board",
+      trust: "Security & Trust Center",
+    };
+  }
+  return TITLES;
+};

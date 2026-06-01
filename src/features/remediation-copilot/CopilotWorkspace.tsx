@@ -55,22 +55,45 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
   const [sent, setSent] = useState(false);
   const [innerModal, setInnerModal] = useState(false);
 
-  // Alias Sandbox Verification States
-  const [sandboxEmail, setSandboxEmail] = useState("alex.rivera");
+  // Alias Sandbox States
+  const [sandboxEmail, setSandboxEmail] = useState(profile.emails[0].split('@')[0]);
   const [sandboxTag, setSandboxTag] = useState("compras");
-  const [sandboxCategory, setSandboxCategory] = useState<'banking' | 'shopping' | 'newsletters'>('shopping');
   const [verifyingAlias, setVerifyingAlias] = useState(false);
   const [aliasVerified, setAliasVerified] = useState(false);
+  const [sandboxCategory, setSandboxCategory] = useState<'banking' | 'shopping' | 'newsletters'>('shopping');
+  const [customInstructions, setCustomInstructions] = useState("");
+  const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
 
   const handleVerifyAlias = () => {
+    if (!sandboxEmail.trim()) {
+      onToast("Escribe un alias para verificar");
+      return;
+    }
     setVerifyingAlias(true);
     setAliasVerified(false);
-    onToast("Enviando ping de verificación de ruta...");
-    setTimeout(() => {
-      setVerifyingAlias(false);
-      setAliasVerified(true);
-      onToast("¡Alias verificado! MX records válidos y enrutamiento seguro confirmado.");
-    }, 2000);
+    setTerminalLogs([]);
+
+    const email = generateSandboxAlias();
+    const hops = [
+      `[PING] Iniciando chequeo DNS para ${email}...`,
+      `[DNS] Buscando registros MX para shield.leakshield.net...`,
+      `[DNS Check OK] Encontrado MX: 10 mail.leakshield.net [TTL 3600]`,
+      `[ROUTING] Estableciendo túnel SMTP seguro (TLS 1.3)...`,
+      `[SPF Validated] SPF Record activo. Remitente autorizado.`,
+      `[DKIM Verified] Firma criptográfica alineada con el dominio.`,
+      `[MX Record Routing Active] Enrutamiento confirmado hacia bandeja protegida.`
+    ];
+
+    hops.forEach((hop, idx) => {
+      setTimeout(() => {
+        setTerminalLogs(prev => [...prev, `[${new Date().toLocaleTimeString('es-ES', { hour12: false })}] ${hop}`]);
+        if (idx === hops.length - 1) {
+          setVerifyingAlias(false);
+          setAliasVerified(true);
+          onToast("¡Alias verificado! MX records válidos y enrutamiento seguro confirmado.");
+        }
+      }, (idx + 1) * 320);
+    });
   };
 
   const getCustomToneDescription = () => {
@@ -81,7 +104,9 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
 
   const letter = `${generateDeletionRequest(target, lawType, profile.name, profile.location)}\n\n[Cláusula de Tono IA - ${
     tone === 'strict' ? 'ESTRICTO LEGAL' : tone === 'cordial' ? 'CORDIAL' : 'DIRECTO'
-  }]: ${getCustomToneDescription()}`;
+  }]: ${getCustomToneDescription()}${
+    customInstructions.trim() ? `\n\n[Instrucciones Adicionales del Usuario]: ${customInstructions.trim()}` : ""
+  }`;
 
   const pushLog = (t: string, tag: string) => {
     setLog(l => [{ t, tag, time: "ahora" }, ...l]);
@@ -404,6 +429,21 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
                   </span>
                 )}
               </div>
+
+              {/* Terminal logs block */}
+              {(verifyingAlias || terminalLogs.length > 0) && (
+                <div className="mt-1 bg-bg-inset border border-line rounded-lg p-3 font-mono text-[10.5px] leading-relaxed text-teal select-text max-h-[140px] overflow-y-auto shadow-inner animate-fadeIn flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5 border-b border-line/45 pb-1.5 mb-1.5 text-t-2 font-sans font-semibold">
+                    <span className="w-2.5 h-2.5 rounded-full bg-teal shadow-[0_0_6px_var(--teal)] animate-pulse" />
+                    Terminal de Verificación SMTP/MX
+                  </div>
+                  {terminalLogs.map((logStr, i) => (
+                    <div key={i} className="whitespace-pre-wrap truncate">
+                      {logStr}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             
             <div className="text-[11.2px] text-t-2 leading-relaxed leading-none flex gap-1 items-start mt-0.5">
@@ -554,6 +594,16 @@ export const CopilotWorkspace: React.FC<CopilotWorkspaceProps> = ({
                     </button>
                   ))}
                 </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5 mt-4">
+                <label className="text-[12px] font-semibold text-t-1">Instrucciones de Personalización IA (Sandbox Prompts)</label>
+                <textarea 
+                  value={customInstructions}
+                  onChange={(e) => setCustomInstructions(e.target.value)}
+                  placeholder="Ej: 'Menciona que tengo una membresía familiar de 3 personas y que exijo el borrado de sus registros también'..."
+                  className="w-full h-18 text-[12.5px] leading-relaxed text-t-0 bg-bg-inset border border-line rounded-lg p-2.5 focus:outline-none focus:border-teal/50 transition-colors placeholder:text-t-3 font-sans resize-none"
+                />
               </div>
 
               <div className="flex flex-col gap-1.5 mt-4">

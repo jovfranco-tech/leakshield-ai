@@ -13,45 +13,21 @@ export const Logo: React.FC<{ size?: number }> = ({ size = 34 }) => {
   );
 };
 
-interface NavItem {
-  id: string;
-  label: string;
-  icon: string;
-  badge?: string;
-  crit?: boolean;
-}
 
-interface NavGroup {
-  group: string;
-  items: NavItem[];
-}
 
-const NAV_GROUPS: NavGroup[] = [
-  { group: "Monitoreo", items: [
-    { id: "dashboard", label: "Dashboard", icon: "dashboard" },
-    { id: "identity", label: "Identidad Digital", icon: "fingerprint" },
-  ]},
-  { group: "Hallazgos", items: [
-    { id: "breaches", label: "Brechas de Seguridad", icon: "breach", badge: "4", crit: true },
-    { id: "footprint", label: "Footprint Público", icon: "globe", badge: "6" },
-    { id: "brokers", label: "Data Brokers", icon: "building", badge: "2" },
-  ]},
-  { group: "Acciones", items: [
-    { id: "copilot", label: "Copiloto de IA", icon: "sparkles" },
-    { id: "tasks", label: "Tablero de Tareas", icon: "kanban", badge: "9" },
-  ]},
-  { group: "Configuración", items: [
-    { id: "trust", label: "Centro de Confianza", icon: "shield-check" },
-  ]},
-];
+
+
+import { getNavGroups } from '../../app/routes';
 
 interface NavRailProps {
   view: string;
   onNav: (view: string) => void;
   profile: Profile;
+  language?: 'es' | 'en';
 }
 
-export const NavRail: React.FC<NavRailProps> = ({ view, onNav, profile }) => {
+export const NavRail: React.FC<NavRailProps> = ({ view, onNav, profile, language = 'es' }) => {
+  const groups = getNavGroups(language);
   return (
     <nav className="nav-rail flex flex-col h-full overflow-hidden select-none">
       <div className="flex items-center gap-3 px-[18px] py-5">
@@ -63,7 +39,7 @@ export const NavRail: React.FC<NavRailProps> = ({ view, onNav, profile }) => {
       </div>
       
       <div className="flex-1 overflow-y-auto px-3 pb-3">
-        {NAV_GROUPS.map(g => (
+        {groups.map(g => (
           <div key={g.group} className="mb-4">
             <div className="text-[10px] tracking-[0.16em] uppercase text-t-3 font-semibold px-3 py-2.5">
               {g.group}

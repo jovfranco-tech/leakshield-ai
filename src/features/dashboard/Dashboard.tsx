@@ -189,7 +189,7 @@ const SemanticStitchingCard: React.FC = () => {
   const [activeNode, setActiveNode] = React.useState<number | null>(null);
 
   const relationships = [
-    { source: "Email Público", target: "Broker (PeopleLookup)", type: "Coincidencia de Alias", risk: "Alto", desc: "El correo jovan***@gmail.com vincula directamente tu identidad con registros residenciales expuestos en bases de datos comerciales." },
+    { source: "Email Público", target: "PeopleLookup", type: "Coincidencia de Alias", risk: "Alto", desc: "El correo jovan***@gmail.com vincula directamente tu identidad con registros residenciales expuestos en bases de datos comerciales." },
     { source: "Dirección IP", target: "Foro de Devs", type: "Geolocalización Cruzada", risk: "Medio", desc: "La IP utilizada expone tu rango de proveedor de red y ubicación de ciudad, vinculando tu cuenta de desarrollo con tu actividad personal." },
     { source: "Teléfono", target: "Brecha ShopMart", type: "Identidad Cruzada", risk: "Crítico", desc: "El número de teléfono expuesto en ShopMart coincide exactamente con tu alias registrado en el broker de datos corporativos." }
   ];
@@ -203,6 +203,17 @@ const SemanticStitchingCard: React.FC = () => {
         transform: 'perspective(1000px) rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg))',
       }}
     >
+      <style>{`
+        @keyframes signalFlow {
+          to {
+            stroke-dashoffset: -20;
+          }
+        }
+        .signal-line-active {
+          stroke-dasharray: 6, 6;
+          animation: signalFlow 1.2s linear infinite;
+        }
+      `}</style>
       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
         background: `radial-gradient(350px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.05), transparent 80%)`
       }} />
@@ -219,6 +230,76 @@ const SemanticStitchingCard: React.FC = () => {
       <p className="text-[12.5px] text-t-1 leading-relaxed mb-4 relative z-10">
         El motor de IA analiza cómo atacantes pueden cruzar datos fragmentarios e inconexos para perfilarte. Haz clic en las conexiones detectadas para ver detalles:
       </p>
+
+      {/* SVG Link lines between exposed metadata nodes */}
+      <svg viewBox="0 0 400 155" className="w-full h-[155px] select-none mb-4 relative z-10 bg-bg-inset border border-line rounded-lg p-2 overflow-visible">
+        <defs>
+          <linearGradient id="activeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#2dd4bf" />
+            <stop offset="100%" stopColor="#06b6d4" />
+          </linearGradient>
+        </defs>
+        
+        {/* Connection Paths */}
+        {relationships.map((_, idx) => {
+          const isActive = activeNode === idx;
+          let d = "";
+          if (idx === 0) d = "M 85,25 C 200,25 200,25 315,25";
+          else if (idx === 1) d = "M 85,75 C 200,75 200,125 315,125";
+          else d = "M 85,125 C 200,125 200,75 315,75";
+
+          return (
+            <g key={idx} className="cursor-pointer" onClick={() => setActiveNode(activeNode === idx ? null : idx)}>
+              <path 
+                d={d} 
+                fill="none" 
+                stroke="transparent" 
+                strokeWidth={12} 
+              />
+              <path 
+                d={d} 
+                fill="none" 
+                stroke={isActive ? "url(#activeGrad)" : "var(--line)"} 
+                strokeWidth={isActive ? 3 : 1.5} 
+                className={`transition-all duration-200 ${isActive ? "opacity-100" : "opacity-40 hover:opacity-80"}`}
+              />
+              {isActive && (
+                <path 
+                  d={d} 
+                  fill="none" 
+                  stroke="url(#activeGrad)" 
+                  strokeWidth={3} 
+                  className="signal-line-active"
+                />
+              )}
+            </g>
+          );
+        })}
+
+        {/* Left Nodes */}
+        <g className="text-[10px] font-medium font-mono" fill="var(--t-1)">
+          <circle cx="85" cy="25" r="4.5" fill={activeNode === 0 ? "#2dd4bf" : "var(--bg-3)"} stroke={activeNode === 0 ? "#06b6d4" : "var(--line-2)"} strokeWidth={1.5} />
+          <text x="75" y="28" textAnchor="end" fill={activeNode === 0 ? "#2dd4bf" : "var(--t-1)"}>Email Público</text>
+
+          <circle cx="85" cy="75" r="4.5" fill={activeNode === 1 ? "#2dd4bf" : "var(--bg-3)"} stroke={activeNode === 1 ? "#06b6d4" : "var(--line-2)"} strokeWidth={1.5} />
+          <text x="75" y="78" textAnchor="end" fill={activeNode === 1 ? "#2dd4bf" : "var(--t-1)"}>Dirección IP</text>
+
+          <circle cx="85" cy="125" r="4.5" fill={activeNode === 2 ? "#2dd4bf" : "var(--bg-3)"} stroke={activeNode === 2 ? "#06b6d4" : "var(--line-2)"} strokeWidth={1.5} />
+          <text x="75" y="128" textAnchor="end" fill={activeNode === 2 ? "#2dd4bf" : "var(--t-1)"}>Teléfono</text>
+        </g>
+
+        {/* Right Nodes */}
+        <g className="text-[10px] font-medium font-mono" fill="var(--t-1)">
+          <circle cx="315" cy="25" r="4.5" fill={activeNode === 0 ? "#06b6d4" : "var(--bg-3)"} stroke={activeNode === 0 ? "#2dd4bf" : "var(--line-2)"} strokeWidth={1.5} />
+          <text x="325" y="28" textAnchor="start" fill={activeNode === 0 ? "#06b6d4" : "var(--t-1)"}>PeopleLookup</text>
+
+          <circle cx="315" cy="75" r="4.5" fill={activeNode === 2 ? "#06b6d4" : "var(--bg-3)"} stroke={activeNode === 2 ? "#2dd4bf" : "var(--line-2)"} strokeWidth={1.5} />
+          <text x="325" y="78" textAnchor="start" fill={activeNode === 2 ? "#06b6d4" : "var(--t-1)"}>Brecha ShopMart</text>
+
+          <circle cx="315" cy="125" r="4.5" fill={activeNode === 1 ? "#06b6d4" : "var(--bg-3)"} stroke={activeNode === 1 ? "#2dd4bf" : "var(--line-2)"} strokeWidth={1.5} />
+          <text x="325" y="128" textAnchor="start" fill={activeNode === 1 ? "#06b6d4" : "var(--t-1)"}>Foro de Devs</text>
+        </g>
+      </svg>
 
       <div className="flex flex-col gap-2.5 relative z-10">
         {relationships.map((rel, idx) => (
