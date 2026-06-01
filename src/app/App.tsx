@@ -8,7 +8,6 @@ import { AIInsightCard } from '../components/ui/AIInsightCard';
 
 // Primitives
 import { demoProfile } from '../data/demoPersona';
-import { demoBreaches, highRiskDataClasses } from '../data/demoBreaches';
 import { demoFootprint, demoOldAccounts, demoDataBrokers } from '../data/demoFootprint';
 
 // Features
@@ -32,6 +31,7 @@ import { generateDeletionRequest } from '../lib/aiOrchestration';
 import { taskService } from '../services/taskService';
 import { aiService } from '../services/aiService';
 import { firebaseService } from '../services/firebaseService';
+import { breachService } from '../services/breachService';
 import { ViewType, DashboardLayout, ScoreStyle, CopilotPresentation, getTitles } from './routes';
 import { Task, CopilotData, BreachFinding, Profile } from '../types/privacy';
 import { auth } from '../lib/firebase';
@@ -891,9 +891,75 @@ export const AppInternal: React.FC = () => {
     windowToken.__t = setTimeout(() => setToast(null), 2400);
   };
 
-  // Integration of useTaskBoard & useScoring custom hooks
+  // Dynamic Real-Time Breach & Task Orchestration Engine (v1.2.0)
+  const [breaches, setBreaches] = useState<BreachFinding[]>([]);
+
+  useEffect(() => {
+    if (!profile || !profile.emails || profile.emails.length === 0) {
+      setBreaches([]);
+      return;
+    }
+
+    const fetchRealBreaches = async () => {
+      const allBreaches: BreachFinding[] = [];
+      try {
+        const fetchPromises = profile.emails.map(async (email) => {
+          const res = await breachService.getBreaches(email);
+          return res;
+        });
+        const results = await Promise.all(fetchPromises);
+        results.forEach(res => {
+          allBreaches.push(...res);
+        });
+        
+        // Remove duplicates if any breach is pwned across multiple queries
+        const uniqueBreachesMap: Record<string, BreachFinding> = {};
+        allBreaches.forEach(b => {
+          const key = `${b.service}_${b.affectedEmail}`;
+          uniqueBreachesMap[key] = b;
+        });
+        setBreaches(Object.values(uniqueBreachesMap));
+      } catch (err) {
+        console.error("[App] Failed to load real-time breaches:", err);
+      }
+    };
+
+    fetchRealBreaches();
+  }, [profile]);
+
   const { tasks, resetAllTasks, setTasks } = useTaskBoard(profile, showToast);
-  const dynamicScore = useScoring(tasks);
+
+  // Dynamic tasks compiler: merges base data-broker/footprint tasks with real-time breach tasks
+  const computedTasks = React.useMemo(() => {
+    const baseTasks = tasks || [];
+    
+    // Clear out any old mock breach tasks (like t1, t2, t5)
+    const filteredBaseTasks = baseTasks.filter(t => t.id !== 't1' && t.id !== 't2' && t.id !== 't5');
+
+    // Generate a clean reactive task for each real breach found
+    const realBreachTasks = breaches.map((b, idx) => {
+      const priority: Task['priority'] = b.severity === 'Critical'
+        ? 'Critical'
+        : b.severity === 'High'
+        ? 'High'
+        : 'Medium';
+
+      return {
+        id: `t_${b.service.toLowerCase().replace(/\s+/g, '_')}_${idx}`,
+        title: `Rotar contraseña expuesta en ${b.service}`,
+        priority,
+        status: b.status || 'Pending',
+        bucket: (b.severity === 'Critical' ? 'Today' : b.severity === 'High' ? 'This Week' : 'Later') as Task['bucket'],
+        module: 'Breaches',
+        ai: true,
+        effort: b.severity === 'Critical' ? '5 min' : '10 min'
+      };
+    });
+
+    return [...filteredBaseTasks, ...realBreachTasks];
+  }, [tasks, breaches]);
+
+  const dynamicScore = useScoring(computedTasks);
 
   // Set accents dynamically
   useEffect(() => {
@@ -905,32 +971,68 @@ export const AppInternal: React.FC = () => {
 
   // Load plan on mount and task updates
   useEffect(() => {
-    if (tasks.length === 0) return;
-    const loadPlan = async () => {
-      const plan = await aiService.getRemediationPlan(tasks);
+    if (computedTasks.length === 0) {
       setCopilotData({
-        summary: "Tienes 2 elementos críticos vinculados a una contraseña reutilizada. Cambiar esas credenciales cierra tu brecha más vulnerable y proyectará tu score en +12 puntos.",
+        summary: "Tu huella digital está impecable. No se detectan brechas ni amenazas de privacidad en tus identificadores bajo vigilancia.",
         nextBest: {
-          title: "Rotar contraseña reutilizada",
-          why: "Una contraseña está expuesta en 2 brechas (ConnectHub + DevForum). Es tu corrección individual de mayor impacto.",
-          impact: "+12 score",
+          title: "Mantener monitoreo activo",
+          why: "Tu identidad digital está totalmente protegida en este momento.",
+          impact: "0 score",
+          effort: "—",
+        },
+        plan: { Today: [], 'This Week': [], Later: [] }
+      });
+      return;
+    }
+    const loadPlan = async () => {
+      const plan = await aiService.getRemediationPlan(computedTasks);
+      const criticals = computedTasks.filter(t => t.priority === 'Critical' && t.status !== 'Resolved');
+      const hasCritical = criticals.length > 0;
+      
+      setCopilotData({
+        summary: hasCritical 
+          ? `Tienes ${criticals.length} tareas de seguridad críticas activas. Resolverlas de inmediato cerrará tus brechas de privacidad más expuestas.`
+          : "¡Gran trabajo! Has resuelto tus brechas críticas de mayor exposición. Sigue mitigando las tareas de riesgo medio.",
+        nextBest: hasCritical ? {
+          title: criticals[0].title,
+          why: "Filtración crítica detectada con contraseñas o datos expuestos.",
+          impact: "+14 score",
           effort: "~5 min",
+        } : {
+          title: "Redactar exclusión legal en Data Brokers",
+          why: "Limitar la distribución no consentida de tus datos residenciales.",
+          impact: "+6 score",
+          effort: "~10 min",
         },
         plan
       });
     };
     loadPlan();
-  }, [tasks]);
+  }, [computedTasks]);
 
   const handleUpdateTasks = async (updated: Task[]) => {
-    setTasks(updated);
+    // Separate base tasks from breach tasks
+    const baseUpdated = updated.filter(t => !t.id.startsWith('t_'));
+    setTasks(baseUpdated);
+    
+    // Update breach status dynamically for any updated breach tasks
+    const breachUpdated = updated.filter(t => t.id.startsWith('t_'));
+    if (breachUpdated.length > 0) {
+      setBreaches(prev => prev.map(b => {
+        const match = breachUpdated.find(t => t.title.toLowerCase().includes(b.service.toLowerCase()));
+        if (match) {
+          return { ...b, status: match.status };
+        }
+        return b;
+      }));
+    }
+    
     playSound('click');
-    for (const t of updated) {
+    for (const t of baseUpdated) {
       await taskService.updateTaskStatus(t.id, t.status);
       await firebaseService.updateTaskStatus(t.id, t.status);
     }
-    // Quantum XOR Encrypted hydration backup save
-    secureSave("tasks_progress", updated, persistentStorage);
+    secureSave("tasks_progress", baseUpdated, persistentStorage);
   };
 
   const handleResetTasks = async () => {
@@ -1140,11 +1242,8 @@ export const AppInternal: React.FC = () => {
     emails: activeProfile === 'personal' ? activeUser.emails : activeProfile === 'trabajo' ? [`work.alias@${activeUser.emails[0]?.split('@')[1] || 'enterprise.com'}`] : [`secure.vault@${activeUser.emails[0]?.split('@')[1] || 'private.net'}`],
   };
 
-  // Dinamización de Datos de Exposición en base a la identidad del usuario logueado (v1.1.0)
-  const userBreaches = demoBreaches.map(b => ({
-    ...b,
-    affectedEmail: b.affectedEmail.includes('work') ? (computedProfile.emails[1] || computedProfile.emails[0]) : computedProfile.emails[0]
-  }));
+  // Dinamización de Datos de Exposición en base a la identidad del usuario logueado (v1.2.0)
+  const userBreaches = breaches;
 
   const userFootprint = demoFootprint.map(f => {
     let title = f.title;
@@ -1175,7 +1274,7 @@ export const AppInternal: React.FC = () => {
       : o.service
   }));
 
-  const userTasks = tasks.map(t => {
+  const userTasks = computedTasks.map(t => {
     let title = t.title;
     if (title.includes('@alexrivera')) {
       title = title.replace('@alexrivera', `@${computedProfile.usernames[0] || 'usuario'}`);
@@ -1190,15 +1289,21 @@ export const AppInternal: React.FC = () => {
 
   // Dynamic risk summary card objects
   const breachesCount = userBreaches.length;
-  const criticalCount = userBreaches.filter((b: BreachFinding) => b.severity === 'Critical' && tasks.find(t => t.id === 't1')?.status !== 'Resolved').length;
-  const highCount = userBreaches.filter((b: BreachFinding) => b.severity === 'High' && tasks.find(t => t.id === 't2')?.status !== 'Resolved').length;
+  const criticalCount = userBreaches.filter((b: BreachFinding) => {
+    const match = computedTasks.find(t => t.title.toLowerCase().includes(b.service.toLowerCase()));
+    return b.severity === 'Critical' && (!match || match.status !== 'Resolved');
+  }).length;
+  const highCount = userBreaches.filter((b: BreachFinding) => {
+    const match = computedTasks.find(t => t.title.toLowerCase().includes(b.service.toLowerCase()));
+    return b.severity === 'High' && (!match || match.status !== 'Resolved');
+  }).length;
   
-  const brokerCount = demoDataBrokers.filter(b => tasks.find(t => t.id === (b.id === 'db1' ? 't4' : 't7'))?.status !== 'Resolved').length;
+  const brokerCount = demoDataBrokers.filter(b => computedTasks.find(t => t.id === (b.id === 'db1' ? 't4' : 't7'))?.status !== 'Resolved').length;
 
   const dynamicRisk = {
     breach: { 
       label: "Riesgo de Brechas", 
-      level: criticalCount > 0 ? "Critical" : "High", 
+      level: criticalCount > 0 ? "Critical" : highCount > 0 ? "High" : "ok", 
       value: `${breachesCount} brechas`, 
       sub: `${criticalCount} críticas · ${highCount} altas`, 
       trend: -1 
@@ -1227,9 +1332,9 @@ export const AppInternal: React.FC = () => {
   };
 
   // Remediation progress calculations
-  const resolved = tasks.filter(t => t.status === "Resolved").length;
-  const inProgress = tasks.filter(t => t.status === "In Progress").length;
-  const total = tasks.length;
+  const resolved = computedTasks.filter(t => t.status === "Resolved").length;
+  const inProgress = computedTasks.filter(t => t.status === "In Progress").length;
+  const total = computedTasks.length;
   const percent = total > 0 ? Math.round((resolved / total) * 100) : 0;
 
   const dynamicProgress = { resolved, inProgress, total, percent };
@@ -1272,7 +1377,7 @@ export const AppInternal: React.FC = () => {
             score={dynamicScore}
             remediation={dynamicProgress}
             breaches={userBreaches}
-            highRiskData={highRiskDataClasses}
+            highRiskData={breachService.getHighRiskData(breaches)}
             risk={dynamicRisk}
             copilot={copilotData}
             dashboardLayout={dashboardLayout}
