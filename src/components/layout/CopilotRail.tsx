@@ -26,48 +26,48 @@ export const Typed: React.FC<{ text: string; speed?: number }> = ({ text, speed 
 
 export const RAIL_CONTEXT: Record<string, { label: string; summary: string }> = {
   landing: {
-    label: "Exploring LeakShield",
-    summary: "Welcome to LeakShield AI. Take a look at the landing screen, understand our safety parameters, and click 'Start privacy scan' to explore the onboarding sequence."
+    label: "Explorando LeakShield",
+    summary: "Te damos la bienvenida a LeakShield AI. Revisa la pantalla de inicio, comprende nuestros límites de seguridad y haz clic en 'Iniciar escaneo de privacidad' para comenzar."
   },
   consent: {
-    label: "Onboarding boundaries",
-    summary: "I'm keeping track of your consent parameters. Protecting your identity starts with locking down the rules of engagement."
+    label: "Límites de consentimiento",
+    summary: "Vigilo tus parámetros de consentimiento. Proteger tu identidad comienza con establecer las reglas de juego claras del command center."
   },
   intake: {
-    label: "Setting up your shield",
-    summary: "I'm monitoring your input vectors. Adding key emails and handles lets me cross-reference the complete threat matrix."
+    label: "Configurando tu escudo",
+    summary: "Monitoreo tus identificadores. Añadir correos y nombres de usuario clave me permite cruzar toda la matriz de amenazas en tiempo real."
   },
   dashboard: {
-    label: "Reviewing your full exposure",
-    summary: "I've analyzed 4 breaches, 6 footprint findings and 2 broker listings. Your biggest gap is one password reused across two breached accounts — fixing it alone could add ~12 points."
+    label: "Revisando tu exposición",
+    summary: "He analizado 4 brechas, 6 hallazgos en tu huella y 2 listados en brokers. Tu mayor brecha es una contraseña reutilizada en dos cuentas comprometidas. Corregir esto sumará +12 puntos."
   },
   identity: {
-    label: "Watching your identifiers",
-    summary: "I'm monitoring 2 emails and 2 usernames. Adding your phone number would let me catch SIM-swap and SMS-leak signals you're currently blind to."
+    label: "Vigilando tus identificadores",
+    summary: "Monitoreo 2 correos y 2 nombres de usuario. Añadir tu número celular permitiría capturar alertas de SIM-swap a las que estás ciego actualmente."
   },
   breaches: {
-    label: "Prioritizing breaches",
-    summary: "I ranked your breaches by sensitivity, not just recency. ConnectHub and DevForum share the same leaked password — treat them as one fix, done together."
+    label: "Priorizando brechas",
+    summary: "Ordeno tus brechas por sensibilidad, no solo fecha. ConnectHub y DevForum comparten la misma contraseña filtrada: soluciónalas juntas hoy."
   },
   footprint: {
-    label: "Mapping your public footprint",
-    summary: "Of 6 public findings, the people-directory listing is the one I'd remove first — it ties your real name to a home address. I can draft the opt-out for you."
+    label: "Mapeando tu huella pública",
+    summary: "De los 6 hallazgos públicos, removería primero el listado del directorio telefónico, ya que asocia tu nombre a tu dirección física. Puedo redactar la solicitud de exclusión."
   },
   brokers: {
-    label: "Tracking data brokers",
-    summary: "2 brokers list your profile. One removal is already in progress; I've pre-drafted the deletion request for the second so you only review and send."
+    label: "Rastreando data brokers",
+    summary: "2 brokers comercializan tu perfil. Una remoción está en progreso; redacté la solicitud para el segundo para que solo la revises y apruebes."
   },
   copilot: {
-    label: "Your remediation plan",
-    summary: "Here's your prioritized plan. I sequence by score impact ÷ effort, so the fastest wins come first. You stay in control — nothing is sent without your approval."
+    label: "Tu plan de remediación",
+    summary: "Aquí está tu secuencia priorizada. Clasifico por impacto en el puntaje ÷ esfuerzo para que resuelvas lo rápido primero. Nada se envía sin tu aprobación."
   },
   tasks: {
-    label: "Working your task board",
-    summary: "2 of 9 tasks are resolved. The 2 Critical items are quick (under 5 min each) and unlock the largest score gain — I'd clear those today."
+    label: "Tablero de tareas",
+    summary: "2 de 9 tareas resueltas. Los 2 elementos críticos son rápidos (menos de 5 min) y desbloquean la mayor ganancia de puntaje. Despéjalos hoy mismo."
   },
   trust: {
-    label: "Privacy boundaries",
-    summary: "I operate within strict limits: only your own or authorized data, no stored passwords, and every action I draft needs your review before anything happens."
+    label: "Límites de privacidad",
+    summary: "Opero bajo estrictas reglas: solo datos autorizados, sin contraseñas guardadas y cada plantilla de solicitud requiere tu aprobación humana antes de enviarse."
   }
 };
 
@@ -90,6 +90,12 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
 }) => {
   const ctx = RAIL_CONTEXT[view] || RAIL_CONTEXT.dashboard;
 
+  const translateBucket = (b: string) => {
+    if (b === 'Today') return 'Hoy mismo';
+    if (b === 'This Week') return 'Esta semana';
+    return 'Más tarde';
+  };
+
   return (
     <aside className={`w-[var(--rail-w)] bg-gradient-to-b from-bg-1 to-bg-0 border-l border-line flex flex-col h-full overflow-hidden select-none flex-shrink-0 ${className}`}>
       {/* Header */}
@@ -99,10 +105,10 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
             <Icon name="sparkles" size={17} />
           </div>
           <div className="flex-1">
-            <div className="text-[13.5px] font-semibold text-t-0">Privacy Copilot</div>
+            <div className="text-[13.5px] font-semibold text-t-0 font-sans">Copiloto de Privacidad</div>
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-ok shadow-[0_0_8px_var(--ok)]" />
-              <span className="text-[11px] text-t-2 font-medium">{ctx.label}</span>
+              <span className="text-[11.5px] text-t-2 font-medium">{ctx.label}</span>
             </div>
           </div>
         </div>
@@ -115,7 +121,7 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-teal to-cyan" />
           <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold tracking-wider uppercase text-teal mb-2">
             <Icon name="sparkles" size={13} style={{ marginRight: 4 }} />
-            Context summary
+            Resumen de contexto
           </span>
           <div className="text-[12.8px] leading-[1.6] text-t-0 font-medium">
             <Typed text={ctx.summary} />
@@ -124,7 +130,7 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
 
         {/* Next Best Action Card */}
         <div>
-          <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-2">Next best action</div>
+          <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-2">Siguiente mejor acción</div>
           <div className="border border-teal-line bg-bg-2 rounded-lg p-3.5 relative overflow-hidden">
             <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-teal to-cyan" />
             <div className="text-[13.5px] font-semibold text-t-0 mb-1">{copilotData.nextBest.title}</div>
@@ -143,23 +149,23 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
               className="w-full flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[12.5px] px-3 py-2 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] active:translate-y-[0.5px] cursor-pointer transition-all duration-100"
               onClick={() => {
                 onNav("breaches");
-                onToast("Opened the fix in Breach Intelligence");
+                onToast("Se abrió la corrección en Inteligencia de Brechas");
               }}
             >
               <Icon name="key" size={14} />
-              Start this fix
+              Iniciar corrección
             </button>
           </div>
         </div>
 
         {/* Mini Plan Board */}
         <div>
-          <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-2">Remediation Sequence</div>
+          <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-2">Secuencia de Remediación</div>
           <div className="flex flex-col gap-3">
             {Object.entries(copilotData.plan).map(([bucket, items]) => (
               <div key={bucket} className="flex flex-col gap-1.5">
                 <div className="flex items-center gap-2">
-                  <span className="text-[11.5px] font-semibold text-t-1">{bucket}</span>
+                  <span className="text-[11.5px] font-semibold text-t-1">{translateBucket(bucket)}</span>
                   <span className="flex-1 h-[1px] bg-line" />
                   <span className="font-mono text-[10.5px] text-t-2">{items.length}</span>
                 </div>
@@ -192,13 +198,13 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
             onClick={onOpenDeletion}
           >
             <Icon name="file" size={14} />
-            Draft deletion request
+            Borrador de solicitud ARCO/CCPA
           </button>
           <button 
             className="w-full text-center text-t-2 hover:text-teal font-semibold text-[11.5px] mt-2.5 flex items-center justify-center gap-1.5 bg-transparent border-0 cursor-pointer transition-all duration-130"
             onClick={() => onNav("copilot")}
           >
-            Open full copilot workspace
+            Ver plan de remediación completo
             <Icon name="arrow-right" size={13} />
           </button>
         </div>
@@ -210,10 +216,10 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
           <Icon name="sparkles" size={15} style={{ color: "var(--teal)" }} />
           <input 
             className="bg-transparent border-0 outline-none text-t-0 font-sans text-[13px] w-full placeholder-t-3"
-            placeholder="Ask the copilot…" 
+            placeholder="Preguntar al copiloto..." 
             onKeyDown={e => {
               if (e.key === "Enter") {
-                onToast("Copilot is a simulated demo — responses are illustrative");
+                onToast("El copiloto es una demo simulada — las respuestas son ilustrativas");
                 (e.target as HTMLInputElement).value = "";
               }
             }} 
@@ -221,7 +227,7 @@ export const CopilotRail: React.FC<CopilotRailProps> = ({
         </div>
         <div className="flex items-center gap-1.5 mt-2.5 text-t-3 text-[10.5px]">
           <Icon name="shield-check" size={12} />
-          <span>AI outputs require human review · simulated demo</span>
+          <span>Las respuestas de IA requieren revisión humana · demo simulada</span>
         </div>
       </div>
     </aside>

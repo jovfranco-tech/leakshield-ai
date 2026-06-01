@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Icon } from '../../components/ui/Icon';
 import { Logo } from '../../components/layout/NavRail';
 import { Badge } from '../../components/ui/Badge';
@@ -18,9 +18,39 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
   const [draft, setDraft] = useState("");
   const [phone, setPhone] = useState("");
   const [scanning, setScanning] = useState(false);
+  const [scanStep, setScanStep] = useState(0);
+
+  const scanSteps = [
+    "Inicializando agente de inteligencia autónomo...",
+    "Buscando coincidencias en 14,820 bases de datos de brechas...",
+    "Escaneando huella digital pública en redes y directorios...",
+    "Cruzando registros comerciales en 80+ data brokers activos...",
+    "Calculando ponderaciones matemáticas del Score de Exposición...",
+    "¡Análisis finalizado con éxito! Redirigiendo..."
+  ];
+
+  useEffect(() => {
+    let interval: number;
+    if (scanning) {
+      setScanStep(0);
+      interval = window.setInterval(() => {
+        setScanStep(s => {
+          if (s >= scanSteps.length - 1) {
+            clearInterval(interval);
+            setTimeout(() => {
+              if (onComplete) onComplete();
+            }, 600);
+            return s;
+          }
+          return s + 1;
+        });
+      }, 500);
+    }
+    return () => clearInterval(interval);
+  }, [scanning]);
 
   const addId = (val: string) => {
-    // Defensive input sanitization: limit length to 80 chars and strip out HTML tag symbols
+    // Robust defensive input sanitization: clamp length & strip HTML/script injection tags
     const trimmed = val.trim().slice(0, 80).replace(/[<>]/g, "");
     if (!trimmed) return;
     if (trimmed.includes("@")) {
@@ -30,126 +60,153 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
     }
     setDraft("");
     if (onToast) {
-      onToast(`Now monitoring ${trimmed}`);
+      onToast(`Monitoreando activamente: ${trimmed}`);
     }
   };
 
   const handleStartScan = () => {
     setScanning(true);
-    setTimeout(() => {
-      if (onComplete) {
-        onComplete();
-      }
-    }, 2100);
   };
 
   const Body = (
     <div className={`grid gap-5 items-start ${inApp ? "grid-cols-1 lg:grid-cols-[1.3fr_0.9fr]" : "grid-cols-1"}`}>
-      <div className="border border-line rounded-lg p-5 bg-bg-2 shadow-premium">
-        <div className="flex items-center gap-2 mb-3.5">
-          <Icon name="fingerprint" size={18} style={{ color: "var(--teal)" }} />
-          <h2 className="text-[15px] font-semibold text-t-0">Monitored identifiers</h2>
-        </div>
-
-        <div className="flex flex-col gap-1.5 mb-4">
-          <label className="text-[12px] font-semibold text-t-1">Full name</label>
-          <input className="bg-bg-inset border border-line-2 rounded-lg px-3 py-2 text-t-0 font-sans text-[13.5px] outline-none focus:border-teal-line focus:shadow-[0_0_0_3px_var(--teal-dim)] transition-all duration-130 w-full" defaultValue={profile.name} />
-        </div>
+      <div className="border border-line rounded-lg p-5 bg-bg-2 shadow-premium relative overflow-hidden">
+        {/* Specular Diagonal Highlight */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.008] to-white/[0.03] pointer-events-none" />
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[12px] font-semibold text-t-1">Country / region</label>
-            <input className="bg-bg-inset border border-line-2 rounded-lg px-3 py-2 text-t-0 font-sans text-[13.5px] outline-none focus:border-teal-line focus:shadow-[0_0_0_3px_var(--teal-dim)] transition-all duration-130 w-full" defaultValue="Mexico" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label className="text-[12px] font-semibold text-t-1">Phone (optional)</label>
-            <input 
-              className="bg-bg-inset border border-line-2 rounded-lg px-3 py-2 text-t-0 font-sans text-[13.5px] outline-none focus:border-teal-line focus:shadow-[0_0_0_3px_var(--teal-dim)] transition-all duration-130 w-full" 
-              placeholder="+52 …" 
-              value={phone} 
-              onChange={e => setPhone(e.target.value)} 
-            />
-          </div>
-        </div>
-
-        <label className="text-[12px] font-semibold text-t-1 block mb-2">Emails & usernames</label>
-        <div className="flex flex-col gap-2 mb-3">
-          {emails.map(e => (
-            <div key={e} className="flex items-center gap-2.5 border border-line rounded-lg px-3 py-2 bg-bg-inset">
-              <Icon name="mail" size={15} style={{ color: "var(--t-2)" }} />
-              <span className="font-mono text-[12.5px] flex-1 text-t-0">{e}</span>
-              <Badge level="ok">monitoring</Badge>
+        {scanning ? (
+          <div className="py-8 flex flex-col items-center justify-center text-center fade-in">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-teal-dim border border-teal-line text-teal mb-4 spin">
+              <Icon name="refresh" size={24} />
             </div>
-          ))}
-          {usernames.map(u => (
-            <div key={u} className="flex items-center gap-2.5 border border-line rounded-lg px-3 py-2 bg-bg-inset">
-              <Icon name="user" size={15} style={{ color: "var(--t-2)" }} />
-              <span className="font-mono text-[12.5px] flex-1 text-t-0">@{u}</span>
-              <Badge level="ok">monitoring</Badge>
+            <h3 className="text-[17px] font-semibold text-t-0 mb-3.5">Escaneo Inteligente en Progreso</h3>
+            <div className="w-full max-w-[380px] bg-bg-3 border border-line rounded-lg p-4 text-left flex flex-col gap-2.5">
+              {scanSteps.map((step, idx) => {
+                const isDone = idx < scanStep;
+                const isActive = idx === scanStep;
+                return (
+                  <div key={idx} className={`flex items-center gap-2.5 text-[12.5px] transition-all duration-300 ${isDone ? "text-ok" : isActive ? "text-teal font-semibold" : "text-t-3"}`}>
+                    <span className="flex-shrink-0 flex items-center justify-center w-5 h-5">
+                      {isDone ? (
+                        <Icon name="check-circle" size={14} />
+                      ) : isActive ? (
+                        <Icon name="refresh" size={14} className="spin" />
+                      ) : (
+                        <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                      )}
+                    </span>
+                    <span>{step}</span>
+                  </div>
+                );
+              })}
             </div>
-          ))}
-        </div>
-        
-        <div className="flex gap-2.5">
-          <div className="flex-1 flex items-center gap-2 bg-bg-2 border border-line rounded-lg px-3 py-2 text-t-2">
-            <Icon name="plus" size={15} />
-            <input 
-              className="bg-transparent border-0 outline-none text-t-0 font-sans text-[13px] w-full placeholder-t-3"
-              placeholder="Add email or username…" 
-              maxLength={80}
-              value={draft} 
-              onChange={e => setDraft(e.target.value)} 
-              onKeyDown={e => {
-                if (e.key === "Enter") addId(draft);
-              }} 
-            />
           </div>
-          <button 
-            className="inline-flex items-center justify-center gap-1.5 rounded-[9px] font-semibold text-[12px] px-[15px] py-[9px] border border-line-2 bg-bg-3 hover:bg-bg-2 hover:border-line-3 text-t-0 cursor-pointer transition-all duration-130"
-            onClick={() => addId(draft)}
-          >
-            Add
-          </button>
-        </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-2 mb-3.5">
+              <Icon name="fingerprint" size={18} style={{ color: "var(--teal)" }} />
+              <h2 className="text-[15px] font-semibold text-t-0">Identificadores monitoreados</h2>
+            </div>
 
-        {!inApp && (
-          <button 
-            className="w-full flex items-center justify-center gap-2 rounded-lg font-semibold text-[13px] px-[15px] py-3 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] mt-5.5 cursor-pointer transition-all duration-130 shadow-premium"
-            onClick={handleStartScan}
-          >
-            {scanning ? (
-              <>
-                <Icon name="refresh" size={16} className="spin" />
-                Scanning your exposure…
-              </>
-            ) : (
-              <>
+            <div className="flex flex-col gap-1.5 mb-4">
+              <label className="text-[12px] font-semibold text-t-1">Nombre completo del titular</label>
+              <input 
+                className="bg-bg-inset border border-line-2 rounded-lg px-3 py-2 text-t-0 font-sans text-[13.5px] outline-none focus:border-teal-line focus:shadow-[0_0_0_3px_var(--teal-dim)] transition-all duration-130 w-full" 
+                defaultValue={profile.name} 
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[12px] font-semibold text-t-1">País / región</label>
+                <input 
+                  className="bg-bg-inset border border-line-2 rounded-lg px-3 py-2 text-t-0 font-sans text-[13.5px] outline-none focus:border-teal-line focus:shadow-[0_0_0_3px_var(--teal-dim)] transition-all duration-130 w-full" 
+                  defaultValue="México" 
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[12px] font-semibold text-t-1">Teléfono móvil (opcional)</label>
+                <input 
+                  className="bg-bg-inset border border-line-2 rounded-lg px-3 py-2 text-t-0 font-sans text-[13.5px] outline-none focus:border-teal-line focus:shadow-[0_0_0_3px_var(--teal-dim)] transition-all duration-130 w-full" 
+                  placeholder="+52 55 •••• ••••" 
+                  maxLength={20}
+                  value={phone} 
+                  onChange={e => setPhone(e.target.value.replace(/[^0-9+\s-]/g, ""))} 
+                />
+              </div>
+            </div>
+
+            <label className="text-[12px] font-semibold text-t-1 block mb-2">Correos y nombres de usuario bajo vigilancia</label>
+            <div className="flex flex-col gap-2 mb-3">
+              {emails.map(e => (
+                <div key={e} className="flex items-center gap-2.5 border border-line rounded-lg px-3 py-2 bg-bg-inset">
+                  <Icon name="mail" size={15} style={{ color: "var(--t-2)" }} />
+                  <span className="font-mono text-[12.5px] flex-1 text-t-0">{e}</span>
+                  <Badge level="ok">monitoreando</Badge>
+                </div>
+              ))}
+              {usernames.map(u => (
+                <div key={u} className="flex items-center gap-2.5 border border-line rounded-lg px-3 py-2 bg-bg-inset">
+                  <Icon name="user" size={15} style={{ color: "var(--t-2)" }} />
+                  <span className="font-mono text-[12.5px] flex-1 text-t-0">@{u}</span>
+                  <Badge level="ok">monitoreando</Badge>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex gap-2.5">
+              <div className="flex-1 flex items-center gap-2 bg-bg-2 border border-line rounded-lg px-3 py-2 text-t-2">
+                <Icon name="plus" size={15} />
+                <input 
+                  className="bg-transparent border-0 outline-none text-t-0 font-sans text-[13px] w-full placeholder-t-3"
+                  placeholder="Añadir correo o usuario..." 
+                  maxLength={80}
+                  value={draft} 
+                  onChange={e => setDraft(e.target.value)} 
+                  onKeyDown={e => {
+                    if (e.key === "Enter") addId(draft);
+                  }} 
+                />
+              </div>
+              <button 
+                className="inline-flex items-center justify-center gap-1.5 rounded-[9px] font-semibold text-[12px] px-[15px] py-[9px] border border-line-2 bg-bg-3 hover:bg-bg-2 hover:border-line-3 text-t-0 cursor-pointer transition-all duration-130"
+                onClick={() => addId(draft)}
+              >
+                Añadir
+              </button>
+            </div>
+
+            {!inApp && (
+              <button 
+                className="w-full flex items-center justify-center gap-2 rounded-lg font-semibold text-[13px] px-[15px] py-3 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] mt-5.5 cursor-pointer transition-all duration-130 shadow-premium"
+                onClick={handleStartScan}
+              >
                 <Icon name="scan" size={16} />
-                Run privacy scan
-              </>
+                Iniciar escaneo de privacidad
+              </button>
             )}
-          </button>
+          </>
         )}
       </div>
 
       <div className="flex flex-col gap-4">
         <AIInsightCard 
-          tag="AI Coverage" 
+          tag="Cobertura IA" 
           lead 
           confidence="Medium"
-          title="Widen your coverage"
-          body="You're monitoring 2 emails and 2 usernames. Adding your phone number lets me detect SIM-swap and SMS-leak signals you're currently blind to."
-          impact={inApp ? "+coverage" : null} 
+          title="Amplía tu cobertura"
+          body="Estás vigilando 2 correos y 2 nombres de usuario. Vincular tu número celular te protegerá contra hackeos por SIM-swapping y filtración de SMS que actualmente están desprotegidos."
+          impact={inApp ? "+cobertura" : null} 
         />
         
         <div className="border border-line rounded-lg p-5 bg-bg-2 shadow-premium">
-          <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-3">What a scan checks</div>
+          <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-3">Qué analiza el escaneo</div>
           <div className="flex flex-col gap-3">
             {[
-              ["breach", "Known breach databases"], 
-              ["globe", "Public web & social footprint"], 
-              ["building", "Data-broker listings"], 
-              ["clock", "Dormant / old accounts"]
+              ["breach", "Bases de datos de filtraciones conocidas"], 
+              ["globe", "Huella digital pública en web y redes"], 
+              ["building", "Listados de brokers de datos comerciales"], 
+              ["clock", "Cuentas inactivas / antiguas expuestas"]
             ].map(([ic, t]) => (
               <div key={t} className="flex items-center gap-2.5">
                 <Icon name={ic} size={15} style={{ color: "var(--teal)" }} />
@@ -159,7 +216,7 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
           </div>
           <div className="flex items-center gap-2 mt-4 text-t-3 text-[11px]">
             <Icon name="shield-check" size={13} style={{ flexShrink: 0 }} />
-            <span>Identifiers are matched, never stored as passwords.</span>
+            <span>Los identificadores se comparan de forma segura, nunca guardamos contraseñas.</span>
           </div>
         </div>
       </div>
@@ -171,12 +228,12 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
       <div className="max-w-[1180px] mx-auto fade-in">
         <div className="flex justify-between items-end mb-4 flex-wrap gap-3">
           <div>
-            <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1">Digital Identity Intake</div>
-            <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">Identity & monitoring</h1>
+            <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1">Registro de Identidad Digital</div>
+            <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">Identidad y monitoreo</h1>
           </div>
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25">
             <span className="demo-blip" />
-            Simulated
+            Simulado
           </span>
         </div>
         {Body}
@@ -192,8 +249,8 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
           <div className="font-semibold text-[18px] text-t-0">LeakShield AI</div>
         </div>
         <div className="text-center">
-          <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1.5">Step 2 of 2 · Identity setup</div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">What should we watch for you?</h1>
+          <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1.5">Paso 2 de 2 · Configuración de identidad</div>
+          <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">¿Qué deberíamos vigilar por ti?</h1>
         </div>
         {Body}
       </div>
@@ -201,3 +258,4 @@ export const IntakeScreen: React.FC<IntakeScreenProps> = ({ profile, inApp = fal
   );
 };
 export default IntakeScreen;
+

@@ -5,6 +5,14 @@ import { StatusPill } from '../../components/ui/StatusPill';
 import { AIInsightCard } from '../../components/ui/AIInsightCard';
 import { BreachFinding } from '../../types/privacy';
 
+const handleMouseMove = (e: React.MouseEvent<HTMLDivElement | HTMLButtonElement>) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+  e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+};
+
 interface BreachIntelligenceProps {
   breaches: BreachFinding[];
   inlineAI: boolean;
@@ -23,6 +31,8 @@ export const BreachIntelligence: React.FC<BreachIntelligenceProps> = ({
   const [filter, setFilter] = useState<'All' | 'Critical' | 'High' | 'Medium'>('All');
   
   const levels: ('All' | 'Critical' | 'High' | 'Medium')[] = ["All", "Critical", "High", "Medium"];
+  const labelMap: Record<string, string> = { All: "Todas", Critical: "Críticas", High: "Altas", Medium: "Medias" };
+
   const filteredList = list.filter(b => filter === "All" || b.severity === filter);
   const b = list.find(x => x.id === sel) || filteredList[0] || list[0];
 
@@ -30,7 +40,7 @@ export const BreachIntelligence: React.FC<BreachIntelligenceProps> = ({
     const updated = list.map(item => {
       if (item.id === breachId) {
         const nextStatus = item.status === 'Resolved' ? 'Pending' : 'Resolved';
-        onToast(nextStatus === 'Resolved' ? "Marked resolved" : "Marked as pending");
+        onToast(nextStatus === 'Resolved' ? "Marcada como resuelta" : "Marcada como pendiente");
         
         // Link to task system if task ID mapping exists
         const taskIdMap: Record<string, string> = { b1: "t1", b2: "t2", b3: "t5" };
@@ -50,33 +60,33 @@ export const BreachIntelligence: React.FC<BreachIntelligenceProps> = ({
     <div className="max-w-[1180px] mx-auto fade-in">
       <div className="flex justify-between items-end mb-4 flex-wrap gap-3">
         <div>
-          <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1">Breach Intelligence</div>
-          <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">Breach exposure</h1>
+          <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-1">Inteligencia de Brechas</div>
+          <h1 className="text-[26px] font-semibold tracking-tight text-t-0 leading-tight">Exposición a brechas</h1>
         </div>
         <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25">
           <span className="demo-blip" />
-          Simulated breaches
+          Brechas simuladas
         </span>
       </div>
 
       {inlineAI && (
         <div className="mb-4">
           <AIInsightCard 
-            tag="AI Breach Prioritizer" 
+            tag="Analista de Brechas IA" 
             lead 
             confidence="High"
-            body="I ranked these by sensitivity, not recency. ConnectHub and DevForum share one leaked password — fix them together for the biggest single gain."
+            body="Clasifiqué las filtraciones por severidad y sensibilidad de datos, no por orden cronológico. ConnectHub y DevForum exponen la misma contraseña reutilizada: rótala en ambos servicios hoy."
             impact="+12 score" 
-            action="Start with the reused password" 
+            action="Comenzar con brecha crítica" 
             onAction={() => { 
               setSel("b1"); 
-              onToast("Selected the critical breach"); 
+              onToast("Se seleccionó la brecha ConnectHub"); 
             }} 
           />
         </div>
       )}
 
-      <div className="flex items-center gap-2.5 mb-4 flex-wrap">
+      <div className="flex items-center gap-2.5 mb-4 flex-wrap animate-fadeIn">
         <div className="flex gap-1 bg-bg-inset p-1 rounded-lg border border-line">
           {levels.map(l => (
             <button 
@@ -88,12 +98,12 @@ export const BreachIntelligence: React.FC<BreachIntelligenceProps> = ({
               }`} 
               onClick={() => setFilter(l)}
             >
-              {l}
+              {labelMap[l]}
             </button>
           ))}
         </div>
         <span className="text-t-2 text-[12.5px] ml-2">
-          {filteredList.length} of {list.length} breaches
+          {filteredList.length} de {list.length} brechas detectadas
         </span>
       </div>
 
@@ -103,42 +113,58 @@ export const BreachIntelligence: React.FC<BreachIntelligenceProps> = ({
           {filteredList.map(x => (
             <button 
               key={x.id} 
+              onMouseMove={handleMouseMove}
               onClick={() => setSel(x.id)} 
-              className={`border rounded-lg p-3.5 text-left cursor-pointer flex gap-3.5 items-center transition-all duration-130 w-full ${
+              className={`group relative overflow-hidden border rounded-lg p-3.5 text-left cursor-pointer flex gap-3.5 items-center transition-all duration-130 w-full ${
                 sel === x.id 
                   ? "border-teal-line bg-teal-dim" 
                   : "border-line bg-bg-2 hover:border-line-2"
               }`}
             >
-              <div className="w-[38px] h-[38px] rounded-lg bg-bg-3 border border-line-2 flex items-center justify-center font-semibold text-[15px] text-t-0 flex-shrink-0">
+              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
+                background: `radial-gradient(200px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.05), transparent 80%)`
+              }} />
+              <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.003] to-white/[0.015] pointer-events-none" />
+
+              <div className="w-[38px] h-[38px] rounded-lg bg-bg-3 border border-line-2 flex items-center justify-center font-semibold text-[15px] text-t-0 flex-shrink-0 relative z-10">
                 {x.logo}
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 relative z-10">
                 <div className="flex justify-between items-center mb-0.5">
                   <span className="font-semibold text-[13.5px] text-t-0 truncate">{x.service}</span>
                   <span className="font-mono text-t-2 text-[11px]">P{x.priority}</span>
                 </div>
                 <div className="text-t-2 text-[11.5px] mb-1.5">
-                  {x.category} · {x.date}
+                  {x.category === "Social network" ? "Red social" : x.category === "Developer community" ? "Comunidad de desarrolladores" : x.category === "E-commerce" ? "Comercio electrónico" : "Aplicación de fitness"} · {x.date}
                 </div>
                 <div className="flex gap-2">
                   <Badge level={x.severity} />
-                  <StatusPill status={x.status} />
+                  <StatusPill status={x.status === "Pending" ? "Pending" : x.status === "In Progress" ? "In Progress" : x.status === "Resolved" ? "Resolved" : "Monitor"} />
                 </div>
               </div>
             </button>
           ))}
           {filteredList.length === 0 && (
             <div className="border border-dashed border-line rounded-lg p-8 text-center text-t-2">
-              No breaches found for this severity filter.
+              No se encontraron brechas con este filtro de severidad.
             </div>
           )}
         </div>
 
         {/* Details View */}
         {b && (
-          <div className="border border-line rounded-lg p-5 bg-bg-2 shadow-premium fade-in" key={b.id}>
-            <div className="flex justify-between items-center mb-4 flex-wrap gap-3">
+          <div 
+            onMouseMove={handleMouseMove}
+            className="group relative overflow-hidden border border-line rounded-lg p-5 bg-bg-2 shadow-premium fade-in" 
+            key={b.id}
+          >
+            {/* Glossy radial glow & specular line highlight */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" style={{
+              background: `radial-gradient(400px circle at var(--mouse-x, 0px) var(--mouse-y, 0px), rgba(45, 212, 191, 0.05), transparent 80%)`
+            }} />
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.005] to-white/[0.025] pointer-events-none" />
+
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-3 relative z-10">
               <div className="flex items-center gap-3">
                 <div className="w-[46px] h-[46px] rounded-lg bg-bg-3 border border-line-2 flex items-center justify-center font-semibold text-[18px] text-t-0 flex-shrink-0">
                   {b.logo}
@@ -149,21 +175,21 @@ export const BreachIntelligence: React.FC<BreachIntelligenceProps> = ({
                     <Badge level={b.severity} />
                   </div>
                   <div className="text-t-2 text-[12.5px] mt-1.2">
-                    {b.category} · breach dated {b.date} · {b.records}
+                    {b.category === "Social network" ? "Red social" : b.category === "Developer community" ? "Comunidad de devs" : b.category === "E-commerce" ? "Comercio electrónico" : "App de fitness"} · filtrado en {b.date} · {b.records === "118M accounts" ? "118M cuentas" : b.records === "9.4M accounts" ? "9.4M cuentas" : b.records === "42M accounts" ? "42M cuentas" : "6.1M cuentas"}
                   </div>
                 </div>
               </div>
-              <StatusPill status={b.status} />
+              <StatusPill status={b.status === "Pending" ? "Pending" : b.status === "In Progress" ? "In Progress" : b.status === "Resolved" ? "Resolved" : "Monitor"} />
             </div>
 
-            <div className="flex gap-2 mb-4 flex-wrap">
+            <div className="flex gap-2 mb-4 flex-wrap relative z-10">
               <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-0.5 rounded-[7px] bg-bg-3 border border-line text-t-1">
                 <Icon 
                   name={b.verified ? "check-circle" : "eye"} 
                   size={13} 
                   style={{ color: b.verified ? "var(--ok)" : "var(--med)" }} 
                 />
-                {b.verified ? "Verified breach" : "Unverified"}
+                {b.verified ? "Brecha verificada" : "No verificada"}
               </span>
               <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold px-2.5 py-0.5 rounded-[7px] bg-bg-3 border border-line text-t-1">
                 <Icon name="mail" size={13} />
@@ -175,10 +201,10 @@ export const BreachIntelligence: React.FC<BreachIntelligenceProps> = ({
               </span>
             </div>
 
-            <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-2">Exposed data classes</div>
-            <div className="flex gap-2 mb-4.5 flex-wrap">
+            <div className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold mb-2 relative z-10">Clases de datos expuestos</div>
+            <div className="flex gap-2 mb-4.5 flex-wrap relative z-10">
               {b.dataClasses.map(d => {
-                const danger = /password|phone|address/i.test(d);
+                const danger = /contraseña|teléfono|domicilio|dirección/i.test(d) || d.includes("hash") || d.includes("plano");
                 return (
                   <span 
                     key={d} 
@@ -195,13 +221,13 @@ export const BreachIntelligence: React.FC<BreachIntelligenceProps> = ({
               })}
             </div>
 
-            <div className="border border-teal-line bg-gradient-to-br from-teal/6 to-bg-2 rounded-lg p-4 relative overflow-hidden mb-4">
+            <div className="border border-teal-line bg-gradient-to-br from-teal/6 to-bg-2 rounded-lg p-4 relative overflow-hidden mb-4 z-10">
               <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-teal to-cyan" />
               
               <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
                 <span className="inline-flex items-center gap-1 text-[10.5px] font-semibold tracking-wider uppercase text-teal">
                   <Icon name="sparkles" size={13} style={{ marginRight: 4 }} />
-                  Recommended by AI
+                  Recomendado por la IA
                 </span>
                 {b.riskReduced && (
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded border border-teal-line bg-teal-dim text-teal">
@@ -213,42 +239,42 @@ export const BreachIntelligence: React.FC<BreachIntelligenceProps> = ({
 
               <div className="flex flex-col gap-3">
                 <div>
-                  <span className="text-[10px] tracking-wide uppercase text-t-3 font-semibold block mb-0.5">Why this matters</span>
+                  <span className="text-[10px] tracking-wide uppercase text-t-3 font-semibold block mb-0.5">Por qué importa</span>
                   <p className="text-t-1 text-[12.8px] leading-relaxed m-0">{b.ai}</p>
                 </div>
                 
                 <div className="border-t border-line/40 pt-2.5">
-                  <span className="text-[10px] tracking-wide uppercase text-t-3 font-semibold block mb-0.5">Suggested action</span>
+                  <span className="text-[10px] tracking-wide uppercase text-t-3 font-semibold block mb-0.5">Acción sugerida</span>
                   <p className="text-t-0 text-[13px] leading-relaxed m-0 font-medium">{b.action}</p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 text-t-3 text-[11px] mb-4">
+            <div className="flex items-center gap-1.5 text-t-3 text-[11px] mb-4 relative z-10">
               <Icon name="shield-check" size={13} />
-              <span>AI breach intelligence · Human review required before execution</span>
+              <span>Análisis de brechas IA · Requiere revisión humana antes de ejecutar</span>
             </div>
 
-            <div className="flex gap-2.5 mt-[18px] flex-wrap">
+            <div className="flex gap-2.5 mt-[18px] flex-wrap relative z-10">
               <button 
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] active:translate-y-[0.5px] cursor-pointer transition-all duration-100 animate-pulse-subtle"
-                onClick={() => onToast("Opening password rotation guide (demo)")}
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] active:translate-y-[0.5px] cursor-pointer transition-all duration-100 animate-pulse-subtle shadow-premium"
+                onClick={() => onToast("Abriendo guía para rotación segura de contraseñas (demo)")}
               >
                 <Icon name="key" size={15} />
-                Rotate password
+                Rotar contraseña
               </button>
               <button 
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 border border-line-2 bg-bg-3 hover:bg-bg-2 hover:border-line-3 text-t-0 cursor-pointer transition-all duration-130"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 border border-line-2 bg-bg-3 hover:bg-bg-2 hover:border-line-3 text-t-0 cursor-pointer transition-all duration-130 shadow-premium"
                 onClick={() => handleToggleResolve(b.id)}
               >
                 <Icon name="check" size={15} />
-                {b.status === "Resolved" ? "Mark as pending" : "Mark resolved"}
+                {b.status === "Resolved" ? "Marcar como pendiente" : "Marcar como resuelto"}
               </button>
               <button 
                 className="text-t-2 hover:text-t-0 font-semibold text-[13px] px-3 bg-transparent border-0 cursor-pointer transition-all duration-130"
-                onClick={() => onToast("Snoozed — we'll keep monitoring")}
+                onClick={() => onToast("Pospuesto — mantendremos el monitoreo")}
               >
-                Snooze
+                Posponer
               </button>
             </div>
           </div>

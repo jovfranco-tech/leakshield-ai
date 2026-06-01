@@ -27,21 +27,21 @@ interface NavGroup {
 }
 
 const NAV_GROUPS: NavGroup[] = [
-  { group: "Monitor", items: [
+  { group: "Monitoreo", items: [
     { id: "dashboard", label: "Dashboard", icon: "dashboard" },
-    { id: "identity", label: "Identity Intake", icon: "fingerprint" },
+    { id: "identity", label: "Identidad Digital", icon: "fingerprint" },
   ]},
-  { group: "Findings", items: [
-    { id: "breaches", label: "Breach Intelligence", icon: "breach", badge: "4", crit: true },
-    { id: "footprint", label: "Public Footprint", icon: "globe", badge: "6" },
+  { group: "Hallazgos", items: [
+    { id: "breaches", label: "Brechas de Seguridad", icon: "breach", badge: "4", crit: true },
+    { id: "footprint", label: "Footprint Público", icon: "globe", badge: "6" },
     { id: "brokers", label: "Data Brokers", icon: "building", badge: "2" },
   ]},
-  { group: "Act", items: [
-    { id: "copilot", label: "AI Copilot", icon: "sparkles" },
-    { id: "tasks", label: "Task Board", icon: "kanban", badge: "9" },
+  { group: "Acciones", items: [
+    { id: "copilot", label: "Copiloto de IA", icon: "sparkles" },
+    { id: "tasks", label: "Tablero de Tareas", icon: "kanban", badge: "9" },
   ]},
-  { group: "Settings", items: [
-    { id: "trust", label: "Trust Center", icon: "shield-check" },
+  { group: "Configuración", items: [
+    { id: "trust", label: "Centro de Confianza", icon: "shield-check" },
   ]},
 ];
 
@@ -58,7 +58,7 @@ export const NavRail: React.FC<NavRailProps> = ({ view, onNav, profile }) => {
         <Logo />
         <div>
           <div className="font-semibold text-[15px] tracking-tight text-t-0 leading-tight">LeakShield AI</div>
-          <div className="font-medium text-[10.5px] text-t-2 tracking-widest uppercase mt-0.5">Privacy Command Center</div>
+          <div className="font-medium text-[10.5px] text-t-2 tracking-widest uppercase mt-0.5">Centro de Control de Privacidad</div>
         </div>
       </div>
       
@@ -113,7 +113,7 @@ export const NavRail: React.FC<NavRailProps> = ({ view, onNav, profile }) => {
         <button 
           className="w-8 h-8 rounded-lg border border-line bg-bg-2 hover:bg-bg-3 text-t-1 hover:text-t-0 flex items-center justify-center cursor-pointer transition-all duration-130" 
           onClick={() => onNav("landing")} 
-          title="Sign out"
+          title="Cerrar sesión"
         >
           <Icon name="logout" size={15} />
         </button>

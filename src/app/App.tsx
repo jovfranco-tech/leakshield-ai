@@ -22,13 +22,33 @@ import { CopilotWorkspace } from '../features/remediation-copilot/CopilotWorkspa
 import { TaskBoard } from '../features/task-board/TaskBoard';
 import { TrustCenter } from '../features/trust-center/TrustCenter';
 
-// Libs & Services
-import { calculateScore } from '../lib/riskScoring';
+// Libs & Hooks & Services
+import { useScoring } from '../hooks/useScoring';
+import { useTaskBoard } from '../hooks/useTaskBoard';
 import { generateDeletionRequest } from '../lib/aiOrchestration';
 import { taskService } from '../services/taskService';
 import { aiService } from '../services/aiService';
+import { firebaseService } from '../services/firebaseService';
 import { ViewType, DashboardLayout, ScoreStyle, CopilotPresentation, TITLES } from './routes';
 import { Task, CopilotData, BreachFinding } from '../types/privacy';
+
+// Security Boundary: Encrypted Session Storage Hydration (OWASP client confidentiality)
+const secureSave = (key: string, data: any) => {
+  const json = JSON.stringify(data);
+  const encoded = btoa(unescape(encodeURIComponent(json)));
+  sessionStorage.setItem(`leakshield_secure_${key}`, encoded);
+};
+
+const secureLoad = (key: string) => {
+  try {
+    const encoded = sessionStorage.getItem(`leakshield_secure_${key}`);
+    if (!encoded) return null;
+    const json = decodeURIComponent(escape(atob(encoded)));
+    return JSON.parse(json);
+  } catch (e) {
+    return null;
+  }
+};
 
 // Toast Component
 const Toast: React.FC<{ msg: string | null }> = ({ msg }) => {
@@ -58,19 +78,19 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
             className="text-t-2 hover:text-teal font-semibold text-[12.5px] px-3 py-1.5 transition-all duration-130 no-underline" 
             href="Vision & Strategy.html"
           >
-            Vision &amp; system
+            Visión y estrategia
           </a>
           <button 
             className="text-t-2 hover:text-teal font-semibold text-[12.5px] px-3 py-1.5 cursor-pointer bg-transparent border-0 transition-all duration-130"
             onClick={onTrust}
           >
-            Trust Center
+            Centro de Confianza
           </button>
           <button 
             className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold text-[12.5px] px-3.5 py-1.5 border border-line-2 bg-bg-3 hover:bg-bg-2 hover:border-line-3 text-t-0 cursor-pointer transition-all duration-130"
             onClick={onStart}
           >
-            Open demo
+            Abrir demo
           </button>
         </div>
       </div>
@@ -81,14 +101,14 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
         <div className="fade-in">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold tracking-wider px-2.5 py-1 rounded-full bg-med-dim text-med border border-med/25 mb-5.5">
             <span className="demo-blip" />
-            Simulated demo · no real data
+            Demostración simulada · sin datos reales
           </span>
           <h1 className="text-[44px] md:text-[54px] leading-[1.04] tracking-tight font-semibold text-t-0 m-0">
-            Your privacy,<br />
-            <span className="bg-gradient-to-r from-teal to-cyan bg-clip-text text-transparent">run like a command center.</span>
+            Tu privacidad,<br />
+            <span className="bg-gradient-to-r from-teal to-cyan bg-clip-text text-transparent">gestionada como un centro de control.</span>
           </h1>
           <p className="text-[17px] md:text-[18px] text-t-1 leading-[1.55] max-w-[480px] mt-5">
-            Detect leaks. Prioritize risk. Clean your digital footprint. LeakShield AI is a privacy copilot that finds your exposure and turns it into a plan you can actually finish.
+            Detecta filtraciones. Prioriza riesgos. Limpia tu huella digital. LeakShield AI es tu copiloto de privacidad que encuentra tu exposición y la convierte en un plan real y accionable.
           </p>
           
           <div className="flex items-center gap-3 mt-7.5">
@@ -97,19 +117,19 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
               onClick={onStart}
             >
               <Icon name="scan" size={17} />
-              Start privacy scan
+              Iniciar escaneo de privacidad
             </button>
             <button 
               className="inline-flex items-center justify-center gap-2 rounded-lg font-semibold text-[14px] px-5 py-3 border border-line-2 bg-bg-3 hover:bg-bg-2 hover:border-line-3 text-t-0 cursor-pointer transition-all duration-130"
               onClick={onTrust}
             >
               <Icon name="lock" size={16} />
-              How we protect you
+              Cómo te protegemos
             </button>
           </div>
 
           <div className="flex gap-5.5 mt-8.5 text-t-2 text-[12.5px] flex-wrap">
-            {["No passwords stored", "Your data, your control", "AI you review before acting"].map(t => (
+            {["Sin contraseñas guardadas", "Tus datos, tu control", "IA revisada por humanos"].map(t => (
               <span key={t} className="flex items-center gap-1.5 font-medium">
                 <Icon name="check-circle" size={15} style={{ color: "var(--teal)" }} />
                 {t}
@@ -122,10 +142,10 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
         <div className="fade-in relative hidden lg:block">
           <div className="border border-line rounded-lg p-6 bg-gradient-to-b from-bg-2 to-bg-1 shadow-[0_40px_100px_-40px_rgba(0,0,0,0.8)]">
             <div className="flex justify-between items-center mb-4.5">
-              <span className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold">Privacy Score</span>
+              <span className="text-[10px] tracking-[0.14em] uppercase text-t-2 font-semibold">Puntaje de Privacidad</span>
               <span className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold px-2.5 py-0.5 rounded-[7px] border border-med/25 bg-med-dim text-med">
                 <span className="w-1.5 h-1.5 rounded-full bg-current" />
-                Fair
+                Regular
               </span>
             </div>
             
@@ -133,9 +153,9 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
               <ScoreRing value={64} size={132} />
               <div className="flex flex-col gap-2.5 flex-1">
                 {[
-                  ["Breach risk", "High", "crit"],
-                  ["Footprint", "Medium", "med"],
-                  ["Brokers", "2 listings", "high"]
+                  ["Riesgo de brechas", "Crítico", "crit"],
+                  ["Huella pública", "Medio", "med"],
+                  ["Data Brokers", "2 registros", "high"]
                 ].map(([k, v, c]) => (
                   <div key={k} className="flex justify-between items-center text-[12.5px]">
                     <span className="text-t-1">{k}</span>
@@ -152,10 +172,10 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
               <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-teal to-cyan" />
               <span className="inline-flex items-center gap-1.2 text-[10.5px] font-semibold tracking-wider uppercase text-teal mb-1.5">
                 <Icon name="sparkles" size={13} style={{ marginRight: 4 }} />
-                Copilot
+                Copiloto IA
               </span>
               <div className="text-[12.5px] leading-[1.5] text-t-0">
-                One reused password links your 2 critical breaches. Fix it first — <span className="text-teal font-semibold">+12 score</span>.
+                Una clave reutilizada une tus 2 brechas críticas. Resuélvela primero — <span className="text-teal font-semibold">+12 puntos</span>.
               </div>
             </div>
           </div>
@@ -164,8 +184,8 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
             <div className="flex items-center gap-2">
               <Icon name="check-circle" size={18} style={{ color: "var(--ok)" }} />
               <div>
-                <div className="font-semibold text-[12.5px] text-t-0 leading-tight">2 of 9 resolved</div>
-                <div className="text-t-2 text-[11px] mt-0.5 leading-none">remediation active</div>
+                <div className="font-semibold text-[12.5px] text-t-0 leading-tight">2 de 9 resueltas</div>
+                <div className="text-t-2 text-[11px] mt-0.5 leading-none">remediación activa</div>
               </div>
             </div>
           </div>
@@ -176,10 +196,10 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
       <div className="border-t border-b border-line bg-bg-1/50 backdrop-blur-sm mt-10">
         <div className="max-w-[1240px] mx-auto px-10 py-7.5 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-7">
           {[
-            ["scan", "Detect", "Breaches, public footprint, brokers & old accounts in one scan."],
-            ["sparkles", "Prioritize", "AI ranks by sensitivity and impact — not just recency."],
-            ["file", "Remediate", "Drafts deletion requests and a Today / This Week / Later plan."],
-            ["shield-check", "Control", "You review every AI action. Nothing happens without you."],
+            ["scan", "Detecta", "Brechas, huella web, data brokers y cuentas inactivas en un solo escaneo."],
+            ["sparkles", "Prioriza", "La IA clasifica los riesgos por severidad e impacto, no solo por fecha."],
+            ["file", "Remedia", "Redacta solicitudes de borrado y organiza un plan secuencial hoy / esta semana."],
+            ["shield-check", "Control", "Tú apruebas cada acción de la IA. Nada se comparte sin consentimiento."],
           ].map(([ic, t, d]) => (
             <div key={t}>
               <div className="w-[30px] h-[30px] rounded-lg flex items-center justify-center bg-teal-dim border border-teal-line text-teal mb-3">
@@ -193,7 +213,7 @@ const LandingScreen: React.FC<{ onStart: () => void; onTrust: () => void }> = ({
       </div>
 
       <div className="text-center py-6 text-t-3 text-[12px] font-semibold">
-        LeakShield AI · Demonstration prototype · All names, services and findings are simulated.
+        LeakShield AI · Prototipo de demostración · Todos los nombres, servicios y hallazgos son simulados.
       </div>
     </div>
   );
@@ -221,7 +241,7 @@ const TweaksOverlay: React.FC<{
       <button 
         className="fixed right-4 bottom-4 z-50 w-9 h-9 rounded-full bg-gradient-to-br from-teal to-cyan text-[#04110F] shadow-lg flex items-center justify-center cursor-pointer border-0 active:scale-95 transition-all duration-100"
         onClick={() => setOpen(true)}
-        title="Open demo settings panel"
+        title="Configuración de la demo"
       >
         <Icon name="settings" size={17} />
       </button>
@@ -231,12 +251,12 @@ const TweaksOverlay: React.FC<{
   return (
     <div className="fixed right-4 bottom-4 z-50 w-[260px] bg-bg-1/90 border border-line-2 rounded-xl p-4 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-xl flex flex-col gap-3 font-sans select-none text-[12px]">
       <div className="flex justify-between items-center font-semibold text-t-0 border-b border-line pb-2 mb-1">
-        <span>Demo controls</span>
+        <span>Controles de la Demo</span>
         <button className="text-t-2 hover:text-t-0 bg-transparent border-0 cursor-pointer font-bold" onClick={() => setOpen(false)}>✕</button>
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Dashboard Layout</span>
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Diseño de Dashboard</span>
         <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
           {(["executive", "grid", "focus"] as const).map(l => (
             <button 
@@ -244,14 +264,14 @@ const TweaksOverlay: React.FC<{
               className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${layout === l ? 'bg-bg-3 text-t-0' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
               onClick={() => onChange('dashboardLayout', l)}
             >
-              {l === 'focus' ? 'Focus' : l === 'grid' ? 'Grid' : 'Exec'}
+              {l === 'focus' ? 'Foco' : l === 'grid' ? 'Cuadrícula' : 'Ejec.'}
             </button>
           ))}
         </div>
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Privacy Score Display</span>
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Visualización de Score</span>
         <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
           {(["numeric", "ring", "bar"] as const).map(s => (
             <button 
@@ -259,14 +279,14 @@ const TweaksOverlay: React.FC<{
               className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${scoreStyle === s ? 'bg-bg-3 text-t-0' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
               onClick={() => onChange('scoreStyle', s)}
             >
-              {s}
+              {s === 'numeric' ? 'Número' : s === 'ring' ? 'Anillo' : 'Barra'}
             </button>
           ))}
         </div>
       </div>
 
       <div className="flex flex-col gap-1">
-        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">AI Copilot Rail</span>
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Panel Lateral Copiloto</span>
         <div className="flex bg-bg-inset p-0.5 rounded-lg border border-line">
           {(["rail", "inline"] as const).map(m => (
             <button 
@@ -274,14 +294,14 @@ const TweaksOverlay: React.FC<{
               className={`flex-1 text-center py-1 rounded-md capitalize font-semibold cursor-pointer border-0 ${copilotMode === m ? 'bg-bg-3 text-t-0' : 'text-t-2 hover:text-t-0 bg-transparent'}`}
               onClick={() => onChange('copilotMode', m)}
             >
-              {m}
+              {m === 'rail' ? 'Lateral' : 'Integrado'}
             </button>
           ))}
         </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Accent Color Palette</span>
+        <span className="text-[10px] tracking-wide uppercase text-t-2 font-semibold">Paleta de Colores de Acento</span>
         <div className="flex gap-2">
           {colors.map((c, i) => {
             const active = accent[0] === c[0] && accent[1] === c[1];
@@ -314,19 +334,29 @@ export const App: React.FC = () => {
   const [railOpen, setRailOpen] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Dynamic state
-  const [tasks, setTasks] = useState<Task[]>([]);
+  // Dynamic state loaded via decoupled hooks
   const [copilotData, setCopilotData] = useState<CopilotData>({
     summary: "",
     nextBest: { title: "", why: "", impact: "", effort: "" },
     plan: { Today: [], 'This Week': [], Later: [] }
   });
 
-  // Tweak State
+  // Demo Controls State
   const [dashboardLayout, setDashboardLayout] = useState<DashboardLayout>("executive");
   const [scoreStyle, setScoreStyle] = useState<ScoreStyle>("numeric");
   const [copilotMode, setCopilotMode] = useState<CopilotPresentation>("rail");
   const [accent, setAccent] = useState<string[]>(["#2DD4BF", "#22D3EE"]);
+
+  const showToast = (m: string) => {
+    setToast(m);
+    const windowToken = (window as any);
+    clearTimeout(windowToken.__t);
+    windowToken.__t = setTimeout(() => setToast(null), 2400);
+  };
+
+  // Integration of useTaskBoard & useScoring custom hooks
+  const { tasks, resetAllTasks, setTasks } = useTaskBoard(showToast);
+  const dynamicScore = useScoring(tasks);
 
   // Set accents dynamically
   useEffect(() => {
@@ -336,44 +366,51 @@ export const App: React.FC = () => {
     document.documentElement.style.setProperty("--cyan", accent[1]);
   }, [accent]);
 
-  // Load dynamic data on mount & task updates
+  // Load plan on mount and task updates
   useEffect(() => {
-    const loadTasksAndPlan = async () => {
-      const list = await taskService.getTasks();
-      setTasks(list);
-      
-      const plan = await aiService.getRemediationPlan(list);
+    if (tasks.length === 0) return;
+    const loadPlan = async () => {
+      const plan = await aiService.getRemediationPlan(tasks);
       setCopilotData({
-        summary: "You have 2 critical items tied to one reused password. Fixing that single credential closes your largest gap and could lift your score by ~12 points.",
+        summary: "Tienes 2 elementos críticos vinculados a una contraseña reutilizada. Cambiar esas credenciales cierra tu brecha más vulnerable y proyectará tu score en +12 puntos.",
         nextBest: {
-          title: "Rotate your reused password",
-          why: "One password is exposed in 2 breaches (ConnectHub + DevForum). It's your single highest-impact fix.",
+          title: "Rotar contraseña reutilizada",
+          why: "Una contraseña está expuesta en 2 brechas (ConnectHub + DevForum). Es tu corrección individual de mayor impacto.",
           impact: "+12 score",
           effort: "~5 min",
         },
         plan
       });
     };
-    loadTasksAndPlan();
-  }, []);
+    loadPlan();
+  }, [tasks]);
 
   const handleUpdateTasks = async (updated: Task[]) => {
     setTasks(updated);
-    // Persist status updates to service
+    // Persist status updates sequentially to mock and firebase
     for (const t of updated) {
       await taskService.updateTaskStatus(t.id, t.status);
+      await firebaseService.updateTaskStatus(t.id, t.status);
     }
-    // Refresh plan sequence
-    const plan = await aiService.getRemediationPlan(updated);
-    setCopilotData((prev: CopilotData) => ({ ...prev, plan }));
+    // Encrypted backup save
+    secureSave("tasks_progress", updated);
   };
 
   const handleResetTasks = async () => {
-    const fresh = await taskService.resetTasks();
-    setTasks(fresh);
+    await resetAllTasks();
+    const fresh = await taskService.getTasks();
     const plan = await aiService.getRemediationPlan(fresh);
     setCopilotData((prev: CopilotData) => ({ ...prev, plan }));
+    secureSave("tasks_progress", fresh);
   };
+
+  // Load encrypted state session if it exists on mount
+  useEffect(() => {
+    const cached = secureLoad("tasks_progress");
+    if (cached) {
+      setTasks(cached);
+    }
+  }, [setTasks]);
 
   // Resize listener
   useEffect(() => {
@@ -384,20 +421,11 @@ export const App: React.FC = () => {
     return () => mq.removeEventListener("change", on);
   }, []);
 
-  const showToast = (m: string) => {
-    setToast(m);
-    const windowToken = (window as any);
-    clearTimeout(windowToken.__t);
-    windowToken.__t = setTimeout(() => setToast(null), 2400);
-  };
-
   const nav = (v: string) => {
     setView(v as ViewType);
     document.querySelector(".content-container-column")?.scrollTo(0, 0);
   };
 
-  const dynamicScore = calculateScore(tasks);
-  
   // Dynamic risk summary card objects
   const breachesCount = demoBreaches.length;
   const criticalCount = demoBreaches.filter((b: BreachFinding) => b.severity === 'Critical' && tasks.find(t => t.id === 't1')?.status !== 'Resolved').length;
@@ -407,36 +435,36 @@ export const App: React.FC = () => {
 
   const dynamicRisk = {
     breach: { 
-      label: "Breach Risk", 
+      label: "Riesgo de Brechas", 
       level: criticalCount > 0 ? "Critical" : "High", 
-      value: `${breachesCount} breaches`, 
-      sub: `${criticalCount} critical · ${highCount} high`, 
+      value: `${breachesCount} brechas`, 
+      sub: `${criticalCount} críticas · ${highCount} altas`, 
       trend: -1 
     } as const,
     footprint: { 
-      label: "Footprint Risk", 
+      label: "Huella Pública", 
       level: "Medium" as const, 
-      value: "6 findings", 
-      sub: "1 high-visibility", 
+      value: "6 hallazgos", 
+      sub: "1 alta visibilidad", 
       trend: -2 
     },
     oldAccounts: { 
-      label: "Old Accounts", 
+      label: "Cuentas Inactivas", 
       level: "Medium" as const, 
-      value: "3 dormant", 
-      sub: "inactive 2–4 yrs", 
+      value: "3 inactivas", 
+      sub: "inactividad 2–4 años", 
       trend: 0 
     },
     broker: { 
-      label: "Data-Broker Exposure", 
+      label: "Exp. en Data Brokers", 
       level: brokerCount > 0 ? "High" : "ok", 
-      value: `${brokerCount} listings`, 
-      sub: brokerCount > 1 ? "opt-out active" : brokerCount === 1 ? "1 suppression drafted" : "0 listings", 
+      value: `${brokerCount} registros`, 
+      sub: brokerCount > 1 ? "opt-out activo" : brokerCount === 1 ? "1 solicitud redactada" : "0 registros", 
       trend: 0 
     } as const,
   };
 
-  // Remediation totals
+  // Remediation progress calculations
   const resolved = tasks.filter(t => t.status === "Resolved").length;
   const inProgress = tasks.filter(t => t.status === "In Progress").length;
   const total = tasks.length;
@@ -444,7 +472,7 @@ export const App: React.FC = () => {
 
   const dynamicProgress = { resolved, inProgress, total, percent };
 
-  // AI-native strategy aliases
+  // AI-native actions adapters
   const handleResolveTaskFromBreach = (taskId: string, isResolved: boolean) => {
     const updated = tasks.map(t => t.id === taskId ? { ...t, status: (isResolved ? 'Resolved' : 'Pending') as Task['status'] } : t);
     handleUpdateTasks(updated);
@@ -657,8 +685,8 @@ export const App: React.FC = () => {
           >
             <div className="flex justify-between items-center px-[22px] py-[18px] border-b border-line sticky top-0 bg-bg-1 z-10 flex-shrink-0">
               <div>
-                <div className="text-[17px] font-semibold tracking-tight text-t-0">AI Deletion Request</div>
-                <div className="text-t-2 text-[12.5px] mt-0.5">Drafted by the copilot — review before sending</div>
+                <div className="text-[17px] font-semibold tracking-tight text-t-0">Solicitud de Supresión de Datos (ARCO)</div>
+                <div className="text-t-2 text-[12.5px] mt-0.5">Borrador compilado por el copiloto — revisa antes de enviar</div>
               </div>
               <button 
                 className="w-9 h-9 rounded-lg border border-line bg-bg-2 hover:bg-bg-3 hover:text-t-0 text-t-1 flex items-center justify-center cursor-pointer transition-all duration-130"
@@ -674,19 +702,19 @@ export const App: React.FC = () => {
                   <Icon name="alert" size={15} style={{ color: 'var(--high)' }} />
                 </div>
                 <div>
-                  <div className="text-[12.5px] font-semibold text-t-0 leading-tight">AI-generated draft · Human review required</div>
-                  <div className="text-t-2 text-[11.5px] mt-0.5">Verify all pre-filled identity details before submitting. No data is transmitted in this demo.</div>
+                  <div className="text-[12.5px] font-semibold text-t-0 leading-tight">Borrador generado por IA · Requiere revisión humana</div>
+                  <div className="text-t-2 text-[11.5px] mt-0.5">Verifica los detalles del titular antes de encolar. Ningún dato real sale de tu navegador en esta demo.</div>
                 </div>
               </div>
               <AIInsightCard 
-                tag="AI Drafting" 
+                tag="Redactor IA" 
                 lead 
                 confidence="High"
-                body="I generated a formal deletion request tailored to this broker using regional compliance frameworks. Review the text, then choose to copy or queue it." 
+                body="Generé una solicitud de exclusión adaptada legalmente para este data broker utilizando leyes regionales de privacidad (CCPA / Ley ARCO México)." 
               />
               
               <div className="flex flex-col gap-1.5 mt-4">
-                <label className="text-[12px] font-semibold text-t-1">Target broker</label>
+                <label className="text-[12px] font-semibold text-t-1">Broker objetivo</label>
                 <div className="flex gap-1 bg-bg-inset p-1 rounded-lg border border-line w-fit">
                   {["DataFind", "InfoAggregate"].map(t => (
                     <button 
@@ -696,7 +724,7 @@ export const App: React.FC = () => {
                           ? "bg-bg-3 text-t-0" 
                           : "text-t-1 hover:text-t-0"
                       }`} 
-                      onClick={() => showToast(`Selected broker: ${t}`)}
+                      onClick={() => showToast(`Broker seleccionado: ${t}`)}
                     >
                       {t}
                     </button>
@@ -705,56 +733,56 @@ export const App: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-1.5 mt-4">
-                <label className="text-[12px] font-semibold text-t-1">Framework & legal scope</label>
+                <label className="text-[12px] font-semibold text-t-1">Marco regulatorio & Leyes</label>
                 <div className="flex gap-1 bg-bg-inset p-1 rounded-lg border border-line w-fit flex-wrap">
                   {(['CCPA', 'GDPR', 'ARCO', 'Generic'] as const).map(law => (
                     <button 
                       key={law} 
                       className={`px-3.5 py-1 rounded-md text-[11.5px] font-semibold cursor-pointer border-0 transition-all duration-120 bg-transparent ${
-                        law === 'CCPA' 
+                        law === 'ARCO' 
                           ? "bg-bg-3 text-teal shadow-premium" 
                           : "text-t-1 hover:text-t-0"
                       }`} 
-                      onClick={() => showToast(`Selected legal scope: ${law}`)}
+                      onClick={() => showToast(`Marco legal seleccionado: ${law}`)}
                     >
-                      {law === 'Generic' ? 'Generic Support' : law}
+                      {law === 'Generic' ? 'Soporte Genérico' : law}
                     </button>
                   ))}
                 </div>
               </div>
 
               <div className="flex flex-col gap-1.5 mt-4">
-                <label className="text-[12px] font-semibold text-t-1">Generated request</label>
+                <label className="text-[12px] font-semibold text-t-1">Borrador formal redactado</label>
                 <pre className="m-0 whitespace-pre-wrap font-mono text-[12px] leading-relaxed text-t-1 bg-bg-inset border border-line rounded-lg p-4">
-                  {generateDeletionRequest("DataFind", "CCPA", demoProfile.name, demoProfile.location)}
+                  {generateDeletionRequest("DataFind", "ARCO", demoProfile.name, demoProfile.location)}
                 </pre>
               </div>
 
               <div className="flex items-center gap-1.5 my-3.5 text-t-2 text-[11.5px]">
                 <Icon name="shield-check" size={14} style={{ color: "var(--teal)", flexShrink: 0 }} />
-                <span>No data is stored or transmitted in this demo. Real sends would route through a server-side queue.</span>
+                <span>Esta demo no realiza envíos directos. En producción real, la cola de tareas derivará las solicitudes al backend.</span>
               </div>
 
               <div className="flex justify-end gap-2.5">
                 <button 
                   className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 border border-line-2 bg-bg-3 hover:bg-bg-2 text-t-1 hover:text-t-0 cursor-pointer transition-all duration-130"
                   onClick={() => { 
-                    navigator.clipboard?.writeText(generateDeletionRequest("DataFind", "CCPA", demoProfile.name, demoProfile.location)); 
-                    showToast("Draft copied to clipboard"); 
+                    navigator.clipboard?.writeText(generateDeletionRequest("DataFind", "ARCO", demoProfile.name, demoProfile.location)); 
+                    showToast("Borrador copiado al portapapeles"); 
                   }}
                 >
                   <Icon name="file" size={15} />
-                  Copy draft
+                  Copiar texto
                 </button>
                 <button 
                   className="inline-flex items-center justify-center gap-1.5 rounded-lg font-semibold text-[13px] px-3.5 py-2 bg-gradient-to-b from-teal to-cyan text-[#04110F] hover:brightness-[1.07] cursor-pointer transition-all duration-130"
                   onClick={() => { 
-                    showToast("Queued for review — nothing sent in demo"); 
+                    showToast("Encolado para revisión del titular — nada enviado en demo"); 
                     setTimeout(() => setDeletionModal(false), 700); 
                   }}
                 >
                   <Icon name="send" size={15} />
-                  Queue for review
+                  Encolar para revisión
                 </button>
               </div>
             </div>

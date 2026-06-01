@@ -33,8 +33,82 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({ value, size = 168, stroke 
   }, [value, c]);
 
   return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <style>{`
+        @keyframes score-ring-orbit-ccw {
+          0% { transform: rotate(360deg); }
+          100% { transform: rotate(0deg); }
+        }
+        @keyframes score-ring-orbit-cw {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        @keyframes particle-pulse {
+          0%, 100% { transform: scale(0.7); opacity: 0.35; }
+          50% { transform: scale(1.3); opacity: 0.95; }
+        }
+      `}</style>
+
+      {/* Orbit Container 1 (Teal Particle) */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          animation: "score-ring-orbit-cw 12s linear infinite",
+        }}
+      >
+        <div 
+          className="absolute rounded-full bg-teal shadow-[0_0_8px_var(--teal)]"
+          style={{
+            width: stroke * 0.5,
+            height: stroke * 0.5,
+            left: `calc(50% - ${stroke * 0.25}px)`,
+            top: `calc(50% - ${r}px - ${stroke * 0.25}px)`,
+            animation: "particle-pulse 2s ease-in-out infinite",
+          }}
+        />
+      </div>
+
+      {/* Orbit Container 2 (Cyan Particle) */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          animation: "score-ring-orbit-ccw 16s linear infinite",
+        }}
+      >
+        <div 
+          className="absolute rounded-full bg-cyan shadow-[0_0_8px_var(--cyan)]"
+          style={{
+            width: stroke * 0.4,
+            height: stroke * 0.4,
+            left: `calc(50% - ${stroke * 0.2}px)`,
+            top: `calc(50% + ${r}px - ${stroke * 0.2}px)`,
+            animation: "particle-pulse 2.5s ease-in-out infinite",
+            animationDelay: "0.5s",
+          }}
+        />
+      </div>
+
+      {/* Orbit Container 3 (Secondary Amber/Glow Particle) */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          animation: "score-ring-orbit-cw 22s linear infinite",
+        }}
+      >
+        <div 
+          className="absolute rounded-full bg-[#f59e0b] shadow-[0_0_6px_#f59e0b]"
+          style={{
+            width: stroke * 0.3,
+            height: stroke * 0.3,
+            left: `calc(50% - ${r}px - ${stroke * 0.15}px)`,
+            top: `calc(50% - ${stroke * 0.15}px)`,
+            animation: "particle-pulse 1.8s ease-in-out infinite",
+            animationDelay: "1s",
+          }}
+        />
+      </div>
+
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }} className="relative z-10">
         <defs>
           <linearGradient id="scoreGrad" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="var(--accent-a)" />
@@ -55,7 +129,7 @@ export const ScoreRing: React.FC<ScoreRingProps> = ({ value, size = 168, stroke 
           style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(.2,.7,.2,1)" }} 
         />
       </svg>
-      <div className="absolute inset-0 grid place-items-center text-center">
+      <div className="absolute inset-0 grid place-items-center text-center z-20">
         <div>
           <div className="font-mono font-semibold tracking-tighter leading-[0.9]" style={{ fontSize: size * .34 }}>
             <CountUp value={value} />

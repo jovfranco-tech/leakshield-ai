@@ -2,42 +2,42 @@ export function generateDeletionRequest(
   target: string, 
   type: 'ARCO' | 'GDPR' | 'CCPA' | 'Generic' = 'CCPA',
   userName: string = 'Alex Rivera',
-  location: string = 'Mexico City, MX'
+  location: string = 'Ciudad de México, MX'
 ): string {
   const introMap = {
-    CCPA: "I am writing to submit a request under the California Consumer Privacy Act (CCPA) to delete and suppress my personal data.",
-    GDPR: "I am writing to exercise my Right to Erasure (Article 17 of the GDPR) and request the immediate deletion of my personal data.",
-    ARCO: "I am writing to exercise my ARCO Rights (specifically the Right to Cancellation and Opposition) regarding my personal data.",
-    Generic: "I am writing to request the permanent deletion and suppression of my personal information from your records."
+    CCPA: "Le escribo para presentar una solicitud formal bajo la Ley de Privacidad del Consumidor de California (CCPA) para la eliminación y supresión de mis datos personales.",
+    GDPR: "Le escribo para ejercer mi Derecho de Supresión (Artículo 17 del RGPD) y solicitar la eliminación inmediata de mis datos personales de sus sistemas.",
+    ARCO: "Le escribo para ejercer mis Derechos ARCO (específicamente los Derechos de Cancelación y Oposición) sobre mis datos personales y registros.",
+    Generic: "Le escribo para solicitar la eliminación permanente y la supresión de mi información personal de todos sus registros y bases de datos."
   };
 
   const legalRefMap = {
-    CCPA: "Under CCPA, I am requesting that you delete all personal information collected from or about me, and instruct any service providers to do the same.",
-    GDPR: "Pursuant to GDPR Article 17, please delete all records concerning me. If you have shared this data with third parties, you must take reasonable steps to inform them of this erasure request.",
-    ARCO: "Pursuant to Ley Federal de Protección de Datos Personales, please cancel all my records from your public registries and files.",
-    Generic: "Please suppress my profile from all search utilities, resale databases, and public directory listings."
+    CCPA: "Bajo la CCPA, solicito que elimine toda la información personal recopilada sobre mí y que instruya a sus proveedores de servicios a hacer lo mismo.",
+    GDPR: "De conformidad con el Artículo 17 del RGPD, elimine todos los registros que me conciernan. Si ha compartido estos datos con terceros, tome medidas razonables para informarles de esta solicitud de supresión.",
+    ARCO: "De conformidad con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, cancele todos mis registros de sus archivos y registros públicos.",
+    Generic: "Por favor, suprima mi perfil de todos los buscadores, bases de datos comerciales y listados de directorios públicos."
   };
 
-  return `To the Privacy / Data Protection Team at ${target},
+  return `Para el Equipo de Privacidad / Protección de Datos de ${target},
 
 ${introMap[type] || introMap.Generic}
 
-Identifiers (provided for verification and matching purposes only):
-  • Name: ${userName}
-  • Region/Location: ${location}
+Identificadores (provistos únicamente con fines de verificación y emparejamiento):
+  • Nombre: ${userName}
+  • Región/Ubicación: ${location}
 
-Requested Actions:
+Acciones Solicitadas:
   1. ${legalRefMap[type] || legalRefMap.Generic}
-  2. Suppress my identifier vectors from all public search indexes and third-party data broker exports.
-  3. Send a written confirmation of completion within the statutory timeline.
+  2. Suprimir mis vectores de identificación de todos los índices de búsqueda pública y exportaciones de data brokers externos.
+  3. Enviar una confirmación de finalización por escrito dentro del plazo establecido por la ley.
 
-This request is made directly by the data subject regarding their own personal data.
+Esta solicitud se realiza de forma directa por el titular en relación con sus propios datos personales.
 
-Regards,
+Atentamente,
 ${userName}
 
 ---
-AI-generated draft. Human review required.`;
+Borrador generado por IA. Requiere revisión humana antes de ser enviado.`;
 }
 
 export interface AliasRecommendation {
@@ -52,30 +52,30 @@ export function getAliasStrategy(category: string): AliasRecommendation {
     case 'government':
     case 'finance':
       return {
-        type: "Real Email with 2FA",
-        recommendation: "alex.rivera@example.com (high-trust)",
-        rationale: "Use only your primary secure email with robust hardware 2FA for legal, banking, and high-trust government accounts where identity verification is required."
+        type: "Correo real con 2FA",
+        recommendation: "alex.rivera@example.com (alta confianza)",
+        rationale: "Utiliza tu correo electrónico principal y seguro equipado con token 2FA físico para bancos, trámites gubernamentales y cuentas que requieran estricta verificación de identidad."
       };
     case 'shopping':
     case 'social':
     case 'apps':
       return {
-        type: "Permanent Alias by Service",
+        type: "Alias permanente por servicio",
         recommendation: "work.alias+shopping@example.com",
-        rationale: "Use custom aliases for services that are prone to leaks. This isolates breaches to a single mailbox and lets you track who sold your data."
+        rationale: "Utiliza alias personalizados para portales comerciales propensos a fugas. Esto aísla cualquier brecha a un solo buzón y te ayuda a rastrear si vendieron tus datos."
       };
     case 'newsletters':
     case 'promotions':
       return {
-        type: "Masked / Disposable Email",
+        type: "Correo enmascarado / desechable",
         recommendation: "shield.temp-1982a@leakshield.net",
-        rationale: "Use temporary or dynamically generated masked emails for newsletters, content blocks, or one-off coupon signups. Burn the alias if it starts receiving spam."
+        rationale: "Utiliza correos temporales o enmascarados generados dinámicamente para boletines, cupones o registros de una sola vez. Desecha el alias si empieza a recibir spam."
       };
     default:
       return {
-        type: "Dedicated Separate Mailbox",
+        type: "Buzón sandbox dedicado",
         recommendation: "arivera.tech@external-vault.net",
-        rationale: "Establish a completely separate sandbox email for developer forums, legacy discussion boards, or test accounts."
+        rationale: "Establece un buzón completamente separado para foros de desarrolladores, tableros de discusión antiguos o registros de prueba."
       };
   }
 }

@@ -39,10 +39,10 @@ export const Topbar: React.FC<TopbarProps> = ({
           <Icon name="search" size={15} />
           <input 
             className="bg-transparent border-0 outline-none text-t-0 font-sans text-[13px] w-full placeholder-t-2"
-            placeholder="Search breaches, findings, tasks…" 
+            placeholder="Buscar brechas, hallazgos, tareas…" 
             onKeyDown={e => {
               if (e.key === "Enter") {
-                onToast("Search is illustrative in this demo");
+                onToast("La búsqueda es ilustrativa en esta demo");
               }
             }} 
           />
@@ -55,7 +55,7 @@ export const Topbar: React.FC<TopbarProps> = ({
             onClick={() => onNav("copilot")}
           >
             <Icon name="sparkles" size={14} style={{ color: "var(--teal)" }} />
-            Copilot
+            Copiloto
           </button>
         )}
 
@@ -64,7 +64,7 @@ export const Topbar: React.FC<TopbarProps> = ({
           <button 
             className="w-9 h-9 rounded-lg border border-line bg-bg-2 hover:bg-bg-3 text-t-1 hover:text-t-0 flex items-center justify-center cursor-pointer transition-all duration-130"
             onClick={toggleRail} 
-            title="Toggle copilot"
+            title="Activar copiloto"
           >
             <Icon 
               name="sparkles" 
@@ -78,8 +78,8 @@ export const Topbar: React.FC<TopbarProps> = ({
         {!isLandingOrOnboarding && (
           <button 
             className="w-9 h-9 rounded-lg border border-line bg-bg-2 hover:bg-bg-3 text-t-1 hover:text-t-0 flex items-center justify-center cursor-pointer transition-all duration-130 relative"
-            onClick={() => onToast("3 new alerts (demo)")}
-            title="Notifications"
+            onClick={() => onToast("3 nuevas alertas (demo)")}
+            title="Notificaciones"
           >
             <Icon name="bell" size={16} />
             <span className="absolute top-[8px] right-[9px] w-[7px] h-[7px] rounded-full bg-crit border-2 border-bg-2" />
